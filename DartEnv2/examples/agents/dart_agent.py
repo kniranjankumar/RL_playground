@@ -4,19 +4,19 @@ import gym
 import numpy as np
 
 if __name__ == '__main__':
-    env = gym.make('DartBlockPush-v1')
+    env = gym.make('DartBlockPush-v0')
 
-    env.reset()
+    obs, mass = env.reset()
     # print(env.observation_space)
 
     while(True):
         # print(i)
-        mass = np.random.uniform(0,10)
-        ob, reward, done, _ = env.step([5,5,mass])
+        force = np.random.uniform(-1,1)
+        ob, reward, done, _ = env.step([force,force,mass])
         if done:
-            print(reward)
-            print('predicted mass='+str(mass))
-            env.reset()
+            # print(reward)
+            # print('predicted mass='+str(mass))
+            obs, mass = env.reset()
         # env.render()
 
     env.render(close=True)

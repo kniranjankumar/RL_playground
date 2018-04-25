@@ -109,7 +109,7 @@ register(
     max_episode_steps=1000,
 )
 register(
-    id='DartBlockPush-v1',
+    id='DartBlockPush-v0',
     entry_point='gym.envs.dart:DartBlockPushEnv',
     reward_threshold=950.0,
     timestep_limit=10,

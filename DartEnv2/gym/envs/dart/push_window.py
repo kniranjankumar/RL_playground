@@ -8,8 +8,9 @@ from pydart2.gui.glut.window import *
 import os
 
 class PushGLUTWindow(GLUTWindow):
-    def __init__(self,sim,title):
+    def __init__(self, sim, title, window_size= (1280, 720)):
         super().__init__(sim, title)
+        self.window_size = window_size
         self.scene = OpenGLScene_split(*self.window_size)
         self.folder_name = "/home/niranjan/Projects/vis_inst/pytorch-CycleGAN-and-pix2pix/datasets/push_arti_2tex/"
         for root, dirs, files in os.walk('/home/niranjan/Projects/datasets/ETH_Synthesizability/texture',
