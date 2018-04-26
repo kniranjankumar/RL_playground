@@ -12,7 +12,8 @@ class DartBlockPushEnv(dart_env.DartEnv, utils.EzPickle):
         self.action_scale = 500
         self.mass_range = [1, 5]
         self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1])
-        dart_env.DartEnv.__init__(self, 'cube_data.skel', frame_skip = 200, observation_size=[256,256,3], action_bounds=control_bounds)
+        dart_env.DartEnv.__init__(self, 'cube_data.skel', frame_skip=200, observation_size=[720, 720, 3],
+                                  action_bounds=control_bounds)
         utils.EzPickle.__init__(self)
 
 
@@ -99,7 +100,7 @@ class DartBlockPushEnv(dart_env.DartEnv, utils.EzPickle):
     def _get_obs(self):
         # return self._get_viewer().getFrame()
         image_obs = self._get_viewer().getFrame()
-        image_obs = cv.resize(image_obs, (256, 256))
+        # image_obs = cv.resize(image_obs, (256, 256))
         # return np.concatenate([self.robot_skeleton.q, self.robot_skeleton.dq]).ravel()
         # return (self.robot_skeleton.q).ravel()
         return {'observation': image_obs, 'mass': self.mass}
@@ -115,7 +116,7 @@ class DartBlockPushEnv(dart_env.DartEnv, utils.EzPickle):
         ob =self._get_obs()
         # print(ob)
         # return ob, mass
-        return ob['observation']
+        return ob
 
     def viewer_setup(self):
         self._get_viewer().scene.tb.trans[2] = -0.3
