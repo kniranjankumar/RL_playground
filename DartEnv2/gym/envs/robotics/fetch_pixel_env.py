@@ -123,6 +123,8 @@ class FetchPixelEnv(robot_pixel_env.RobotPixelEnv):
             'observation': obs_image.copy(),
             'achieved_goal': obs_image.copy(),
             'desired_goal': self.goal.copy(),
+            'goal_state': self.goal_gripper_state.copy(),
+            'observation_state': self.current_gripper_state.copy()
         }
 
     def _viewer_setup(self):
