@@ -11,10 +11,11 @@ class DartBlockPushEnv(dart_env.DartEnv, utils.EzPickle):
         # control_bounds = np.array([[1.0,-1.0], [-1.0, -1.0]])
         self.action_scale = 500
         self.mass_range = [1, 5]
+        self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1])
         dart_env.DartEnv.__init__(self, 'cube_data.skel', frame_skip = 200, observation_size=[256,256,3], action_bounds=control_bounds)
         utils.EzPickle.__init__(self)
 
-        self.mass = np.random.uniform( self.mass_range[0],  self.mass_range[1])
+
         qpos = self.robot_skeleton.q + self.np_random.uniform(low=-.01, high=.01, size=self.robot_skeleton.ndofs)
         qvel = self.robot_skeleton.dq + self.np_random.uniform(low=-.001, high=.001, size=self.robot_skeleton.ndofs)
         self.set_state(qpos, qvel)
@@ -63,7 +64,8 @@ class DartBlockPushEnv(dart_env.DartEnv, utils.EzPickle):
             done = 0
         if not done:
             self.do_simulation(tau, self.frame_skip)
-            ob = self._get_obs()
+            obs = self._get_obs()
+            ob = obs['observation']
             reward = 0
             if np.isnan(np.sum(ob)):
                 done = 1
@@ -71,7 +73,8 @@ class DartBlockPushEnv(dart_env.DartEnv, utils.EzPickle):
                 reward = -5
                 return ob, reward, done, {}
         else:
-            ob = self._get_obs()
+            obs = self._get_obs()
+            ob = obs['observation']
             if np.isnan(np.sum(ob)):
                 done = 1
                 ob = np.zeros_like(0)
@@ -90,7 +93,7 @@ class DartBlockPushEnv(dart_env.DartEnv, utils.EzPickle):
             # done = not notdone
             # print(' '+str(self.dart_world.t))
 
-        return ob, reward, done, {}
+        return obs, reward, done, {}
 
 
     def _get_obs(self):
@@ -99,7 +102,7 @@ class DartBlockPushEnv(dart_env.DartEnv, utils.EzPickle):
         image_obs = cv.resize(image_obs, (256, 256))
         # return np.concatenate([self.robot_skeleton.q, self.robot_skeleton.dq]).ravel()
         # return (self.robot_skeleton.q).ravel()
-        return {'observation':image_obs, 'actual_mass':self.mass}
+        return {'observation': image_obs, 'mass': self.mass}
 
     def reset_model(self):
         self.dart_world.reset()
@@ -112,7 +115,7 @@ class DartBlockPushEnv(dart_env.DartEnv, utils.EzPickle):
         ob =self._get_obs()
         # print(ob)
         # return ob, mass
-        return ob
+        return ob['observation']
 
     def viewer_setup(self):
         self._get_viewer().scene.tb.trans[2] = -0.3
