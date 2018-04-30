@@ -10,15 +10,14 @@ class DartBlockPushEnv(dart_env.DartEnv, utils.EzPickle):
         control_bounds = np.array([[1.0,1.0,1.0],[-1.0,-1.0,-1.0]])
         # control_bounds = np.array([[1.0,-1.0], [-1.0, -1.0]])
         self.action_scale = 500
-        self.mass_range = [1, 5]
+        self.mass_range = [0.5, 4]
         self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1])
-        dart_env.DartEnv.__init__(self, 'cube_data.skel', frame_skip=200, observation_size=[720, 720, 3],
+        dart_env.DartEnv.__init__(self, 'cube_data.skel', frame_skip=200, observation_size=3,  # [256,256,3],
                                   action_bounds=control_bounds)
         utils.EzPickle.__init__(self)
 
-
-        qpos = self.robot_skeleton.q + self.np_random.uniform(low=-.01, high=.01, size=self.robot_skeleton.ndofs)
-        qvel = self.robot_skeleton.dq + self.np_random.uniform(low=-.001, high=.001, size=self.robot_skeleton.ndofs)
+        qpos = self.robot_skeleton.q  # + self.np_random.uniform(low=-.01, high=.01, size=self.robot_skeleton.ndofs)
+        qvel = self.robot_skeleton.dq  #+ self.np_random.uniform(low=-.001, high=.001, size=self.robot_skeleton.ndofs)
         self.set_state(qpos, qvel)
         # mass = 0.5
         self.robot_skeleton.bodynodes[0].set_mass(self.mass)
@@ -50,9 +49,9 @@ class DartBlockPushEnv(dart_env.DartEnv, utils.EzPickle):
         # reward = 1.0
         # print(a)
         tau = np.zeros(self.robot_skeleton.ndofs)
-        a = np.clip(a, [-1,-1,0], [1,1,10])
-        tau[0] = a[0] * self.action_scale
-        tau[1] = a[1] * self.action_scale
+        a = np.clip(a, [-1, -1, self.mass_range[0]], [1, 1, self.mass_range[1]])
+        tau[0] = a[0] * 0.5  # self.action_scale
+        tau[1] = a[1] * 0.5  #self.action_scale
         # a[2] = np.clip(a[2],0,10)
         mass_1 = a[2]
         # mass_1 =  (self.mass_range[1]*(1 + a[2]) + self.mass_range[0]*(1 - a[2])) #scaling actions from -1 to 1 to mass range
@@ -82,10 +81,11 @@ class DartBlockPushEnv(dart_env.DartEnv, utils.EzPickle):
                 reward = -5
                 return ob, reward, done, {}
             # print(ob)
-            print(body_mass,mass_1)
+
             error = abs(mass_1 - body_mass)
             # print('error'+str(error))
             reward = 5 - error
+            print(body_mass, mass_1, error, reward)
             # if error<0.1:
             #     reward = 10
             # else:
@@ -99,19 +99,19 @@ class DartBlockPushEnv(dart_env.DartEnv, utils.EzPickle):
 
     def _get_obs(self):
         # return self._get_viewer().getFrame()
-        image_obs = self._get_viewer().getFrame()
+        # image_obs = self._get_viewer().getFrame()
         # image_obs = cv.resize(image_obs, (256, 256))
         # return np.concatenate([self.robot_skeleton.q, self.robot_skeleton.dq]).ravel()
-        # return (self.robot_skeleton.q).ravel()
-        return {'observation': image_obs, 'mass': self.mass}
+        return {'observation': (self.robot_skeleton.q).ravel(), 'mass': self.mass}
+        # return {'observation': image_obs, 'mass': self.mass}
 
     def reset_model(self):
         self.dart_world.reset()
         self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1])
         # self.robot_skeleton.bodynodes[0].set_mass(3)
         self.robot_skeleton.bodynodes[0].set_mass(self.mass)
-        qpos = self.robot_skeleton.q + self.np_random.uniform(low=-.01, high=.01, size=self.robot_skeleton.ndofs)
-        qvel = self.robot_skeleton.dq + self.np_random.uniform(low=-.001, high=.001, size=self.robot_skeleton.ndofs)
+        qpos = self.robot_skeleton.q  # + self.np_random.uniform(low=-.01, high=.01, size=self.robot_skeleton.ndofs)
+        qvel = self.robot_skeleton.dq  #+ self.np_random.uniform(low=-.001, high=.001, size=self.robot_skeleton.ndofs)
         self.set_state(qpos, qvel)
         ob =self._get_obs()
         # print(ob)
@@ -119,8 +119,8 @@ class DartBlockPushEnv(dart_env.DartEnv, utils.EzPickle):
         return ob
 
     def viewer_setup(self):
-        self._get_viewer().scene.tb.trans[2] = -0.3
-        self._get_viewer().scene.tb.trans[1] = 0
+        self._get_viewer().scene.tb.trans[2] = -0.9
+        self._get_viewer().scene.tb.trans[1] = 0.
         self._get_viewer().scene.tb._set_theta(-90)
         self.track_skeleton_id = 0
     def getViewer(self, sim, title=None):

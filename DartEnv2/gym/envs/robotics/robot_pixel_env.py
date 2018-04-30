@@ -6,14 +6,31 @@ import gym
 from gym import error, spaces
 from gym.utils import seeding
 
+import cv2
+
+from keras.applications.vgg16 import VGG16
+from keras.applications.vgg16 import preprocess_input
+from keras.preprocessing import image
+
+from keras.models import Model
+
+import numpy as np
+
 try:
     import mujoco_py
 except ImportError as e:
-    raise error.DependencyNotInstalled("{}. (HINT: you need to install mujoco_py, and also perform the setup instructions here: https://github.com/openai/mujoco-py/.)".format(e))
+    raise error.DependencyNotInstalled(
+        "{}. (HINT: you need to install mujoco_py, and also perform the setup instructions here: https://github.com/openai/mujoco-py/.)".format(
+            e))
 
 
 class RobotPixelEnv(gym.GoalEnv):
     def __init__(self, model_path, initial_qpos, n_actions, n_substeps):
+        print('inside init')
+        # Initialising the VGG model
+        print('Creating VGG16')
+        self.vgg = VGG16(weights='imagenet', include_top=True)
+        self.vgg = Model(inputs=self.vgg.input, outputs=self.vgg.layers[-2].output)
         if model_path.startswith('/'):
             fullpath = model_path
         else:
@@ -110,7 +127,19 @@ class RobotPixelEnv(gym.GoalEnv):
             # data = self._get_viewer()._read_pixels_as_in_window()
             # original image is upside-down, so flip it
             data = data[::-1, :, :]
-            return data[50:1000,350:1300,:]
+            data = data[50:1000, 350:1300, :]
+            resized_image = cv2.resize(data, (224, 224))
+
+            img_data = image.img_to_array(resized_image)
+            img_data = np.expand_dims(img_data, axis=0)
+            img_data = preprocess_input(img_data)
+
+            vgg16_feature = self.vgg.predict(img_data)
+            vgg16_feature = np.reshape(vgg16_feature, vgg16_feature.shape[1])
+            return vgg16_feature
+
+            # return data[50:1000,350:1300,:]
+
             # return data
         elif mode == 'human':
             self._get_viewer().render()
@@ -177,3 +206,4 @@ class RobotPixelEnv(gym.GoalEnv):
         to enforce additional constraints on the simulation state.
         """
         pass
+
