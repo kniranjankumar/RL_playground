@@ -4,3 +4,4 @@ from gym.envs.dart.dart_env import DartEnv
 from gym.envs.dart.cart_pole import DartCartPoleEnv
 from gym.envs.dart.hopper import DartHopperEnv
 from gym.envs.dart.block_push import DartBlockPushEnv
+from gym.envs.dart.reacher2d import DartReacher2dEnv

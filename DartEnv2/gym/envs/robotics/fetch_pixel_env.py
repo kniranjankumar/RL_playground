@@ -55,9 +55,11 @@ class FetchPixelEnv(robot_pixel_env.RobotPixelEnv):
         # Compute distance between goal and the achieved goal.
         # self.current_state = copy.deepcopy(self.sim.get_state())
         # print(self.current_state.qpos)
-        d = goal_distance(self.current_gripper_state, self.goal_gripper_state)
+        d = goal_distance(achieved_goal, goal)
+        # d = goal_distance(self.current_gripper_state, self.goal_gripper_state)
         if self.reward_type == 'sparse':
-            return -(d > self.distance_threshold).astype(np.float32)
+            # return -(d > self.distance_threshold).astype(np.float32)
+            return -d
         else:
             return -d
 
