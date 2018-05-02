@@ -54,9 +54,9 @@ class DartEnv(gym.Env):
 
         high = np.inf*np.ones(self.obs_dim)
         low = -high
-        self.observation_space = spaces.Dict(
-            {"observation": spaces.Box(low, high), "mass": spaces.Box(np.array([0]), np.array([10]))})
-
+        # self.observation_space = spaces.Dict(
+        #     {"observation": spaces.Box(low, high), "mass": spaces.Box(np.array([0]), np.array([10]))})
+        self.observation_space = spaces.Box(low, high)
         self._seed()
 
         # self.viewer = None
@@ -108,7 +108,7 @@ class DartEnv(gym.Env):
             self.dart_world.step()
 
     def _render(self, mode='human', close=False):
-        self._get_viewer().scene.tb.trans[0] = -self.dart_world.skeletons[self.track_skeleton_id].com()[0]*1
+        # self._get_viewer().scene.tb.trans[0] = -self.dart_world.skeletons[self.track_skeleton_id].com()[0]*1
         if close:
             if self.viewer is not None:
                 self._get_viewer().close()
