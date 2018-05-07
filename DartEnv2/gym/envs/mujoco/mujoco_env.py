@@ -38,7 +38,7 @@ class MujocoEnv(gym.Env):
         self.init_qvel = self.sim.data.qvel.ravel().copy()
         observation, _reward, done, _info = self.step(np.zeros(self.model.nu))
         assert not done
-        self.obs_dim = observation.size
+        self.obs_dim = observation.shape
 
         bounds = self.model.actuator_ctrlrange.copy()
         low = bounds[:, 0]

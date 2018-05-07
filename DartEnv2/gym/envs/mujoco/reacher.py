@@ -43,18 +43,19 @@ class ReacherEnv(mujoco_env.MujocoEnv, utils.EzPickle):
         img = img[575:1075, 200:1000, :]
         # cv2.imshow('test',img)
         # cv2.waitKey()
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        # img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
         resized_image = cv2.resize(img, (400, 250))
 
-        resized_image = np.expand_dims(resized_image, 0)
-        resized_image = np.expand_dims(resized_image, 3)
+        # resized_image = np.expand_dims(resized_image, 0)
+        # resized_image = np.expand_dims(resized_image, 3)
 
-        loc = self.model_net.predict(resized_image)
+        # loc = self.model_net.predict(resized_image)
 
-        return np.concatenate([
-            np.cos(theta),
-            np.sin(theta),
-            self.sim.data.qpos.flat[2:],
-            self.sim.data.qvel.flat[:2],
-            self.get_body_com("fingertip") - [loc[0, 0], loc[0, 1], 0.01]  # self.get_body_com("target")
-        ])
+        # return np.concatenate([
+        #   np.cos(theta),
+        #    np.sin(theta),
+        #    self.sim.data.qpos.flat[2:],
+        #    self.sim.data.qvel.flat[:2],
+        #    self.get_body_com("fingertip") - self.get_body_com("target")
+        # ])
+        return resized_image
