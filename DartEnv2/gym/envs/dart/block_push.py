@@ -12,7 +12,7 @@ class DartBlockPushEnv(dart_env.DartEnv, utils.EzPickle):
         self.action_scale = 500
         self.mass_range = [0.5, 4]
         self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1])
-        dart_env.DartEnv.__init__(self, 'cube_data.skel', frame_skip=200, observation_size=3,  # [256,256,3],
+        dart_env.DartEnv.__init__(self, 'cube_data.skel', frame_skip=200, observation_size=[256, 256, 3],
                                   action_bounds=control_bounds)
         utils.EzPickle.__init__(self)
 
@@ -58,7 +58,7 @@ class DartBlockPushEnv(dart_env.DartEnv, utils.EzPickle):
         # is_predicting = a[3]
         body_mass = self.robot_skeleton.bodynodes[0].m#+ self.robot_skeleton.bodynodes[1].m
 
-        if self.dart_world.t >0.3:
+        if self.dart_world.t > 0.6:
             done = 1
         else:
             done = 0
@@ -73,6 +73,7 @@ class DartBlockPushEnv(dart_env.DartEnv, utils.EzPickle):
                 reward = -5
                 return ob, reward, done, {}
         else:
+            print('done')
             obs = self._get_obs()
             ob = obs['observation']
             if np.isnan(np.sum(ob)):
@@ -93,19 +94,20 @@ class DartBlockPushEnv(dart_env.DartEnv, utils.EzPickle):
             # notdone = np.isfinite(ob).all() and (np.abs(ob[1]) <= .2)
             # done = not notdone
             # print(' '+str(self.dart_world.t))
-
+            # print(obs['observation'])
         return obs, reward, done, {}
 
 
     def _get_obs(self):
         # return self._get_viewer().getFrame()
-        # image_obs = self._get_viewer().getFrame()
-        # image_obs = cv.resize(image_obs, (256, 256))
+        image_obs = self._get_viewer().getFrame()
+        image_obs = cv.resize(image_obs, (256, 256))
         # return np.concatenate([self.robot_skeleton.q, self.robot_skeleton.dq]).ravel()
-        return {'observation': (self.robot_skeleton.q).ravel(), 'mass': self.mass}
-        # return {'observation': image_obs, 'mass': self.mass}
+        # return {'observation': (self.robot_skeleton.q).ravel(), 'mass': self.mass}
+        return {'observation': image_obs, 'mass': self.mass}
 
     def reset_model(self):
+        print('reset')
         self.dart_world.reset()
         self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1])
         # self.robot_skeleton.bodynodes[0].set_mass(3)
