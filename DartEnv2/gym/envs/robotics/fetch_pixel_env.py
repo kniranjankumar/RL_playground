@@ -5,8 +5,7 @@ from gym.envs.robotics import rotations, robot_pixel_env, utils
 
 def goal_distance(goal_a, goal_b):
     assert goal_a.shape == goal_b.shape
-    # return np.sum((goal_a - goal_b))
-    return np.linalg.norm(goal_a- goal_b, axis=-1)
+    return np.linalg.norm(goal_a - goal_b, axis=-1)
 
 
 class FetchPixelEnv(robot_pixel_env.RobotPixelEnv):
@@ -53,13 +52,11 @@ class FetchPixelEnv(robot_pixel_env.RobotPixelEnv):
 
     def compute_reward(self, achieved_goal, goal, info):
         # Compute distance between goal and the achieved goal.
-        # self.current_state = copy.deepcopy(self.sim.get_state())
-        # print(self.current_state.qpos)
-        d = goal_distance(achieved_goal, goal)
-        # d = goal_distance(self.current_gripper_state, self.goal_gripper_state)
+        self.current_state = copy.deepcopy(self.sim.get_state())
+        print(self.current_state.qpos)
+        d = goal_distance(self.current_state.qpos, self.sample_goal_state.qpos)
         if self.reward_type == 'sparse':
-            # return -(d > self.distance_threshold).astype(np.float32)
-            return -d
+            return -(d > self.distance_threshold).astype(np.float32)
         else:
             return -d
 
@@ -108,14 +105,12 @@ class FetchPixelEnv(robot_pixel_env.RobotPixelEnv):
         else:
             object_pos = object_rot = object_velp = object_velr = object_rel_pos = np.zeros(0)
         gripper_state = robot_qpos[-2:]
-
         gripper_vel = robot_qvel[-2:] * dt  # change to a scalar if the gripper is made symmetric
 
         if not self.has_object:
             achieved_goal = grip_pos.copy()
         else:
             achieved_goal = np.squeeze(object_pos.copy())
-        self.current_gripper_state = achieved_goal
         obs = np.concatenate([
             grip_pos, object_pos.ravel(), object_rel_pos.ravel(), gripper_state, object_rot.ravel(),
             object_velp.ravel(), object_velr.ravel(), grip_velp, gripper_vel,
@@ -125,8 +120,6 @@ class FetchPixelEnv(robot_pixel_env.RobotPixelEnv):
             'observation': obs_image.copy(),
             'achieved_goal': obs_image.copy(),
             'desired_goal': self.goal.copy(),
-            'goal_state': self.goal_gripper_state.copy(),
-            'observation_state': self.current_gripper_state.copy()
         }
 
     def _viewer_setup(self):
@@ -164,10 +157,9 @@ class FetchPixelEnv(robot_pixel_env.RobotPixelEnv):
     def _sample_goal(self):
         self.current_state = copy.deepcopy(self.sim.get_state())
         action = np.random.uniform(-1,1,4)
-        # action = np.clip(action, self.action_space.low, self.action_space.high)
         pos_ctrl, gripper_ctrl = action[:3], action[3]
 
-        pos_ctrl *= 0.1  # limit maximum change in position
+        # pos_ctrl *= 0.05  # limit maximum change in position
         rot_ctrl = [1., 0., 1., 0.]  # fixed rotation of the end effector, expressed as a quaternion
         gripper_ctrl = np.array([gripper_ctrl, gripper_ctrl])
         assert gripper_ctrl.shape == (2,)
@@ -176,17 +168,14 @@ class FetchPixelEnv(robot_pixel_env.RobotPixelEnv):
         action = np.concatenate([pos_ctrl, rot_ctrl, gripper_ctrl])
 
         # Apply action to simulation.
-        for i in range(2):
+        for i in range(1000):
             utils.ctrl_set_action(self.sim, action)
             utils.mocap_set_action(self.sim, action)
-            self.sim.step()
-            self._step_callback()
+
         self.sample_goal_state = copy.deepcopy(self.sim.get_state())
-        goal = self.render(mode='rgb_array')
-        grip_pos = self.sim.data.get_site_xpos('robot0:grip')
-        self.goal_gripper_state = grip_pos.copy()
 
         self.sim.set_state(self.current_state)
+        goal = self.render(mode='rgb_array')
         # if self.has_object:
         #     goal = self.initial_gripper_xpos[:3] + self.np_random.uniform(-self.target_range, self.target_range, size=3)
         #     goal += self.target_offset
@@ -198,7 +187,7 @@ class FetchPixelEnv(robot_pixel_env.RobotPixelEnv):
         return goal.copy()
 
     def _is_success(self, achieved_goal, desired_goal):
-        d = goal_distance(achieved_goal, desired_goal)
+        d = np.mean(goal_distance(achieved_goal, desired_goal)[:])
         return (d < self.distance_threshold).astype(np.float32)
 
     def _env_setup(self, initial_qpos):
