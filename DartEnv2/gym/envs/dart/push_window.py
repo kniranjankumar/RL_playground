@@ -38,8 +38,8 @@ class PushGLUTWindow(GLUTWindow):
 
     def drawGL(self, ):
         self.scene.render(self.sim)
-        # GLUT.glutSwapBuffers()
-        GL.glFinish()
+        GLUT.glutSwapBuffers()
+        # GL.glFinish()
 
     def runSingleStep(self):
         GLUT.glutPostRedisplay()

@@ -5,7 +5,6 @@ import numpy as np
 from keras.layers import Input, Dense
 from keras.models import Model
 import numpy
-import pandas
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.wrappers.scikit_learn import KerasRegressor
@@ -42,12 +41,12 @@ if __name__ == '__main__':
             X.append(np.copy(x))
             Y.append(np.copy(ob['mass']))
             obs = env.reset()
-            # force1 = np.random.uniform(-1, 1)
-            # force2 = np.random.uniform(-1, 1)
+            force1 = np.random.uniform(-1, 1)
+            force2 = np.random.uniform(-1, 1)
 
         # print(i)
 
-        ob, reward, done, _ = env.step([force1, force2, mass])
+        ob, reward, done, _ = env.step([force1, force2, mass, ])
         rew_sum += reward
 
     X = np.asarray(X)
