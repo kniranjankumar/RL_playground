@@ -115,6 +115,13 @@ register(
     timestep_limit=10,
     max_episode_steps=200,
 )
+register(
+    id='DartBlockPushMass-v0',
+    entry_point='gym.envs.dart:DartBlockPushEnv1',
+    reward_threshold=950.0,
+    timestep_limit=10,
+    max_episode_steps=200,
+)
 
 register(
     id='DartReacher2d-v1',

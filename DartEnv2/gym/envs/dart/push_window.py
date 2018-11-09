@@ -13,7 +13,7 @@ class PushGLUTWindow(GLUTWindow):
         self.window_size = window_size
         self.scene = OpenGLScene_split(*self.window_size)
         self.folder_name = "/home/niranjan/Projects/vis_inst/pytorch-CycleGAN-and-pix2pix/datasets/push_arti_2tex/"
-        for root, dirs, files in os.walk('/home/niranjan/Projects/datasets/ETH_Synthesizability/texture',
+        for root, dirs, files in os.walk('/home/niranjan/Projects/datasets/texture',
                                          topdown=False):
             pass
         self.root = root
@@ -38,8 +38,8 @@ class PushGLUTWindow(GLUTWindow):
 
     def drawGL(self, ):
         self.scene.render(self.sim)
-        GLUT.glutSwapBuffers()
-        # GL.glFinish()
+        # GLUT.glutSwapBuffers()
+        GL.glFinish()
 
     def runSingleStep(self):
         GLUT.glutPostRedisplay()

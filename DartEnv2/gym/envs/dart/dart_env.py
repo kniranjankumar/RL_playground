@@ -42,8 +42,8 @@ class DartEnv(gym.Env):
         self.frame_skip= frame_skip
         self.viewer = None
 
-        observation, _reward, done, _info = self._step(np.zeros(len(action_bounds[0])))
-        assert not done
+        # observation, _reward, done, _info = self._step(np.zeros(len(action_bounds[0])))
+        # assert not done
         self.obs_dim = observation_size
         self.act_dim = len(action_bounds[0])
 
@@ -55,7 +55,7 @@ class DartEnv(gym.Env):
         high = np.inf*np.ones(self.obs_dim)
         low = -high
         self.observation_space = spaces.Dict(
-            {"observation": spaces.Box(low, high), "mass": spaces.Box(np.array([0]), np.array([10]))})
+            {"observation": spaces.Box(low, high), "mass": spaces.Box(np.array([1]), np.array([4]))})
         # self.observation_space = spaces.Box(low, high)
         self._seed()
 

@@ -85,6 +85,27 @@
             <joint type="free" name="joint 1">
                 <parent>world</parent>
                 <child>link 2</child>
+                <axis>
+                    <xyz>0 1 0</xyz>
+                    <dynamics>
+                        <damping>0.0</damping>
+                        <friction>0.0001</friction>
+                    </dynamics>
+                </axis>
+                 <axis>
+                    <xyz>0 0 1</xyz>
+                    <dynamics>
+                        <damping>0.0</damping>
+                        <friction>0.0001</friction>
+                    </dynamics>
+                </axis>
+                <axis>
+                    <xyz>1 0 0</xyz>
+                    <dynamics>
+                        <damping>0.0</damping>
+                        <friction>0.0001</friction>
+                    </dynamics>
+                </axis>
             </joint>
 
             <joint type="revolute" name="joint 2">
@@ -96,7 +117,7 @@
                     <xyz>0 1 0</xyz>
                     <dynamics>
                         <damping>0.0</damping>
-                        <friction>0.01</friction>
+                        <friction>0.00</friction>
                     </dynamics>
                 </axis>
             </joint>
