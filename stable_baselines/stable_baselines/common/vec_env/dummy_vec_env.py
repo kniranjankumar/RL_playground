@@ -4,7 +4,9 @@ import numpy as np
 from gym import spaces
 
 from . import VecEnv
+import pydart2
 
+pydart2.init()
 
 class DummyVecEnv(VecEnv):
     """
@@ -12,7 +14,7 @@ class DummyVecEnv(VecEnv):
 
     :param env_fns: ([Gym Environment]) the list of environments to vectorize
     """
-    
+
     def __init__(self, env_fns):
         self.envs = [fn() for fn in env_fns]
         env = self.envs[0]
@@ -42,14 +44,12 @@ class DummyVecEnv(VecEnv):
         self.actions = actions
 
     def step_wait(self):
-        print('new_step')
         for env_idx in range(self.num_envs):
-            # print(len(self.envs[env_idx].env.env.obs_history))
-            obs, self.buf_rews[env_idx], self.buf_dones[env_idx], self.buf_infos[env_idx] =\
+            obs, self.buf_rews[env_idx], self.buf_dones[env_idx], self.buf_infos[env_idx] = \
                 self.envs[env_idx].step(self.actions[env_idx])
-            if self.buf_dones[env_idx] and env_idx == 3:
-                # obs = self.envs[env_idx].reset()
-                obs = self.reset()
+            # print(self.envs[0].env.dart_world.t,self.envs[1].env.dart_world.t,self.envs[2].env.dart_world.t)
+            if self.buf_dones[env_idx]:
+                obs = self.envs[env_idx].reset()
             self._save_obs(env_idx, obs)
         return (np.copy(self._obs_from_buf()), np.copy(self.buf_rews), np.copy(self.buf_dones),
                 self.buf_infos.copy())
@@ -84,3 +84,38 @@ class DummyVecEnv(VecEnv):
             return self.buf_obs[None]
         else:
             return self.buf_obs
+
+    def env_method(self, method_name, *method_args, **method_kwargs):
+        """
+        Provides an interface to call arbitrary class methods of vectorized environments
+
+        :param method_name: (str) The name of the env class method to invoke
+        :param method_args: (tuple) Any positional arguments to provide in the call
+        :param method_kwargs: (dict) Any keyword arguments to provide in the call
+        :return: (list) List of items retured by the environment's method call
+        """
+        return [getattr(env_i, method_name)(*method_args, **method_kwargs) for env_i in self.envs]
+
+    def get_attr(self, attr_name):
+        """
+        Provides a mechanism for getting class attribues from vectorized environments
+
+        :param attr_name: (str) The name of the attribute whose value to return
+        :return: (list) List of values of 'attr_name' in all environments
+        """
+        return [getattr(env_i, attr_name) for env_i in self.envs]
+
+    def set_attr(self, attr_name, value, indices=None):
+        """
+        Provides a mechanism for setting arbitrary class attributes inside vectorized environments
+
+        :param attr_name: (str) Name of attribute to assign new value
+        :param value: (obj) Value to assign to 'attr_name'
+        :param indices: (list,int) Indices of envs to assign value
+        :return: (list) in case env access methods might return something, they will be returned in a list
+        """
+        if indices is None:
+            indices = range(len(self.envs))
+        elif isinstance(indices, int):
+            indices = [indices]
+        return [setattr(env_i, attr_name, value) for env_i in [self.envs[i] for i in indices]]

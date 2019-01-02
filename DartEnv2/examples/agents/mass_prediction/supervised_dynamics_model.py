@@ -12,11 +12,10 @@ from glob import glob
 from subprocess import Popen, PIPE
 
 image_obs = False
-try_num = '_try9'
-model_type = 'with_q_action_1000'
+try_num = ''
+model_type = 'with_q_3action_1000_0.1'
 log_folders = glob('./mass_prediction/agent_training/*')
 path = './mass_prediction/agent_training/' + model_type + try_num
-# env = gym.make('DartBlockPush-v0')
 
 
 def get_gpu_temperature():
@@ -47,13 +46,13 @@ def run_rollouts(num_episodes, env, data_path, policy=None):
             else:
 
                 act, state = policy.predict(obs, state)
-                act = act[0][0]
-                act = np.array([act,1.5])
+                act = act[:-1][0]
+                act = np.hstack((act, 1.5))
             # act *= np.random.choice([-1,1],p=[0.5,0.5])
             # act = np.array([0.9,3])
             # act = 0.5*(env.action_space.high - env.action_space.low)
             # act = act.astype('float64')
-            action_list.append(act[0])
+            action_list.append(act[:-1])
             obs1, rew, done, _ = env.step(act)
             obs[0, :] = obs1['observation']
             # print('step')
@@ -82,9 +81,11 @@ def save_images(image_list, data_path):
         img = np.array(image_list) #np.zeros(image_list[0].shape*np.array([1,len(image_list),1]))
         cv2.imwrite(data_path,np.hstack(img))
 
-def get_data(comments, num_rollouts,num_steps):
+
+def get_data(comments, num_rollouts, num_steps, env):
 
     data_path = os.path.join(os.getcwd(), 'mass_prediction','data', comments)
+    print(data_path)
     if os.path.exists(data_path):
         exists = True
     else:
@@ -287,9 +288,9 @@ class Model:
         # print('predictions', predictions, 'actual',actual_mass)
 
 class CnnModel:
-    def __init__(self, num_steps):
+    def __init__(self, num_steps, act_dim):
         self.num_steps = num_steps
-
+        self.act_dim = act_dim
     def cnn_model(self, image_list, act):
         with tf.variable_scope('model',reuse=tf.AUTO_REUSE):
             def Vgg16_like(obs):
@@ -412,18 +413,65 @@ class CnnModel:
         print('starting training')
         return training_init_op
 
-    def setup_feedable_training(self):
+    def setup_feedable_training(self, lr=1e-3):
         self.obs = tf.placeholder(dtype=tf.float64, shape=[None, self.num_steps, 4], name='obs_placeholder')
-        self.act = tf.placeholder(dtype=tf.float64, shape=[None, self.num_steps, 1], name='act_placeholder')
+        self.act = tf.placeholder(dtype=tf.float64, shape=[None, self.num_steps, self.act_dim], name='act_placeholder')
         self.mass = tf.placeholder(dtype=tf.float64, shape=[None, 2], name='mass_placeholder')
 
         predict_mass = self.fc_model(self.obs, self.act)
         abs_error = tf.losses.absolute_difference(self.mass, predict_mass)
         self.mean_error_feedable = tf.reduce_mean(abs_error)
-        optimizer = tf.train.GradientDescentOptimizer(1e-1)
+        optimizer = tf.train.GradientDescentOptimizer(lr)
         self.train_op_feedable = optimizer.minimize(self.mean_error_feedable)
+        self.subset_save = None
+
 
     def feedable_train(self, sess, obs, act, mass, num_iter,graph, batch_size=64):
+        # print(sess.run(tf.get_collection(tf.GraphKeys.VARIABLES)))
+        # self.run_with_location_trace(sess, self.train_op_feedable,
+        #                              feed_dict={self.obs: obs, self.act: act, self.mass: mass})
+        error = []
+        if self.act_dim == 2:
+            path = os.path.join(os.getcwd(),
+                                '/home/niranjan/Projects/vis_inst/DartEnv2/examples/agents/mass_prediction/model_ckpt/with_q_3action_1000_0.1/8/8.ckpt')
+        if self.act_dim == 1:
+            path = os.path.join(os.getcwd(),
+                                '/home/niranjan/Projects/vis_inst/DartEnv2/examples/agents/mass_prediction/model_ckpt/with_q_action_1000/_try9/8/8.ckpt')
+
+        obs_batch1 = obs[-100:, :, :]
+        act_batch1 = act[-100:, :, :]
+        mass_batch1 = mass[-100:, :]
+        # obs = obs[:-100, :, :]
+        # act = act[:-100, :, :]
+        # mass = mass[:-100, :]
+        with graph.as_default():
+            # self.restore_model(sess, path)
+            # bias = tf.get_variable('model/fc1/biases/')
+            if self.subset_save == None:
+                self.subset_save = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="model")[:6])
+                self.subset_save.restore(sess, path)
+            for i in range(num_iter):
+                idx = np.random.choice(range(mass.shape[0]), batch_size)
+                obs_batch = obs[idx, :, :]
+                act_batch = act[idx, :, :]
+                mass_batch = mass[idx, :]
+                # print('sup_mod', sess.run(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)[0]))
+
+                bar2 = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="model")[0]
+                _, error1 = sess.run([self.train_op_feedable, self.mean_error_feedable],
+                                     feed_dict={self.obs: obs_batch, self.act: np.squeeze(act_batch, axis=-1),
+                                                self.mass: mass_batch})
+                error2 = sess.run(self.mean_error_feedable,
+                                  feed_dict={self.obs: obs_batch1, self.act: np.squeeze(act_batch1, axis=-1),
+                                             self.mass: mass_batch1})
+
+                error.append(error2)
+                # if i%10 == 0:
+                # print(error)
+
+        return error
+
+    def get_error(self, sess, obs, act, mass, num_iter, graph, batch_size=64):
         # print(sess.run(tf.get_collection(tf.GraphKeys.VARIABLES)))
         # self.run_with_location_trace(sess, self.train_op_feedable,
         #                              feed_dict={self.obs: obs, self.act: act, self.mass: mass})
@@ -436,7 +484,7 @@ class CnnModel:
             # self.restore_model(sess, path)
             # bias = tf.get_variable('model/fc1/biases/')
 
-            for i in range(num_iter):
+            for i in range(1):
                 idx = np.random.choice(range(mass.shape[0]), batch_size)
                 obs_batch = obs[idx, :, :]
                 act_batch = act[idx, :, :]
@@ -444,7 +492,8 @@ class CnnModel:
                 # print('sup_mod', sess.run(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)[0]))
 
                 # bar2 = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="model")[0]
-                _, error1 = sess.run([self.train_op_feedable,self.mean_error_feedable],feed_dict={self.obs:obs_batch, self.act:act_batch, self.mass:mass_batch})
+                error1 = sess.run(self.mean_error_feedable,
+                                  feed_dict={self.obs: obs, self.act: np.squeeze(act, axis=-1), self.mass: mass})
                 error.append(error1)
                 # if i%10 == 0:
                     # print(error)
@@ -465,7 +514,7 @@ class CnnModel:
 
     def predict_setup(self):
         self.obs_in = tf.placeholder(tf.float64, shape=[None,2,4])
-        self.act_in = tf.placeholder(tf.float64, shape=[None,2,1])
+        self.act_in = tf.placeholder(tf.float64, shape=[None, 2, self.act_dim])
         self.predict_mass = self.cnn_model(self.obs_in, self.act_in) if image_obs else self.fc_model(self.obs_in,self.act_in)
         return self.predict_mass, self.obs_in, self.act_in
 
@@ -531,17 +580,19 @@ class CnnModel:
         self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='model'))
         # data_path = "./mass_prediction/model_ckpt/" + comment + '/' + str(int(i)) + '/' + str(int(i)) + ".ckpt"
         self.saver.restore(sess, data_path)
-def train():
+
+
+def train(env):
     # region Training
     os.makedirs(path)
     print(os.getcwd())
     num_steps = 2
     comments = model_type + '/train'
     print('getting training data')
-    obs, act, mass = get_data(comments, 4000, num_steps)
+    obs, act, mass = get_data(comments, 4000, num_steps, env)
     comments = model_type + '/test'
     print('getting testing data')
-    obs_test, act_test, mass_test = get_data(comments, 400, num_steps)
+    obs_test, act_test, mass_test = get_data(comments, 400, num_steps, env)
     # if not image_obs:
     #     obs, act = normalize_data(obs,act)
     #     obs_test, act_test = normalize_data(obs_test, act_test)
@@ -592,8 +643,8 @@ def train():
     # act_test = np.expand_dims(act_test[:,:,0], axis=1)
     # mass = (mass - 1)/4
     # model = Model(env, num_steps)
-    act = act[:, :, 0]
-    act_test = act_test[:, :, 0]
+    # # act = act[:, :, :-1]
+    # act_test = act_test[:, :, :-1]
     model = CnnModel(num_steps)
     comments = model_type
     with tf.Session() as sess:
@@ -611,17 +662,18 @@ def restore_and_test():
     num_steps = 2
     comments = model_type
     model = CnnModel(num_steps)
-    env = gym.make('DartBlockPush-v0')
+    env = gym.make('DartBlockPushMassAct3-v0')
     obs, act, mass = run_rollouts(500, env, None)
     with tf.Session() as sess:
         init = tf.global_variables_initializer()
         sess.run(init)
         model.predict_setup()
         model.restore_model(sess, comments)
-        prediction = model.predict(sess,obs_in=obs ,act_in=np.expand_dims(act[:,:,0], axis = -1))
+        prediction = model.predict(sess, obs_in=obs, act_in=np.expand_dims(act[:, :, :-1], axis=-1))
     print(prediction-mass)
     print(np.mean((np.abs(prediction-mass))[:]))
 
 if __name__ == '__main__':
+    env = gym.make('DartBlockPushMassAct3-v0')
 
-    train()
+    train(env)

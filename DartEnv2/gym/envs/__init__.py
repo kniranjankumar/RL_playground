@@ -122,6 +122,20 @@ register(
     timestep_limit=10,
     max_episode_steps=200,
 )
+register(
+    id='DartBlockPushMassAct3Wrapped-v0',
+    entry_point='gym.envs.dart:DartBlockPushEnvAct3Wrapped',
+    reward_threshold=950.0,
+    timestep_limit=10,
+    max_episode_steps=200,
+)
+register(
+    id='DartBlockPushMassAct3-v0',
+    entry_point='gym.envs.dart:DartBlockPushEnvAct3',
+    reward_threshold=950.0,
+    timestep_limit=10,
+    max_episode_steps=200,
+)
 
 register(
     id='DartReacher2d-v1',

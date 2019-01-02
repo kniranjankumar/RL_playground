@@ -6,7 +6,7 @@ from pydart2.gui.trackball import Trackball
 import cv2 as cv
 
 
-class DartBlockPushEnv1(dart_env.DartEnv, utils.EzPickle):
+class DartBlockPushEnvAct3(dart_env.DartEnv, utils.EzPickle):
     def __init__(self):
         # Environment parameters
         self.img_observation = False
@@ -18,11 +18,12 @@ class DartBlockPushEnv1(dart_env.DartEnv, utils.EzPickle):
         self.track_skeleton_id = -1
         # self.control_bounds = np.array([[1.0, 1.0, self.mass_range[1], 1.0, 1.0, self.mass_range[1]],
         #                            [-1.0, -1.0, self.mass_range[0], -1.0, -1.0, self.mass_range[0]]])
-        self.control_bounds = np.array([[1.0, self.mass_range[1]], [-1.0, self.mass_range[0]]])
-        self.action_scale = 1000
+        # self.control_bounds = np.array([[1.0, 1.0, 1.0, self.mass_range[1]], [-1.0, -1.0, -1.0, self.mass_range[0]]])
+        self.control_bounds = np.array([[1.0, 1.0, self.mass_range[1]], [-1.0, -1.0, self.mass_range[0]]])
+
+        self.action_scale = np.array([1000, 0.1])
 
         # self.control_bounds = np.array([[1.0], [-1.0]])
-
 
         self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1], 2)
         dart_env.DartEnv.__init__(self, 'arti_data.skel', frame_skip=100,
@@ -31,7 +32,7 @@ class DartBlockPushEnv1(dart_env.DartEnv, utils.EzPickle):
         utils.EzPickle.__init__(self)
 
         qpos = self.robot_skeleton.q  # + self.np_random.uniform(low=-.01, high=.01, size=self.robot_skeleton.ndofs)
-        qvel = self.robot_skeleton.dq  #+ self.np_random.uniform(low=-.001, high=.001, size=self.robot_skeleton.ndofs)
+        qvel = self.robot_skeleton.dq  # + self.np_random.uniform(low=-.001, high=.001, size=self.robot_skeleton.ndofs)
         self.set_state(qpos, qvel)
         # mass = 0.5
         self.robot_skeleton.bodynodes[0].set_mass(self.mass[0])
@@ -50,8 +51,9 @@ class DartBlockPushEnv1(dart_env.DartEnv, utils.EzPickle):
         skel = self.robot_skeleton
         bod1 = skel.bodynodes[0]
         # tau = [500,500]
-        noise = np.random.uniform(-0.01, 0.01)
-        bod1.add_ext_force(np.array([0, 0, tau]), np.array([0, 0, 0]))
+        # noise = np.random.uniform(-0.01, 0.01)
+
+        bod1.add_ext_force(np.array([tau[0] * np.sin(tau[1]), 0, tau[0] * np.cos(tau[1])]), np.array([0, 0, 0]))
         # bod1.set_ext_force(np.array([0, 0, 0]), np.array([0, 0, 0]))
 
         bod2 = skel.bodynodes[1]
@@ -62,6 +64,7 @@ class DartBlockPushEnv1(dart_env.DartEnv, utils.EzPickle):
 
         for i in range(n_frames - 1):
             self.dart_world.step()
+            # self.render("human")
             if self.img_observation and False:
                 if i == 5 or i == 15 or i == 30:
                     img = self._get_obs()
@@ -73,9 +76,7 @@ class DartBlockPushEnv1(dart_env.DartEnv, utils.EzPickle):
         # return np.array(img_buffer)
         return self._get_obs()
 
-
-
-            # self.dart_world.render("human")
+        # self.dart_world.render("human")
         # print('done')
 
     def _step(self, a):
@@ -115,7 +116,7 @@ class DartBlockPushEnv1(dart_env.DartEnv, utils.EzPickle):
 
             error = np.sum(np.abs(np.array(mass_pred) - np.array(body_mass)))
             # print('error'+str(error))
-            reward = 6 - error
+            reward = - error
             # if(reward<1 and mass_pred[0] != 1):
             # print('mass_pred', mass_pred, 'body_mass', body_mass)
             # print(ob)
@@ -132,9 +133,9 @@ class DartBlockPushEnv1(dart_env.DartEnv, utils.EzPickle):
         #     obs['observation'] = np.copy(ob)
         return obs, reward, done, {}
 
-
     def _get_obs(self):
         # return self._get_viewer().getFrame()
+        # image_obs = self._get_viewer().getFrame()
         if self.img_observation:
             image_obs = self._get_viewer().getFrame()
             # cv.normalize(image_obs,  image_obs, 0, 1, cv.NORM_MINMAX)
@@ -153,9 +154,9 @@ class DartBlockPushEnv1(dart_env.DartEnv, utils.EzPickle):
         # qpos = self.robot_skeleton.q #+ self.np_random.uniform(low=-.01, high=.01, size=self.robot_skeleton.ndofs)
         qpos = np.array([0, 0, 0, 0, 0, 0, 0])
 
-        qvel = self.robot_skeleton.dq  #+ self.np_random.uniform(low=-.001, high=.001, size=self.robot_skeleton.ndofs)
+        qvel = self.robot_skeleton.dq  # + self.np_random.uniform(low=-.001, high=.001, size=self.robot_skeleton.ndofs)
         self.set_state(qpos, qvel)
-        ob =self._get_obs()
+        ob = self._get_obs()
         return ob
 
     def viewer_setup(self):
@@ -163,11 +164,12 @@ class DartBlockPushEnv1(dart_env.DartEnv, utils.EzPickle):
         self._get_viewer().scene.tb.trans[1] = 0.
         self._get_viewer().scene.tb._set_theta(-90)
         self.track_skeleton_id = 0
+
     def getViewer(self, sim, title=None):
         # glutInit(sys.argv)
-        win = PushGLUTWindow(sim,title,(720,720))
+        win = PushGLUTWindow(sim, title, (720, 720))
         win.scene.add_camera(Trackball(theta=-45.0, phi=0.0, zoom=0), 'gym_camera')
-        win.scene.set_camera(win.scene.num_cameras()-1)
+        win.scene.set_camera(win.scene.num_cameras() - 1)
         win.run()
         return win
 

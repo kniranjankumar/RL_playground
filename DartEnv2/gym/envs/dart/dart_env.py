@@ -5,6 +5,7 @@ from gym.utils import seeding
 import numpy as np
 from os import path
 import gym
+import copy
 import six
 
 
@@ -22,7 +23,7 @@ class DartEnv(gym.Env):
     """
 
     def __init__(self, model_path, frame_skip, observation_size, action_bounds, dt=0.002):
-        pydart.init()
+        # pydart.init()
         print('pydart initialization OK')
 
         if model_path.startswith("/"):

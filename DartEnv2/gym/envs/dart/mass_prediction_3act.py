@@ -1,4 +1,4 @@
-from gym.envs.dart.block_push import DartBlockPushEnv1
+from gym.envs.dart.block_push_adim3 import DartBlockPushEnvAct3
 from gym.envs.dart import dart_env
 from gym import utils
 from examples.agents.mass_prediction.supervised_dynamics_model import CnnModel
@@ -9,7 +9,7 @@ from gym import error, spaces
 import time
 
 
-class DartBlockPushEnv(DartBlockPushEnv1):
+class DartBlockPushEnvAct3Wrapped(DartBlockPushEnvAct3):
     def __init__(self):
         self.num_steps = 2
         self.obs_history = []
@@ -43,7 +43,7 @@ class DartBlockPushEnv(DartBlockPushEnv1):
                     return
                 connect2server(num + 1)
 
-        connect2server(0)
+        # connect2server(0)
 
         # config = tf.ConfigProto()
         # config.gpu_options.allow_growth = True
@@ -53,11 +53,11 @@ class DartBlockPushEnv(DartBlockPushEnv1):
         # print(server.target)
 
         # with tf.device("/job:local/task:0"):
-        self.model = CnnModel(self.num_steps, 1)
+        self.model = CnnModel(self.num_steps)
         self.model.predict_setup()
         x = self.observation_space.spaces['observation']
 
-        self.action_space = spaces.Box(np.array([self.action_space.high[0]]), np.array([self.action_space.low[0]]))
+        self.action_space = spaces.Box(self.action_space.high[:-1], self.action_space.low[:-1])
         self.observation_space = x
 
         # print(' cool')
@@ -65,6 +65,7 @@ class DartBlockPushEnv(DartBlockPushEnv1):
     def _step(self, a):
         # print('not cool')
         # print('check')
+        a = np.hstack((a, np.array([2.5])))
         if self.init is None:
             if self.server_name is not None:
                 self.sess = tf.Session(config=self.config, target=self.server.target)
@@ -72,7 +73,7 @@ class DartBlockPushEnv(DartBlockPushEnv1):
                 self.sess = tf.Session(config=self.config)
 
             path = os.path.join(os.getcwd(),
-                                '/home/niranjan/Projects/vis_inst/DartEnv2/examples/agents/mass_prediction/model_ckpt/with_q_action_1000/_try9/8/8.ckpt')
+                                '/home/niranjan/Projects/vis_inst/DartEnv2/examples/agents/mass_prediction/model_ckpt/with_q_3action_1000_0.1/8/8.ckpt')
             self.model.restore_model(self.sess, path)
             # print('restored', self.sess.run(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)[0]))
             self.init = True
@@ -82,23 +83,28 @@ class DartBlockPushEnv(DartBlockPushEnv1):
             # print('stepped')
             reward = 0
             self.obs_history.append(obs['observation'])
-            self.act_history.append(a[0])
+            self.act_history.append(a[:-1])
         else:
             # sess = tf.get_default_session()
 
             mass = super()._get_obs()['mass']
             # print('gonna_prediction', self.server_name)
-            success = False
-            while (not success):
-                try:
-                    prediction = self.model.predict(self.sess, obs_in=np.array(self.obs_history),
-                                                    act_in=np.expand_dims(np.array(self.act_history), axis=-1))
-                    success = True
-                    # print('success')
-                except:
-                    # time.sleep(np.random.uniform(0, 1))
-                    pass
-                    # print('failed')
+            if self.server_name is None:
+                prediction = self.model.predict(self.sess, obs_in=np.array(self.obs_history),
+                                                act_in=np.array(self.act_history))
+
+            else:
+                while (True):
+                    try:
+                        prediction = self.model.predict(self.sess, obs_in=np.array(self.obs_history),
+                                                        act_in=np.array(self.act_history))
+
+                        break
+                        # print('success')
+                    except:
+                        # time.sleep(np.random.uniform(0, 1))
+                        pass
+                        # print('failed')
 
                 # time.sleep(1)
                 # prediction = self.model.predict(self.sess, obs_in=np.array(self.obs_history), act_in=np.expand_dims(np.array(self.act_history), axis=-1))
@@ -110,7 +116,7 @@ class DartBlockPushEnv(DartBlockPushEnv1):
             linear_rew = 1 - 2 * error / 3
             # print(error)
             reward = linear_rew
-        return obs['observation'], reward, done, {}
+        return obs['observation'], reward, done, _
 
     def reset_model(self):
         self.act_history = []
