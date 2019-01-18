@@ -102,6 +102,14 @@ register(
 )
 
 register(
+    id='DartBlockPushMassAct2Body3-v0',
+    entry_point='gym.envs.dart:DartBlockPushEnvAct2Body3',
+    reward_threshold=950.0,
+    timestep_limit=10,
+    max_episode_steps=200,
+)
+
+register(
     id='DartCartPole-v1',
     entry_point='gym.envs.dart:DartCartPoleEnv',
     reward_threshold=950.0,
