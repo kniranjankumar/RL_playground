@@ -56,7 +56,8 @@ class DartEnv(gym.Env):
         high = np.inf*np.ones(self.obs_dim)
         low = -high
         self.observation_space = spaces.Dict(
-            {"observation": spaces.Box(low, high), "mass": spaces.Box(np.array([1]), np.array([4]))})
+            {"observation": spaces.Box(low, high),
+             "mass": spaces.Box(np.array([self.obs_dim[0] - 2]), np.array([self.obs_dim[0] - 2]))})
         # self.observation_space = spaces.Box(low, high)
         self._seed()
 

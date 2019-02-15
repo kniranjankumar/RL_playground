@@ -14,8 +14,9 @@ class StaticGLUTWindow(GLUTWindow):
 
     def drawGL(self, ):
         self.scene.render(self.sim)
-        # GLUT.glutSwapBuffers()
-        GL.glFinish()
+        GLUT.glutSwapBuffers()
+        # super(StaticGLUTWindow, self).capture()
+        # GL.glFinish()
 
 
     def runSingleStep(self):

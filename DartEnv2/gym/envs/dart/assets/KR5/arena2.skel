@@ -1,0 +1,173 @@
+<?xml version="1.0" ?>
+<skel version="1.0">
+    <world name="world 1">
+        <physics>
+            <time_step>0.001</time_step>
+            <!--<gravity>0 -9.81 0</gravity>-->
+            <collision_detector>fcl_mesh</collision_detector>
+        </physics>
+
+        <!--<skeleton name="grount skeleton">-->
+        <!--<body name="ground">-->
+        <!--<transformation>0 -0.375 0 0 0 0</transformation>-->
+        <!--<visualization_shape>-->
+        <!--<transformation>0 0 0 0 0 0</transformation>-->
+        <!--<geometry>-->
+        <!--<box>-->
+        <!--<size>2.5 0.05 2.5</size>-->
+        <!--</box>-->
+        <!--</geometry>-->
+        <!--<color>0.95 0.95 0.95</color>-->
+        <!--</visualization_shape>-->
+        <!--<collision_shape>-->
+        <!--<transformation>0 0 0 0 0 0</transformation>-->
+        <!--<geometry>-->
+        <!--<box>-->
+        <!--<size>2.5 0.05 2.5</size>-->
+        <!--</box>-->
+        <!--</geometry>-->
+        <!--</collision_shape>-->
+        <!--</body>-->
+        <!--<joint type="weld" name="joint 1">-->
+        <!--<parent>world</parent>-->
+        <!--<child>ground</child>-->
+        <!--</joint>-->
+        <!--</skeleton>-->
+
+        <skeleton name="box skeleton">
+            <body name="link 1">
+                <gravity>1</gravity>
+                <transformation>0.5 -0.475 0.1 0 0 0</transformation>
+                <inertia>
+                    <mass>4</mass>
+                    <offset>0 0 0</offset>
+                </inertia>
+                <visualization_shape>
+                    <geometry>
+                        <box>
+                            <size>0.07 0.04 0.1</size>
+                        </box>
+                    </geometry>
+                    <color>0.8 0.3 0.3</color>
+                </visualization_shape>
+                <collision_shape>
+                    <geometry>
+                        <box>
+                            <size>0.07 0.04 0.1</size>
+                        </box>
+                    </geometry>
+                </collision_shape>
+            </body>
+            <body name="link 2">
+                <gravity>1</gravity>
+                <transformation>0.5 -0.475 0 0 0 0</transformation>
+                <inertia>
+                    <mass>2</mass>
+                    <offset>0 0 0</offset>
+                </inertia>
+                <visualization_shape>
+                    <geometry>
+                        <box>
+                            <size>0.07 0.04 0.1</size>
+                        </box>
+                    </geometry>
+                    <color>0.3 0.8 0.3</color>
+                </visualization_shape>
+                <collision_shape>
+                    <geometry>
+                        <box>
+                            <size>0.07 0.04 0.1</size>
+                        </box>
+                    </geometry>
+                </collision_shape>
+            </body>
+
+            <joint type="free" name="joint 1">
+                <parent>world</parent>
+                <child>link 2</child>
+            </joint>
+
+            <joint type="revolute" name="joint 2">
+                <transformation>0.0 0.0 -0.05 0 0 0</transformation>
+                <parent>link 2</parent>
+                <child>link 1</child>
+
+                <axis>
+                    <xyz>0 1 0</xyz>
+                    <dynamics>
+                        <damping>0.0</damping>
+                        <friction>0.01</friction>
+                    </dynamics>
+                </axis>
+            </joint>
+
+        </skeleton>
+
+        <!--<skeleton name="skeleton_2">-->
+        <!--<body name="link_1">-->
+        <!--<gravity>1</gravity>-->
+        <!--<transformation>0 -0.275 0 0 0 0</transformation>-->
+        <!--<inertia>-->
+        <!--<mass>1</mass>-->
+        <!--<offset>0 0 0</offset>-->
+        <!--</inertia>-->
+        <!--<visualization_shape>-->
+        <!--<transformation>0 0 0 0 0 0</transformation>-->
+        <!--<geometry>-->
+        <!--<box>-->
+        <!--<size>0.05 0.05 0.05</size>-->
+        <!--</box>-->
+        <!--</geometry>-->
+        <!--<color>0.3 0.8 0.3</color>-->
+        <!--</visualization_shape>-->
+        <!--<collision_shape>-->
+        <!--<transformation>0 0 0 0 0 0</transformation>-->
+        <!--<geometry>-->
+        <!--<box>-->
+        <!--<size>0.05 0.05 0.05</size>-->
+        <!--</box>-->
+        <!--</geometry>-->
+        <!--</collision_shape>-->
+        <!--</body>-->
+
+        <!--<joint type="free" name="joint 1">-->
+        <!--<parent>world</parent>-->
+        <!--<child>link_1</child>-->
+        <!--</joint>-->
+        <!--</skeleton>-->
+
+        <!--<skeleton name="skeleton_3">-->
+        <!--<body name="link_1">-->
+        <!--<gravity>1</gravity>-->
+        <!--<transformation>0.05 -0.195 0 0 0 0</transformation>-->
+        <!--<inertia>-->
+        <!--<mass>1</mass>-->
+        <!--<offset>0 0 0</offset>-->
+        <!--</inertia>-->
+        <!--<visualization_shape>-->
+        <!--<transformation>0 0 0 0 0 0</transformation>-->
+        <!--<geometry>-->
+        <!--<box>-->
+        <!--<size>0.05 0.05 0.05</size>-->
+        <!--</box>-->
+        <!--</geometry>-->
+        <!--<color>0.8 0.8 0.4</color>-->
+        <!--</visualization_shape>-->
+        <!--<collision_shape>-->
+        <!--<transformation>0 0 0 0 0 0</transformation>-->
+        <!--<geometry>-->
+        <!--<box>-->
+        <!--<size>0.05 0.05 0.05</size>-->
+        <!--</box>-->
+        <!--</geometry>-->
+        <!--</collision_shape>-->
+        <!--</body>-->
+
+        <!--<joint type="free" name="joint 1">-->
+        <!--<parent>world</parent>-->
+        <!--<child>link_1</child>-->
+        <!--</joint>-->
+        <!--</skeleton>-->
+
+    </world>
+</skel>

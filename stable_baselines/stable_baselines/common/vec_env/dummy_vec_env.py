@@ -5,7 +5,7 @@ from gym import spaces
 
 from . import VecEnv
 import pydart2
-
+from copy import deepcopy
 pydart2.init()
 
 class DummyVecEnv(VecEnv):
@@ -49,16 +49,16 @@ class DummyVecEnv(VecEnv):
                 self.envs[env_idx].step(self.actions[env_idx])
             # print(self.envs[0].env.dart_world.t,self.envs[1].env.dart_world.t,self.envs[2].env.dart_world.t)
             if self.buf_dones[env_idx]:
-                obs = self.envs[env_idx].reset()
+                obs2 = self.envs[env_idx].reset()
             self._save_obs(env_idx, obs)
-        return (np.copy(self._obs_from_buf()), np.copy(self.buf_rews), np.copy(self.buf_dones),
+        return (deepcopy(self._obs_from_buf()), np.copy(self.buf_rews), np.copy(self.buf_dones),
                 self.buf_infos.copy())
 
     def reset(self):
         for env_idx in range(self.num_envs):
             obs = self.envs[env_idx].reset()
             self._save_obs(env_idx, obs)
-        return np.copy(self._obs_from_buf())
+        return deepcopy(self._obs_from_buf())
 
     def close(self):
         return

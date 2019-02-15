@@ -20,7 +20,7 @@ class DartBlockPushEnvAct3Wrapped(DartBlockPushEnvAct3):
         self.init = None
         # print(os.getcwd())
 
-        num_tasks = 5
+        num_tasks = 17
         # tasks = ["localhost:2222", "localhost:2221", "localhost:2220", "localhost:2225", "localhost:2226"]
         tasks = ["localhost:222" + str(i) for i in range(num_tasks)]
         jobs = {"local": tasks}
@@ -38,12 +38,12 @@ class DartBlockPushEnvAct3Wrapped(DartBlockPushEnvAct3):
                 self.server = tf.train.Server(cluster, job_name="local", task_index=num, config=self.config)
                 self.server_name = str(num)
             except:
-                if num == 5:
+                if num == num_tasks:
                     print('reached max number')
                     return
                 connect2server(num + 1)
 
-        # connect2server(0)
+        connect2server(0)
 
         # config = tf.ConfigProto()
         # config.gpu_options.allow_growth = True
@@ -53,11 +53,11 @@ class DartBlockPushEnvAct3Wrapped(DartBlockPushEnvAct3):
         # print(server.target)
 
         # with tf.device("/job:local/task:0"):
-        self.model = CnnModel(self.num_steps)
+        self.model = CnnModel(self.num_steps, 2)
         self.model.predict_setup()
         x = self.observation_space.spaces['observation']
 
-        self.action_space = spaces.Box(self.action_space.high[:-1], self.action_space.low[:-1])
+        self.action_space = spaces.Box(self.action_space.low[:-1], self.action_space.high[:-1])
         self.observation_space = x
 
         # print(' cool')
@@ -65,6 +65,7 @@ class DartBlockPushEnvAct3Wrapped(DartBlockPushEnvAct3):
     def _step(self, a):
         # print('not cool')
         # print('check')
+        # print(a)
         a = np.hstack((a, np.array([2.5])))
         if self.init is None:
             if self.server_name is not None:
@@ -73,13 +74,15 @@ class DartBlockPushEnvAct3Wrapped(DartBlockPushEnvAct3):
                 self.sess = tf.Session(config=self.config)
 
             path = os.path.join(os.getcwd(),
-                                '/home/niranjan/Projects/vis_inst/DartEnv2/examples/agents/mass_prediction/model_ckpt/with_q_3action_1000_0.1/8/8.ckpt')
+                                '/home/niranjan/Projects/vis_inst/DartEnv2/examples/agents/mass_prediction/model_ckpt/with_q_3action_1000_1.5_try_2/115/115.ckpt')
             self.model.restore_model(self.sess, path)
             # print('restored', self.sess.run(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)[0]))
             self.init = True
 
         obs, reward, done, _ = super()._step(a)
-        if (len(self.obs_history) < self.num_steps):
+        if (not done):
+
+            # if (len(self.obs_history) < self.num_steps):
             # print('stepped')
             reward = 0
             self.obs_history.append(obs['observation'])
@@ -116,6 +119,8 @@ class DartBlockPushEnvAct3Wrapped(DartBlockPushEnvAct3):
             linear_rew = 1 - 2 * error / 3
             # print(error)
             reward = linear_rew
+            # if a[0] < 0.1:
+            #     reward = 0
         return obs['observation'], reward, done, _
 
     def reset_model(self):

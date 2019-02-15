@@ -108,6 +108,29 @@ register(
     timestep_limit=10,
     max_episode_steps=200,
 )
+register(
+    id='DartBlockPushMassN-v0',
+    entry_point='gym.envs.dart:DartBlockPushEnvActnBodyn',
+    reward_threshold=950.0,
+    timestep_limit=10,
+    max_episode_steps=200,
+)
+register(
+    id='DartBlockPushMassNWarpped-v0',
+    entry_point='gym.envs.dart:DartBlockPushEnvActNBodyNWrapped',
+    reward_threshold=950.0,
+    timestep_limit=10,
+    max_episode_steps=200,
+)
+
+register(
+    id='DartBlockPushEnvAct2Body3Wrapped-v0',
+    entry_point='gym.envs.dart:DartBlockPushEnvAct2Body3Wrapped',
+    reward_threshold=950.0,
+    timestep_limit=10,
+    max_episode_steps=200,
+)
+
 
 register(
     id='DartCartPole-v1',
@@ -151,7 +174,16 @@ register(
     reward_threshold=-3.75,
     max_episode_steps=50,
 )
+# PREnv
+# -----------------------------------------
 
+register(
+    id='PREnv-v0',
+    entry_point='gym.envs.dart:KR5Env',
+    reward_threshold=950.0,
+    timestep_limit=10,
+    max_episode_steps=200,
+)
 # Box2d
 # ----------------------------------------
 

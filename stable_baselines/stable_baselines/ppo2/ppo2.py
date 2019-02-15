@@ -2,7 +2,9 @@ import time
 import sys
 import multiprocessing
 from collections import deque
-import os
+# import sys
+# sys.path.extend(['/home/niranjan/Projects/vis_inst', '/home/niranjan/Projects/vis_inst/DartEnv/pydart2', '/home/niranjan/Projects/vis_inst/DartEnv2'])
+
 import gym
 import numpy as np
 import tensorflow as tf
@@ -12,7 +14,7 @@ from stable_baselines.common import explained_variance, ActorCriticRLModel, tf_u
 from stable_baselines.common.runners import AbstractEnvRunner
 from stable_baselines.common.policies import LstmPolicy, ActorCriticPolicy
 from stable_baselines.a2c.utils import total_episode_reward_logger
-from examples.agents.mass_prediction.supervised_dynamics_model import CnnModel
+from DartEnv2.examples.agents.mass_prediction.supervised_dynamics_model import CnnModel
 
 
 class PPO2(ActorCriticRLModel):
@@ -94,10 +96,12 @@ class PPO2(ActorCriticRLModel):
         self.summary = None
         self.episode_reward = None
         if _init_setup_model:
-            self.supervised_model = self.setup_model()
+            self.setup_model()
+            # self.supervised_model = self.setup_model()
 
     def setup_model(self):
         with SetVerbosity(self.verbose):
+
 
             assert issubclass(self.policy, ActorCriticPolicy), "Error: the input policy for the PPO2 model must be " \
                                                                "an instance of common.policies.ActorCriticPolicy."
@@ -108,11 +112,12 @@ class PPO2(ActorCriticRLModel):
             if sys.platform == 'darwin':
                 n_cpu //= 2
 
-            self.graph = tf.Graph()
+            # self.graph = tf.Graph()
+            self.graph = tf.get_default_graph()
             with self.graph.as_default():
                 self.sess = tf_util.make_session(num_cpu=n_cpu, graph=self.graph)
-                supervised_model = CnnModel(2)
-                supervised_model.setup_feedable_training()
+                # #supervised_model = CnnModel(act_dim=3,mass_dim=3,num_steps=3)
+                # #supervised_model.setup_feedable_training(lr=5e-2)
                 # supervised_model.predict_setup()
                 n_batch_step = None
                 n_batch_train = None
@@ -205,12 +210,15 @@ class PPO2(ActorCriticRLModel):
                 # bar2 = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)
                 #
                 # print('bar', bar2)
-                tf.global_variables_initializer().run(session=self.sess)  # pylint: disable=E1101
+                # bar2 = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)[6:]
+                # self.reset_op = tf.initialize_variables(bar2)
+                # tf.global_variables_initializer().run(session=self.sess)  # pylint: disable=E1101
                 # path = '/home/niranjan/Projects/vis_inst/DartEnv2/examples/agents/mass_prediction/model_ckpt/with_q_action_1000/_try9/8/8.ckpt'
                 # supervised_model.restore_model(self.sess, path)
                 # print('ppo',self.sess.run(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)[0]))
                 self.summary = tf.summary.merge_all()
-        return supervised_model
+                # self.supervised_model = supervised_model
+        # return supervised_model
 
     def _train_step(self, learning_rate, cliprange, obs, returns, masks, actions, values, neglogpacs, update,
                     writer, states=None):
@@ -244,33 +252,41 @@ class PPO2(ActorCriticRLModel):
             update_fac = self.n_batch // self.nminibatches // self.noptepochs
         else:
             update_fac = self.n_batch // self.nminibatches // self.noptepochs // self.n_steps
-        while True:
-            try:
-                if writer is not None:
+
+        if writer is not None:
                     # run loss backprop with summary, but once every 10 runs save the metadata (memory, compute time, ...)
                     if (1 + update) % 10 == 0:
                         run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
                         run_metadata = tf.RunMetadata()
+                        while True:
+                            try:
                         summary, policy_loss, value_loss, policy_entropy, approxkl, clipfrac, _ = self.sess.run(
                             [self.summary, self.pg_loss, self.vf_loss, self.entropy, self.approxkl, self.clipfrac,
                              self._train],
                             td_map, options=run_options, run_metadata=run_metadata)
-                        writer.add_run_metadata(run_metadata, 'step%d' % (update * update_fac))
+                        break
+                            except:
+                                pass
+                        # writer.add_run_metadata(run_metadata, 'step%d' % (update * update_fac))
                     else:
+                        while True:
+                            try:
                         summary, policy_loss, value_loss, policy_entropy, approxkl, clipfrac, _ = self.sess.run(
                             [self.summary, self.pg_loss, self.vf_loss, self.entropy, self.approxkl, self.clipfrac,
                              self._train],
                             td_map)
-                    writer.add_summary(summary, (update * update_fac))
-                else:
-                    policy_loss, value_loss, policy_entropy, approxkl, clipfrac, _ = self.sess.run(
-                        [self.pg_loss, self.vf_loss, self.entropy, self.approxkl, self.clipfrac, self._train], td_map)
-                break
-            except:
-                pass
+                        break
+                            except:
+                                pass
+                        writer.add_summary(summary, (update))
+        else:
+            policy_loss, value_loss, policy_entropy, approxkl, clipfrac, _ = self.sess.run(
+                [self.pg_loss, self.vf_loss, self.entropy, self.approxkl, self.clipfrac, self._train], td_map)
+
         return policy_loss, value_loss, policy_entropy, approxkl, clipfrac
 
     def learn(self, total_timesteps, callback=None, seed=None, log_interval=100, tb_log_name="PPO2"):
+        # self.sess.run(self.reset_op)
         with SetVerbosity(self.verbose), TensorboardWriter(self.graph, self.tensorboard_log, tb_log_name) as writer:
             self._setup_learn(seed)
 
@@ -328,9 +344,13 @@ class PPO2(ActorCriticRLModel):
 
                 if writer is not None:
                     self.episode_reward = total_episode_reward_logger(self.episode_reward,
-                                                                      true_reward.reshape((self.n_envs, self.n_steps)),
+                                                                      true_reward.T,
                                                                       masks.reshape((self.n_envs, self.n_steps)),
                                                                       writer, update * (self.n_batch + 1))
+                    # self.episode_reward = total_episode_reward_logger(self.episode_reward,
+                    #                                                   true_reward.reshape((self.n_envs, self.n_steps)),
+                    #                                                   masks.reshape((self.n_envs, self.n_steps)),
+                    #                                                   writer, update* (self.n_batch + 1))
 
                 if callback is not None:
                     callback(locals(), globals())

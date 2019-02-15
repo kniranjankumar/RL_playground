@@ -20,7 +20,7 @@ def _worker(remote, parent_remote, env_fn_wrapper, l):
                 # l.release()
                 # print('released')
                 if done:
-                    observation = env.reset()
+                    _ = env.reset()
                 remote.send((observation, reward, done, info))
             elif cmd == 'reset':
                 observation = env.reset()
@@ -73,12 +73,22 @@ class SubprocVecEnv(VecEnv):
         results = [remote.recv() for remote in self.remotes]
         self.waiting = False
         obs, rews, dones, infos = zip(*results)
-        return np.stack(obs), np.stack(rews), np.stack(dones), infos
+        obs_dict = {}
+        if isinstance(obs[0], dict):
+            for key in obs[0].keys():
+                x = [obs[i][key] for i in range(len(obs))]
+                obs_dict[key] = np.array(x)
+
+        return obs_dict, np.stack(rews), np.stack(dones), infos
 
     def reset(self):
         for remote in self.remotes:
             remote.send(('reset', None))
-        return np.stack([remote.recv() for remote in self.remotes])
+        obs_list = [remote.recv() for remote in self.remotes]
+        obs = {}
+        for key in obs_list[0].keys():
+            obs[key] = np.stack([i[key] for i in obs_list])
+        return obs
 
     def close(self):
         if self.closed:

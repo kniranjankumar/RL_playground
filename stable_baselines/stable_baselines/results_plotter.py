@@ -85,7 +85,7 @@ def plot_curves(xy_list, xaxis, title):
         color = COLORS[i]
         # plt.scatter(x, y, s=2)
         x, y_mean = window_func(x, y, EPISODES_WINDOW, np.mean)  # So returns average of last EPISODE_WINDOW episodes
-        plt.plot(x[:2:-1], signal.savgol_filter(y_mean, 51, 3)[:2:-1], color=color)
+        plt.plot(x[:2:-1], signal.savgol_filter(y_mean, 5001, 3)[:2:-1], color=color)
     plt.xlim(minx, maxx)
     plt.title(title)
     plt.xlabel(xaxis)

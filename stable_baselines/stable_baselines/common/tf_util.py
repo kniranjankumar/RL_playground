@@ -82,22 +82,22 @@ def make_session(num_cpu=None, make_default=False, graph=None):
     """
     if num_cpu is None:
         num_cpu = int(os.getenv('RCALL_NUM_CPU', multiprocessing.cpu_count()))
-    tf_config = tf.ConfigProto(
-        allow_soft_placement=True,
-        inter_op_parallelism_threads=num_cpu,
-        intra_op_parallelism_threads=num_cpu)
-    # Prevent tensorflow from taking all the gpu memory
-    tf_config.gpu_options.allow_growth = True
-    num_tasks = 5
-    tasks = ["localhost:222" + str(i) for i in range(num_tasks)]
-    jobs = {"local": tasks}
-    cluster = tf.train.ClusterSpec(jobs)
-    server = tf.train.Server(cluster, job_name="local", task_index=num_tasks - 1, config=tf_config)
-    print('check')
+    # tf_config = tf.ConfigProto(
+    #     allow_soft_placement=True,
+    #     inter_op_parallelism_threads=num_cpu,
+    #     intra_op_parallelism_threads=num_cpu)
+    # # Prevent tensorflow from taking all the gpu memory
+    # tf_config.gpu_options.allow_growth = True
+    # num_tasks = 17
+    # tasks = ["localhost:222" + str(i) for i in range(num_tasks)]
+    # jobs = {"local": tasks}
+    # cluster = tf.train.ClusterSpec(jobs)
+    # server = tf.train.Server(cluster, job_name="local", task_index=num_tasks - 1, config=tf_config)
+    # print('check')
     if make_default:
-        return tf.InteractiveSession(config=tf_config, graph=graph)
+        return tf.InteractiveSession(graph=graph)
     else:
-        return tf.Session(config=tf_config, graph=graph, target=server.target)
+        return tf.Session(graph=graph)
 
 
 def single_threaded_session(make_default=False, graph=None):

@@ -35,7 +35,11 @@ class DartBlockPushEnv(DartBlockPushEnv1):
         def connect2server(num):
             ## try task_index starting from 0 and connect to the first available task
             try:
+                print(' cool')
+
                 self.server = tf.train.Server(cluster, job_name="local", task_index=num, config=self.config)
+                print(' cool2')
+
                 self.server_name = str(num)
             except:
                 if num == 5:
@@ -44,7 +48,7 @@ class DartBlockPushEnv(DartBlockPushEnv1):
                 connect2server(num + 1)
 
         connect2server(0)
-
+        #
         # config = tf.ConfigProto()
         # config.gpu_options.allow_growth = True
 
@@ -60,7 +64,6 @@ class DartBlockPushEnv(DartBlockPushEnv1):
         self.action_space = spaces.Box(np.array([self.action_space.high[0]]), np.array([self.action_space.low[0]]))
         self.observation_space = x
 
-        # print(' cool')
 
     def _step(self, a):
         # print('not cool')

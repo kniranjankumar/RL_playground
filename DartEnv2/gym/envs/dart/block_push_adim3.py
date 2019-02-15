@@ -21,7 +21,7 @@ class DartBlockPushEnvAct3(dart_env.DartEnv, utils.EzPickle):
         # self.control_bounds = np.array([[1.0, 1.0, 1.0, self.mass_range[1]], [-1.0, -1.0, -1.0, self.mass_range[0]]])
         self.control_bounds = np.array([[1.0, 1.0, self.mass_range[1]], [-1.0, -1.0, self.mass_range[0]]])
 
-        self.action_scale = np.array([1000, 0.1])
+        self.action_scale = np.array([1000, 1.5])
 
         # self.control_bounds = np.array([[1.0], [-1.0]])
 

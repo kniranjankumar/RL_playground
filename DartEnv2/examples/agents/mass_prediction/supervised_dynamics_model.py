@@ -3,31 +3,35 @@ import tensorflow.contrib.slim as slim
 import gym
 import numpy as np
 from tqdm import tqdm
-from glob import glob
 import os
 import cv2
 import time
 from glob import glob
 
-from subprocess import Popen, PIPE
-
+# from subprocess import Popen, PIPE
+# envid = 'DartBlockPushMassAct2Body3-v0'
+envid = 'DartBlockPushMassAct2Body3-v0'
+envid = 'DartBlockPushMassN-v0'
+# env = gym.make(envid)
 image_obs = False
-try_num = ''
-model_type = 'with_q_3action_1000_0.1'
-log_folders = glob('./mass_prediction/agent_training/*')
-path = './mass_prediction/agent_training/' + model_type + try_num
+try_num = '_try_1'
+model_type = '3body3action_1000'
+root = '/home/niranjan/Projects/vis_inst/DartEnv2/examples/agents/mass_prediction_3b_3a/'
+log_folders = glob(root + 'tensorboard/*')
+path = os.path.join(root + 'tensorboard/', envid, model_type, try_num)
 
 
-def get_gpu_temperature():
-    p = Popen(["nvidia-smi", "--query-gpu=temperature.gpu", "--format=csv,noheader,nounits"],stdout=PIPE)
-    stdout, stderror = p.communicate()
-    output = stdout.decode('UTF-8')
-    return int(output)
+# def get_gpu_temperature():
+# p = Popen(["nvidia-smi", "--query-gpu=temperature.gpu", "--format=csv,noheader,nounits"],stdout=PIPE)
+# stdout, stderror = p.communicate()
+# output = stdout.decode('UTF-8')
+# return int(output)
 
 def run_rollouts(num_episodes, env, data_path, policy=None):
     print('running rollouts')
+    num_tasks = 17
     obs1 = env.reset()
-    obs = np.zeros([4,4])
+    obs = np.zeros([num_tasks - 1, env.observation_space.spaces['observation'].shape[0]])
     obs[0,:] = obs1['observation']
     done = False
     rollout_obs = []
@@ -38,22 +42,27 @@ def run_rollouts(num_episodes, env, data_path, policy=None):
         action_list = []
         mass = 0
         state = None
+        mask = None
         while (not done):
             # obs_list.append(np.copy(obs1['observation']))
             # act = np.array([1,1])
             if policy is None:
                 act = np.random.uniform(env.action_space.low, env.action_space.high)
+                state = 0
+                mask = 0
             else:
 
-                act, state = policy.predict(obs, state)
-                act = act[:-1][0]
-                act = np.hstack((act, 1.5))
+                act, state = policy.predict(obs, state, mask, deterministic=True)
+                act = act[0]
+                # act = np.hstack((act, 1.5))
             # act *= np.random.choice([-1,1],p=[0.5,0.5])
             # act = np.array([0.9,3])
             # act = 0.5*(env.action_space.high - env.action_space.low)
             # act = act.astype('float64')
-            action_list.append(act[:-1])
+            action_list.append(act)
             obs1, rew, done, _ = env.step(act)
+            mask = [False for _ in range(num_tasks - 1)]
+            mask[0] = done
             obs[0, :] = obs1['observation']
             # print('step')
             try:
@@ -62,6 +71,8 @@ def run_rollouts(num_episodes, env, data_path, policy=None):
                 print('ouch')
 
         done = False
+        state *= 0  # reset state
+        mask[0] = False
         action_list.pop(-1)
         obs_list.pop(-1)
         mass = obs1['mass']
@@ -83,8 +94,7 @@ def save_images(image_list, data_path):
 
 
 def get_data(comments, num_rollouts, num_steps, env):
-
-    data_path = os.path.join(os.getcwd(), 'mass_prediction','data', comments)
+    data_path = os.path.join(root, 'data', comments)
     print(data_path)
     if os.path.exists(data_path):
         exists = True
@@ -95,7 +105,7 @@ def get_data(comments, num_rollouts, num_steps, env):
         act = np.load(data_path + '/action' + str(num_steps) + '.npy')
         mass = np.load(data_path + '/mass' + str(num_steps) + '.npy')
     else:
-        os.makedirs(data_path)
+        os.makedirs(data_path, exist_ok=True)
         obs, act, mass = run_rollouts(num_rollouts, env, data_path)
         np.save(data_path + '/obs' + str(num_steps) + '.npy', obs)
         np.save(data_path + '/action' + str(num_steps) + '.npy', act)
@@ -255,7 +265,7 @@ class Model:
         percent = tf.reduce_mean(tf.reduce_mean(tf.divide(abs_error, tf.cast(0.0001+tf.abs(batch_data_next['mass']),tf.float32)),axis=1))
 
         self.mean_error = tf.reduce_mean(abs_error)
-        optimizer = tf.train.GradientDescentOptimizer(learning_rate=1e-2)
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate=1e-1)
         self.train_op = optimizer.minimize(mse)
         error_summary = tf.summary.scalar('error-abs',mse)
         percentage_error = tf.summary.scalar('error-percentage', percent)
@@ -288,7 +298,8 @@ class Model:
         # print('predictions', predictions, 'actual',actual_mass)
 
 class CnnModel:
-    def __init__(self, num_steps, act_dim):
+    def __init__(self, num_steps, act_dim, mass_dim):
+        self.mass_dim = mass_dim
         self.num_steps = num_steps
         self.act_dim = act_dim
     def cnn_model(self, image_list, act):
@@ -331,7 +342,7 @@ class CnnModel:
                                 # weights_regularizer=slim.l2_regularizer(0.0005)):
 
                 net = slim.fully_connected(features, 4096, scope='fc7')
-                net = slim.fully_connected(net, 2, activation_fn=None, scope='fc8')
+                                net = slim.fully_connected(net, self.mass_dim, activation_fn=None, scope='fc8')
 
         return tf.squeeze(net)
 
@@ -339,7 +350,7 @@ class CnnModel:
         with tf.variable_scope('model', reuse=tf.AUTO_REUSE):
             with slim.arg_scope([slim.fully_connected],
                                 activation_fn=tf.nn.relu,
-                                weights_initializer=tf.truncated_normal_initializer(0.0, 0.01),
+                                weights_initializer=tf.truncated_normal_initializer(0.0, 0.05),
                                 weights_regularizer=slim.l2_regularizer(0.0005)):
                 net_obs = slim.flatten(net_obs, scope='flatten_obs')
                 #net_obs = slim.fully_connected(net_obs, 100, scope='fc_obs')
@@ -360,7 +371,7 @@ class CnnModel:
                 # net = slim.fully_connected(net, 256, scope='fc3')
                 # net = slim.fully_connected(net, 256, scope='fc4')
 
-                net = slim.fully_connected(net, 2, activation_fn=None, scope='out')
+                net = slim.fully_connected(net, self.mass_dim, activation_fn=None, scope='out')
                 # net = tf.clip_by_value(net,1,4)
                 return tf.cast(net, tf.float64)
 
@@ -380,7 +391,7 @@ class CnnModel:
         dataset = dataset.map(_parse_function) if image_obs else dataset
         dataset = dataset.shuffle(buffer_size=50000) if shuffle else dataset
         data = dataset.repeat() if repeat else dataset
-        batched_data = data.batch(batch_size=64)
+        batched_data = data.batch(batch_size=16)
         iterator = tf.data.Iterator.from_structure(batched_data.output_types, batched_data.output_shapes)
         batch_data_next = iterator.get_next()
         init_op = iterator.make_initializer(batched_data)
@@ -407,16 +418,17 @@ class CnnModel:
         self.train_op = optimizer.minimize(self.mean_error )
         error_summary = tf.summary.scalar('error-abs',self.mean_error )
         percentage_error = tf.summary.scalar('error-percentage', percent)
-        self.merged_summary = tf.summary.merge_all()
         # self.log_dir = './model_ckpt/'
+        self.merged_summary = tf.summary.merge_all()
 
         print('starting training')
         return training_init_op
 
     def setup_feedable_training(self, lr=1e-3):
-        self.obs = tf.placeholder(dtype=tf.float64, shape=[None, self.num_steps, 4], name='obs_placeholder')
+        self.obs = tf.placeholder(dtype=tf.float64, shape=[None, self.num_steps, 2 + self.mass_dim],
+                                  name='obs_placeholder')
         self.act = tf.placeholder(dtype=tf.float64, shape=[None, self.num_steps, self.act_dim], name='act_placeholder')
-        self.mass = tf.placeholder(dtype=tf.float64, shape=[None, 2], name='mass_placeholder')
+        self.mass = tf.placeholder(dtype=tf.float64, shape=[None, self.mass_dim], name='mass_placeholder')
 
         predict_mass = self.fc_model(self.obs, self.act)
         abs_error = tf.losses.absolute_difference(self.mass, predict_mass)
@@ -433,23 +445,27 @@ class CnnModel:
         error = []
         if self.act_dim == 2:
             path = os.path.join(os.getcwd(),
-                                '/home/niranjan/Projects/vis_inst/DartEnv2/examples/agents/mass_prediction/model_ckpt/with_q_3action_1000_0.1/8/8.ckpt')
+                                '/home/niranjan/Projects/vis_inst/DartEnv2/examples/agents/mass_prediction/model_ckpt/with_q_3action_1000_1.5/8/8.ckpt')
         if self.act_dim == 1:
             path = os.path.join(os.getcwd(),
                                 '/home/niranjan/Projects/vis_inst/DartEnv2/examples/agents/mass_prediction/model_ckpt/with_q_action_1000/_try9/8/8.ckpt')
 
+        # splting data into training and test
+        #last 100 items reserved for testing
         obs_batch1 = obs[-100:, :, :]
         act_batch1 = act[-100:, :, :]
         mass_batch1 = mass[-100:, :]
-        # obs = obs[:-100, :, :]
-        # act = act[:-100, :, :]
-        # mass = mass[:-100, :]
+
+        # training data
+        obs = obs[:-100, :, :]
+        act = act[:-100, :, :]
+        mass = mass[:-100, :]
         with graph.as_default():
             # self.restore_model(sess, path)
             # bias = tf.get_variable('model/fc1/biases/')
-            if self.subset_save == None:
-                self.subset_save = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="model")[:6])
-                self.subset_save.restore(sess, path)
+            # if self.subset_save == None:
+            #     self.subset_save = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="model")[:6])
+            #     self.subset_save.restore(sess, path)
             for i in range(num_iter):
                 idx = np.random.choice(range(mass.shape[0]), batch_size)
                 obs_batch = obs[idx, :, :]
@@ -510,11 +526,13 @@ class CnnModel:
         self.test_mean_error = tf.reduce_mean(abs_error)
         self.test_percent = tf.reduce_mean(
             tf.reduce_mean(tf.divide(abs_error, tf.cast(0.0001 + tf.abs(mass_next), tf.float32)), axis=1))
+        error_summary_test = tf.summary.scalar('error-abs-test', self.test_mean_error)
+
         return testing_init_op
 
     def predict_setup(self):
-        self.obs_in = tf.placeholder(tf.float64, shape=[None,2,4])
-        self.act_in = tf.placeholder(tf.float64, shape=[None, 2, self.act_dim])
+        self.obs_in = tf.placeholder(tf.float64, shape=[None, self.num_steps, 2 + self.mass_dim])
+        self.act_in = tf.placeholder(tf.float64, shape=[None, self.num_steps, self.act_dim])
         self.predict_mass = self.cnn_model(self.obs_in, self.act_in) if image_obs else self.fc_model(self.obs_in,self.act_in)
         return self.predict_mass, self.obs_in, self.act_in
 
@@ -557,21 +575,19 @@ class CnnModel:
         train_writer = tf.summary.FileWriter(path, sess.graph)
         for i in range(niter):
             if i%200 == 0 and True:
-                self.save_model(sess, comment, i/200)
-
-            while get_gpu_temperature() > 73:
-                print('sleeping for 5 sec')
-                time.sleep(5)
+                self.save_model(sess, comment, i / 200)
+                # self.test(sess)
             summary, error, _, prediction = sess.run([self.merged_summary, self.mean_error,self.train_op,self.predict_mass])#, feed_dict={self.obs:batch_data_next['obs'], self.act:batch_data_next['act'], self.mass:batch_data_next['mass']})
             print('iter '+ str(i) +' error',error, 'prediction', prediction[0,:])
             train_writer.add_summary(summary,i)
 
     def save_model(self, sess, comment, i):
         self.saver = tf.train.Saver()
-        comment = comment+'/' + try_num
-        folders = glob("./mass_prediction/model_ckpt/" + comment + '/*')
+        ckpt_path = os.path.join(root, 'model_ckpt')
+        comment = os.path.join(ckpt_path, try_num)
+        folders = glob(comment + '/*')
         i = int(len(folders) + i)
-        data_path = "./mass_prediction/model_ckpt/" + comment + '/' + str(i)
+        data_path = comment + '/' + str(i)
         os.makedirs(data_path)
         save_path = self.saver.save(sess, data_path + '/' + str(i) + ".ckpt")
         print("Model saved in path: %s" % save_path)
@@ -582,17 +598,16 @@ class CnnModel:
         self.saver.restore(sess, data_path)
 
 
-def train(env):
+def train(env, num_steps, num_mass, num_act):
     # region Training
-    os.makedirs(path)
+    os.makedirs(path, exist_ok=True)
     print(os.getcwd())
-    num_steps = 2
-    comments = model_type + '/train'
+    comments = os.path.join(model_type, envid, 'train')
     print('getting training data')
-    obs, act, mass = get_data(comments, 4000, num_steps, env)
-    comments = model_type + '/test'
+    obs, act, mass = get_data(comments, 30000, num_steps, env)
+    comments = os.path.join(model_type, envid, 'test')
     print('getting testing data')
-    obs_test, act_test, mass_test = get_data(comments, 400, num_steps, env)
+    obs_test, act_test, mass_test = get_data(comments, 1500, num_steps, env)
     # if not image_obs:
     #     obs, act = normalize_data(obs,act)
     #     obs_test, act_test = normalize_data(obs_test, act_test)
@@ -645,12 +660,12 @@ def train(env):
     # model = Model(env, num_steps)
     # # act = act[:, :, :-1]
     # act_test = act_test[:, :, :-1]
-    model = CnnModel(num_steps)
+    model = CnnModel(num_steps=num_steps, act_dim=num_act, mass_dim=num_mass)
     comments = model_type
     with tf.Session() as sess:
         model.setup(sess,obs, act, obs_test, act_test, mass_train=mass, mass_test=mass_test)
         # model.restore_model(sess, comments,2)
-        model.train(sess, comments, 901)
+        model.train(sess, comments, 100000)
         model.test(sess)
        # model.train_obs_predict(sess, obs[:,0,:], act, np.expand_dims(mass[:,1],axis=1), np.expand_dims(obs1,axis=1))
        #  np.save( os.path.join(os.getcwd(), 'mass_prediction', 'data', comments)+'/test_out',)
@@ -674,6 +689,7 @@ def restore_and_test():
     print(np.mean((np.abs(prediction-mass))[:]))
 
 if __name__ == '__main__':
-    env = gym.make('DartBlockPushMassAct3-v0')
-
-    train(env)
+    # envid = 'DartBlockPushMassAct2Body3-v0'
+    env = gym.make(envid)
+    print('created')
+    train(env, num_steps=3, num_mass=3, num_act=3)
