@@ -14,3 +14,4 @@ from gym.envs.dart.mass_prediction_2act_nbody import DartBlockPushEnvAct2Body3Wr
 from gym.envs.dart.mass_prediction_n_n import DartBlockPushEnvActNBodyNWrapped
 from gym.envs.dart.reacher2d import DartReacher2dEnv
 from gym.envs.dart.KR5_env import KR5Env
+from gym.envs.dart.sphere_env import KR5SphereEnv

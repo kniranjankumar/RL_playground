@@ -9,7 +9,7 @@ import copy
 import six
 
 from gym.envs.dart.static_window import *
-from gym.envs.dart.KR5_arm import MyWorld
+from gym.envs.dart.sphere_actuator import MyWorld
 
 try:
     import pydart2 as pydart
@@ -18,7 +18,7 @@ except ImportError as e:
     raise error.DependencyNotInstalled("{}. (HINT: you need to install pydart2.)".format(e))
 
 
-class KR5Env(gym.Env):
+class KR5SphereEnv(gym.Env):
     """Superclass for all Dart environments.
     """
 
@@ -28,24 +28,26 @@ class KR5Env(gym.Env):
         self.variable_size = False
         action_bounds = np.array([[-1 for i in range(self.num_actions)], [1 for i in range(self.num_actions)]])
         self.mass_range = np.array([1, 7])
-        self.size_range = np.array([0.1, 0.1])
-        # self.size_range = np.array([0.05,0.2])
+        # self.size_range = np.array([0.1,0.1])
+        self.size_range = np.array([0.05, 0.1])
         self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1], self.num_bodies)
         self.size = np.random.uniform(self.size_range[0], self.size_range[1], [self.num_bodies, 2])
+        self.mu = np.random.uniform(0.5, 1.0)
         # self.size = np.sort(self.size)
         # pydart.init()
         print('pydart initialization OK')
 
-        self.dart_world = MyWorld(self.num_bodies, self.num_actions, is_flip=False)
+        self.dart_world = MyWorld(self.num_bodies, self.num_actions, is_flip=True)
         self.box_skeleton = self.dart_world.skeletons[0]  # select block skeleton
         self.action_space = spaces.Box(action_bounds[0, :], action_bounds[1, :])
-        self.obs_dim = 2 + self.num_bodies + 2
+        self.obs_dim = 2 + self.num_bodies * 2 + 1
         high = np.inf * np.ones(self.obs_dim)
         low = -high
         mass_bounds = np.pad(np.array([[self.mass_range[0], self.mass_range[1]]]), ((0, self.num_bodies - 1), (0, 0)),
                              'edge')
         self.observation_space = spaces.Dict(
-            {"observation": spaces.Box(low, high), "mass": spaces.Box(mass_bounds[:, 0], mass_bounds[:, 1])})
+            {"observation": spaces.Box(low, high), "mass": spaces.Box(mass_bounds[:, 0], mass_bounds[:, 1]),
+             "mu": spaces.Box(np.array([0.2]), np.array([1]))})
         # self.observation_space = spaces.Box(low, high)
         for jt in range(0, len(self.box_skeleton.joints)):
             if self.box_skeleton.joints[jt].has_position_limit(0):
@@ -53,13 +55,28 @@ class KR5Env(gym.Env):
 
         # self.observation_space = spaces.Box(low, high)
         self._seed()
-        for i in range(self.num_bodies):
-            self.box_skeleton.bodynodes[i].set_mass(self.mass[i])
-            self.box_skeleton.bodynodes[i].shapenodes[0].shape.set_size([0.07, 0.04, self.size[i, 0]])
-            self.box_skeleton.bodynodes[i].shapenodes[1].shape.set_size([0.07, 0.04, self.size[i, 0]])
-        CTJ = self.box_skeleton.joints[1].transform_from_child_body_node()
-        CTJ[2, 3] = -(self.size[0, 0] + self.size[1, 0] - 0.1) * 0.5
-        self.box_skeleton.joints[1].set_transform_from_child_body_node(CTJ)
+        block_count = 0
+        for i in range(self.num_bodies * 2 - 1):
+            # if self.box_skeleton.bodynodes[i].shapenodes[0].shape
+            if isinstance(self.box_skeleton.bodynodes[i].shapenodes[0].shape, pydart.shape.BoxShape):
+                self.box_skeleton.bodynodes[i].set_mass(self.mass[block_count])
+                self.box_skeleton.bodynodes[i].shapenodes[0].shape.set_size([0.07, 0.04, self.size[block_count, 0]])
+                self.box_skeleton.bodynodes[i].shapenodes[1].shape.set_size([0.07, 0.04, self.size[block_count, 0]])
+                self.box_skeleton.bodynodes[i].set_friction_coeff(self.mu)
+
+                print(block_count)
+                if block_count == 0:
+                    CTJ = self.box_skeleton.joints[block_count + 1].transform_from_parent_body_node()
+                    CTJ[2, 3] = (self.size[block_count, 0] + 0.035 * 2) * 0.5
+                    # CTJ[2,3] = -(self.size[0,0]+self.size[1,0]-0.1)*0.5
+                    self.box_skeleton.joints[block_count + 1].set_transform_from_parent_body_node(CTJ)
+                else:
+                    CTJ = self.box_skeleton.joints[block_count + 1].transform_from_child_body_node()
+                    CTJ[2, 3] = -(self.size[block_count, 0] + 0.035 * 2) * 0.5
+                    # CTJ[2,3] = -(self.size[0,0]+self.size[1,0]-0.1)*0.5
+                    self.box_skeleton.joints[block_count + 1].set_transform_from_child_body_node(CTJ)
+                block_count += 1
+
         # CTJ = self.box_skeleton.joints[0].transform_from_child_body_node()
         # CTJ[0,3] += (self.size[0, 1]*0.25-0.035)
         # self.box_skeleton.joints[0].set_transform_from_child_body_node(CTJ)
@@ -82,17 +99,39 @@ class KR5Env(gym.Env):
         self.dart_world.reset()
         # self.dart_world.reset_box()
         self.mass = self.np_random.uniform(self.mass_range[0], self.mass_range[1], self.num_bodies)
-        self.size = np.random.uniform(self.size_range[0], self.size_range[1], [self.num_bodies, 2])
+        self.size = self.np_random.uniform(self.size_range[0], self.size_range[1], [self.num_bodies, 2])
+        self.mu = self.np_random.uniform(0.5, 1.0)
+        # for i in range(6):
+        #     self.dart_world.box.joints[0].set_damping_coefficient(i, self.mu)
+        # self.dart_world.box.joints[0].set_coulomb_friction(i, np.random.uniform(0,1))
+
         # self.size = np.sort(self.size)
-        for i in range(self.num_bodies):
-            self.box_skeleton.bodynodes[i].set_mass(self.mass[i])
-            self.box_skeleton.bodynodes[i].shapenodes[0].shape.set_size([0.07, 0.04, self.size[i, 0]])
-            self.box_skeleton.bodynodes[i].shapenodes[1].shape.set_size([0.07, 0.04, self.size[i, 0]])
+        block_count = 0
+        for i in range(self.num_bodies * 2 - 1):
+            # if self.box_skeleton.bodynodes[i].shapenodes[0].shape
+            if isinstance(self.box_skeleton.bodynodes[i].shapenodes[0].shape, pydart.shape.BoxShape):
+                self.box_skeleton.bodynodes[i].set_mass(self.mass[block_count])
+                self.box_skeleton.bodynodes[i].shapenodes[0].shape.set_size([0.07, 0.04, self.size[block_count, 0]])
+                self.box_skeleton.bodynodes[i].shapenodes[1].shape.set_size([0.07, 0.04, self.size[block_count, 0]])
+                self.box_skeleton.bodynodes[i].set_friction_coeff(self.mu)
+                if block_count == 0:
+                    CTJ = self.box_skeleton.joints[block_count + 1].transform_from_parent_body_node()
+                    CTJ[2, 3] = (self.size[block_count, 0] + 0.035 * 2) * 0.5
+                    # CTJ[2,3] = -(self.size[0,0]+self.size[1,0]-0.1)*0.5
+                    self.box_skeleton.joints[block_count + 1].set_transform_from_parent_body_node(CTJ)
+                else:
+                    CTJ = self.box_skeleton.joints[block_count + 1].transform_from_child_body_node()
+                    CTJ[2, 3] = -(self.size[block_count, 0] + 0.035 * 2) * 0.5
+                    # CTJ[2,3] = -(self.size[0,0]+self.size[1,0]-0.1)*0.5
+                    self.box_skeleton.joints[block_count + 1].set_transform_from_child_body_node(CTJ)
+                block_count += 1
 
-        CTJ = self.box_skeleton.joints[1].transform_from_child_body_node()
-        CTJ[2, 3] = -(self.size[0, 0] + self.size[1, 0] - 0.1) * 0.5
-        self.box_skeleton.joints[1].set_transform_from_child_body_node(CTJ)
-
+        # CTJ = self.box_skeleton.joints[-1].transform_from_child_body_node()
+        # CTJ[2,3] = -(self.size[0,0]+self.size[1,0]-0.1-0.08)*0.5
+        # self.box_skeleton.joints[-1].set_transform_from_child_body_node(CTJ)
+        q = self.box_skeleton.positions()
+        q[-1] = np.random.uniform(-0.75, 0.75)
+        self.box_skeleton.set_positions(q)
         # CTJ = self.box_skeleton.joints[0].transform_from_child_body_node()
         # CTJ[0,3] += (self.size[0, 1]*0.25-0.035)
         # self.box_skeleton.joints[0].set_transform_from_child_body_node(CTJ)
@@ -125,17 +164,24 @@ class KR5Env(gym.Env):
         self.dart_world.step()
 
     def _step(self, action):
+        action = np.clip(action, -1, 1)
         action[0] = action[0] * 100 + 200
-        action[1] = action[1] * self.size[0, 0] * 0.40 * 0.0001
+        # action[0] = -300
+        action[1] = action[1] * self.size[0, 0] * 0.40
+        # action[1] = 0
+        # action[0] = 600
         self.count_act += 1
         # print(self.count_act)
-        while True:
+        while self.dart_world.t < 10:
             if self.dart_world.complete:
                 break
+            # self.render(mode='human')
             self.do_simulation(action)
-            self.render(mode='human')
-            # if self.dart_world.t > 0.4:
-            #     print("Gone mad")
+            if self.dart_world.t > 10:
+                print(action)
+                print("Gone mad")
+                # self.render(mode='human')
+
             # break
 
         self.dart_world.complete = False
@@ -154,9 +200,12 @@ class KR5Env(gym.Env):
         joints = [6 + i for i in range(self.num_bodies - 1)]
         idx = [1, 3, 5]
         idx.extend(joints)
-        obs = np.append(np.hstack((self.box_skeleton.q[idx], self.dart_world.init_vel[idx])),
-                        [self.size[0, 0], self.size[1, 0]])
-        return {'observation': obs, 'mass': self.mass}
+        # obs = np.append(self.box_skeleton.q[idx],[self.size[0,0], self.size[1,0]])
+
+        obs = np.append(self.box_skeleton.q[idx],
+                        [(self.dart_world.t - self.dart_world.t_0), self.size[0, 0], self.size[1, 0]])
+        # obs = np.append(np.hstack((self.box_skeleton.q[idx],self.dart_world.init_vel[idx])),[self.size[0,0], self.size[1,0]])
+        return {'observation': obs, 'mass': self.mass, 'mu': self.mu}
 
     def _render(self, mode='human', close=False):
         # self._get_viewer().scene.tb.trans[0] = -self.dart_world.skeletons[self.track_skeleton_id].com()[0]*1

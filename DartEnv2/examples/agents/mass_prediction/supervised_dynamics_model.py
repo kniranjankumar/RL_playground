@@ -450,13 +450,13 @@ class CnnModel:
             path = os.path.join(os.getcwd(),
                                 '/home/niranjan/Projects/vis_inst/DartEnv2/examples/agents/mass_prediction/model_ckpt/with_q_action_1000/_try9/8/8.ckpt')
 
-        # splting data into training and test
+        #splting data into training and test
         #last 100 items reserved for testing
         obs_batch1 = obs[-100:, :, :]
         act_batch1 = act[-100:, :, :]
         mass_batch1 = mass[-100:, :]
 
-        # training data
+        #training data
         obs = obs[:-100, :, :]
         act = act[:-100, :, :]
         mass = mass[:-100, :]

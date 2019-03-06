@@ -10,14 +10,19 @@
         <visual>
             <origin xyz="0 -0.525 0" rpy="0 -0 0" />
             <geometry>
-                <box size="2.0 0.05 2.0" />
+                <box size="4.0 0.05 4.0"/>
 
             </geometry>
+            <material
+                    name="">
+                <color
+                        rgba="1 1 1 0.7"/>
+            </material>
         </visual>
         <collision group="default">
             <origin xyz="0 -0.525 0" rpy="0 -0 0" />
             <geometry>
-                <box size="2.0 0.05 2.0" />
+                <box size="4.0 0.05 4.0"/>
             </geometry>
         </collision>
     </link>

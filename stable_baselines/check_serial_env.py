@@ -46,18 +46,20 @@ pydart2.init()
 # env_id = 'DartBlockPushEnvAct2Body3Wrapped-v0'
 # env_id = 'DartBlockPushMassAct2Body3-v0'
 # # env_id = 'DartBlockPushMassNWarpped-v0'
-env_id = 'PREnv-v0'
+env_id = 'PRSphereEnv-v0'
 env1 = gym.make(env_id)
 # env2 = gym.make(env_id)
 #
-print(env1.reset())
-# env1.reset()
-print(env1.action_space)
-# env1.render(mode="human")
+# print(env1.reset())
+obs = env1.reset()
+print(obs)
+
+# print(env1.action_space)
+env1.render(mode="human")
 done = False
 count = 0
 reward = []
-for i in range(50):
+for i in range(1000):
     # print(count)
     count = 0
     while not done:
@@ -67,9 +69,12 @@ for i in range(50):
 
         env1.render(mode="human")
     print('done')
+    print(i)
     reward.append(rew)
     done = False
-    env1.reset()
+    obs = env1.reset()
+    print(obs)
+
     env1.render(mode="human")
 
 # print(sum(reward)/len(reward))

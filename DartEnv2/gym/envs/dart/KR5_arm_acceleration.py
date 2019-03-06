@@ -18,6 +18,8 @@ class Controller2:
         self.action_space = action_space
         self.g = self.skel.world.gravity()
         self.tau = [0 for i in range(action_space)]
+        self.tau[0] = 50
+
         self.enable_flip = enable_flip
 
         self.enabled = True
@@ -30,10 +32,11 @@ class Controller2:
         end_effector = self.skel.bodynodes[-1]
         palm_rad = 0.035
         self.log = []
-        self.J = end_effector.world_jacobian(offset=np.array([palm_rad, 0, 0]))
+        self.J = end_effector.jacobian(offset=np.array([palm_rad, 0, 0]))
 
     def reset(self, WTR, WTO):
         self.tau = [0 for i in range(self.action_space)]
+        self.tau[0] = 50
 
         self.enabled = True
         # self.robot_base = self.skel.world.skeletons[0].bodynodes[0].to_local(self.skel.bodynodes[0].C)
@@ -44,8 +47,8 @@ class Controller2:
         # direction = self.skel.world.skeletons[0].bodynodes[0].to_world([-1,0,0])
         # direction = np.array([direction[0], direction[2]])
         # force = -self.tau *direction
-        self.target = [0, 0, self.tau[0], 0, 0, 0]
-
+        self.target = [0, 0, 0, self.tau[0], 0, 0]
+        # tau = self.skel.M.dot(np.linalg.inv(self.J)).dot(self.target)
         tau = self.J.T.dot(self.target)
         if not self.enabled and np.all(self.skel.world.skeletons[0].dq < 0.0005):
             positions = self.skel.world.skeletons[0].q
@@ -90,7 +93,6 @@ class Controller2:
         return self.skel.coriolis_and_gravity_forces() + tau
 
 
-
 class MyWorld(pydart.World):
 
     def __init__(self, num_bodies, action_space=1, is_flip=False):
@@ -125,7 +127,7 @@ class MyWorld(pydart.World):
 
         elif num_bodies == 2:
             self.world = pydart.World.__init__(self, 0.001,
-                                               "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/arena2.skel")
+                                               "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/arena2.1.skel")
             # # self.world = pydart.World.__init__(self, 0.001,"/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/arena.skel")
             # self.box = self.skeletons[0]
             # self.start_box_pos = self.box.positions()
@@ -202,7 +204,7 @@ class MyWorld(pydart.World):
         rhs = self.target
         lhs2 = self.robot.body("palm").to_world([0.0, 0.0, 0.0])
         rhs2 = self.target2
-        return 0.5 * np.linalg.norm(lhs2 - rhs2) ** 2 + 0.5 * np.linalg.norm(lhs - rhs) ** 2
+        return 0.5 * np.linalg.norm(lhs2 - rhs2) ** 2  # + 0.5 * np.linalg.norm(lhs - rhs) ** 2
 
     def reset_arm(self):
         self.robot.set_positions(self.start_pose)
@@ -247,7 +249,7 @@ class MyWorld(pydart.World):
             positions[-2] = -1.7
             self.complete = False
             pos = self.box.positions()
-            pos[-1] = 0.5
+            # pos[-1] = 0.5
             self.box.set_positions(pos)
             self.WTR = self.robot.joints[0].transform_from_parent_body_node()
             self.WTO = self.box.bodynodes[0].T
@@ -258,7 +260,18 @@ class MyWorld(pydart.World):
             self.box.joints[1].set_position_lower_limit(0, -0.75)
             self.box.joints[1].set_position_limit_enforced()
             print('pydart add_skeleton OK')
-
+            # add ball
+            # self.sphere = self.add_skeleton(
+            #     "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/sphere.urdf")
+            # self.sphere.bodynodes[0].set_gravity_mode(False)
+            # # positions = self.robot.positions()
+            WTR_new = self.box.joints[0].transform_from_parent_body_node()
+            WTR_new[1, 3] += 0.01  # sphere radius+ allowance
+            WTR_new[0, 3] -= (box_size[0] * 0.5 + 0.02 + 0.02)  # sphere radius+ allowance
+            # self.sphere.joints[0].set_transform_from_parent_body_node(WTR_new)
+            # self.target = self.skeletons[0].bodynodes[0].to_world([-box_size[0] / 2 - 0.02, -box_size[1]*0.5, 0.011])
+            self.target = WTR_new[:3, 3]
+            self.target[0] -= 0.055
             self.controller = Controller2(self.robot, action_space=self.action_space, enable_flip=self.is_flip)
             self.robot.set_controller(self.controller)
             print('create controller OK')
@@ -300,7 +313,7 @@ class MyWorld(pydart.World):
             print(rhs)
             print("OK" if np.allclose(lhs, rhs) else "NG!!!!")
 
-        return g + g2
+        return g2  # + g2
 
     def solve(self, ):
         res = minimize(self.f,
