@@ -466,6 +466,7 @@ from pydart2.gui.trackball import Trackball
 from scipy.optimize import minimize
 import math
 import numpy as np
+import sys
 import os
 from pydart2.gui.glut.window import GLUTWindow
 # from gym.envs.dart.static_window import *
@@ -664,7 +665,8 @@ class MyWorld(pydart.World):
         self.num_bodies = num_bodies
         self.complete = False
         self.is_ball = True
-        self.asset_path = os.path.join(os.getcwd(),'assets','KR5')
+        path, folder = os.path.split(os.getcwd())
+        self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets','KR5')
         # self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
         self.world = pydart.World.__init__(self, 0.001,
                                            self.asset_path+"/arena2big.skel")
