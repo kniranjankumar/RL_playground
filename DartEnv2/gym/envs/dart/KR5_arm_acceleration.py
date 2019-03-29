@@ -466,6 +466,7 @@ from pydart2.gui.trackball import Trackball
 from scipy.optimize import minimize
 import math
 import numpy as np
+import os
 from pydart2.gui.glut.window import GLUTWindow
 # from gym.envs.dart.static_window import *
 from pyquaternion import Quaternion
@@ -663,8 +664,10 @@ class MyWorld(pydart.World):
         self.num_bodies = num_bodies
         self.complete = False
         self.is_ball = True
+        self.asset_path = os.path.join(os.getcwd(),'assets','KR5')
+        self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
         self.world = pydart.World.__init__(self, 0.001,
-                                           "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/arena2big.skel")
+                                           self.asset_path+"/arena2big.skel")
 
         # self.robot.set_positions([0.0, 1.4054258, 0.4363229, -0.0, 1.5695383, -0.0])
         # self.robot.set_positions([0.0, 0, 0.0, -0.0, 0, 0])
@@ -674,10 +677,10 @@ class MyWorld(pydart.World):
         if len(self.skeletons) == 2:
             if self.is_ball:
                 self.robot = self.add_skeleton(
-                    "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/KR5 sixx R650 ball.urdf")
+                    self.asset_path+"/KR5 sixx R650 ball.urdf")
             else:
                 self.robot = self.add_skeleton(
-                    "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/KR5 sixx R650 ball.urdf")
+                    self.asset_path+"/KR5 sixx R650 ball.urdf")
             self.box_shape = [self.skeletons[1].bodynodes[i].shapenodes[0].shape.size() for i in
                               range(0, 2, len(self.skeletons[1].bodynodes))]
             WTR = self.robot.joints[0].transform_from_parent_body_node()
