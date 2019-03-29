@@ -191,6 +191,13 @@ register(
     timestep_limit=10,
     max_episode_steps=200,
 )
+register(
+    id='ArmAccEnv-v0',
+    entry_point='gym.envs.dart:ArmAccEnv',
+    reward_threshold=950.0,
+    timestep_limit=10,
+    max_episode_steps=200,
+)
 # Box2d
 # ----------------------------------------
 

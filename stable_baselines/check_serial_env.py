@@ -46,7 +46,7 @@ pydart2.init()
 # env_id = 'DartBlockPushEnvAct2Body3Wrapped-v0'
 # env_id = 'DartBlockPushMassAct2Body3-v0'
 # # env_id = 'DartBlockPushMassNWarpped-v0'
-env_id = 'PRSphereEnv-v0'
+env_id = 'ArmAccEnv-v0'
 env1 = gym.make(env_id)
 # env2 = gym.make(env_id)
 #

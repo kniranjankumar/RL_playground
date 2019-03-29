@@ -22,16 +22,16 @@ path = os.path.join(root + 'tensorboard/', envid, model_type, try_num)
 
 
 # def get_gpu_temperature():
-# p = Popen(["nvidia-smi", "--query-gpu=temperature.gpu", "--format=csv,noheader,nounits"],stdout=PIPE)
-# stdout, stderror = p.communicate()
-# output = stdout.decode('UTF-8')
-# return int(output)
+    # p = Popen(["nvidia-smi", "--query-gpu=temperature.gpu", "--format=csv,noheader,nounits"],stdout=PIPE)
+    # stdout, stderror = p.communicate()
+    # output = stdout.decode('UTF-8')
+    # return int(output)
 
 def run_rollouts(num_episodes, env, data_path, policy=None):
     print('running rollouts')
     num_tasks = 17
     obs1 = env.reset()
-    obs = np.zeros([num_tasks - 1, env.observation_space.spaces['observation'].shape[0]])
+    obs = np.zeros([num_tasks-1,env.observation_space.spaces['observation'].shape[0]])
     obs[0,:] = obs1['observation']
     done = False
     rollout_obs = []
@@ -61,7 +61,7 @@ def run_rollouts(num_episodes, env, data_path, policy=None):
             # act = act.astype('float64')
             action_list.append(act)
             obs1, rew, done, _ = env.step(act)
-            mask = [False for _ in range(num_tasks - 1)]
+            mask = [False for _ in range(num_tasks-1)]
             mask[0] = done
             obs[0, :] = obs1['observation']
             # print('step')
@@ -71,7 +71,7 @@ def run_rollouts(num_episodes, env, data_path, policy=None):
                 print('ouch')
 
         done = False
-        state *= 0  # reset state
+        state *= 0 #reset state
         mask[0] = False
         action_list.pop(-1)
         obs_list.pop(-1)
@@ -94,7 +94,8 @@ def save_images(image_list, data_path):
 
 
 def get_data(comments, num_rollouts, num_steps, env):
-    data_path = os.path.join(root, 'data', comments)
+
+    data_path = os.path.join(root,'data', comments)
     print(data_path)
     if os.path.exists(data_path):
         exists = True
@@ -342,7 +343,7 @@ class CnnModel:
                                 # weights_regularizer=slim.l2_regularizer(0.0005)):
 
                 net = slim.fully_connected(features, 4096, scope='fc7')
-                                net = slim.fully_connected(net, self.mass_dim, activation_fn=None, scope='fc8')
+                net = slim.fully_connected(net, self.mass_dim, activation_fn=None, scope='fc8')
 
         return tf.squeeze(net)
 
@@ -425,8 +426,7 @@ class CnnModel:
         return training_init_op
 
     def setup_feedable_training(self, lr=1e-3):
-        self.obs = tf.placeholder(dtype=tf.float64, shape=[None, self.num_steps, 2 + self.mass_dim],
-                                  name='obs_placeholder')
+        self.obs = tf.placeholder(dtype=tf.float64, shape=[None, self.num_steps, 2+self.mass_dim], name='obs_placeholder')
         self.act = tf.placeholder(dtype=tf.float64, shape=[None, self.num_steps, self.act_dim], name='act_placeholder')
         self.mass = tf.placeholder(dtype=tf.float64, shape=[None, self.mass_dim], name='mass_placeholder')
 
@@ -531,7 +531,7 @@ class CnnModel:
         return testing_init_op
 
     def predict_setup(self):
-        self.obs_in = tf.placeholder(tf.float64, shape=[None, self.num_steps, 2 + self.mass_dim])
+        self.obs_in = tf.placeholder(tf.float64, shape=[None,self.num_steps,2+self.mass_dim])
         self.act_in = tf.placeholder(tf.float64, shape=[None, self.num_steps, self.act_dim])
         self.predict_mass = self.cnn_model(self.obs_in, self.act_in) if image_obs else self.fc_model(self.obs_in,self.act_in)
         return self.predict_mass, self.obs_in, self.act_in
@@ -575,7 +575,7 @@ class CnnModel:
         train_writer = tf.summary.FileWriter(path, sess.graph)
         for i in range(niter):
             if i%200 == 0 and True:
-                self.save_model(sess, comment, i / 200)
+                self.save_model(sess, comment, i/200)
                 # self.test(sess)
             summary, error, _, prediction = sess.run([self.merged_summary, self.mean_error,self.train_op,self.predict_mass])#, feed_dict={self.obs:batch_data_next['obs'], self.act:batch_data_next['act'], self.mass:batch_data_next['mass']})
             print('iter '+ str(i) +' error',error, 'prediction', prediction[0,:])
@@ -583,8 +583,8 @@ class CnnModel:
 
     def save_model(self, sess, comment, i):
         self.saver = tf.train.Saver()
-        ckpt_path = os.path.join(root, 'model_ckpt')
-        comment = os.path.join(ckpt_path, try_num)
+        ckpt_path = os.path.join(root,'model_ckpt')
+        comment = os.path.join(ckpt_path,try_num)
         folders = glob(comment + '/*')
         i = int(len(folders) + i)
         data_path = comment + '/' + str(i)
@@ -598,11 +598,11 @@ class CnnModel:
         self.saver.restore(sess, data_path)
 
 
-def train(env, num_steps, num_mass, num_act):
+def train(env,num_steps,num_mass,num_act):
     # region Training
-    os.makedirs(path, exist_ok=True)
+    os.makedirs(path,exist_ok=True)
     print(os.getcwd())
-    comments = os.path.join(model_type, envid, 'train')
+    comments = os.path.join(model_type,envid,'train')
     print('getting training data')
     obs, act, mass = get_data(comments, 30000, num_steps, env)
     comments = os.path.join(model_type, envid, 'test')
@@ -660,7 +660,7 @@ def train(env, num_steps, num_mass, num_act):
     # model = Model(env, num_steps)
     # # act = act[:, :, :-1]
     # act_test = act_test[:, :, :-1]
-    model = CnnModel(num_steps=num_steps, act_dim=num_act, mass_dim=num_mass)
+    model = CnnModel(num_steps=num_steps,act_dim=num_act,mass_dim=num_mass)
     comments = model_type
     with tf.Session() as sess:
         model.setup(sess,obs, act, obs_test, act_test, mass_train=mass, mass_test=mass_test)
@@ -692,4 +692,4 @@ if __name__ == '__main__':
     # envid = 'DartBlockPushMassAct2Body3-v0'
     env = gym.make(envid)
     print('created')
-    train(env, num_steps=3, num_mass=3, num_act=3)
+    train(env,num_steps=3,num_mass=3,num_act=3)

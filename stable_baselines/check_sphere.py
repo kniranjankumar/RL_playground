@@ -379,32 +379,32 @@ def constfn(val):
 # #
 # env_id = "DartBlockPushEnvAct2Body3Wrapped-v0"
 
-env_id = 'PRSphereEnv-v0'
+env_id = 'ArmAccEnv-v0'
 
 env_list = [make_env(env_id, i) for i in range(num)]
 env = NetworkVecEnv(env_list)
 env.reset()
 policy_tensorboard, _ = os.path.split(env.path)
-model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=1e-5,
-             tensorboard_log=policy_tensorboard + "/policy_tensorboard/" + _)
-# model = PPO2.load(the_path+ "/checkpoint/policy", env, verbose=1, learning_rate=constfn(1e-5), tensorboard_log=policy_tensorboard+"/policy_tensorboard/"+ _)
+# model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=1e-5,
+#              tensorboard_log=policy_tensorboard + "/policy_tensorboard/" + _)
+model = PPO2.load(the_path+ "/checkpoint/policy", env, verbose=1, learning_rate=constfn(1e-5), tensorboard_log=policy_tensorboard+"/policy_tensorboard/"+ _)
 
 env.sess = model.sess
 env.graph = model.graph
 # env.model.graph = model.graph
 env.model.setup_feedable_training(model.sess)
-# env.restore_model(os.path.join(env.path, 'checkpoint_predict_constrained', str(8), '8.ckpt'))
-error1 = env.train(2000, is_fresh=True)
+env.restore_model(os.path.join(env.path, 'checkpoint_predict_constrained', str(23), '23.ckpt'))
+# error1 = env.train(2000, is_fresh=False)
 
 # evaluate(model, env)
 # env.save_model()
 # while True:
 #     env.step([env.action_space.sample() for i in range(num)])
 # print('check')
-model.learn(total_timesteps=600000)
-os.makedirs(the_path + "/checkpoint", exist_ok=True)
+# model.learn(total_timesteps=600000)
+# os.makedirs(the_path + "/checkpoint", exist_ok=True)
 # model.save(the_path+ "/checkpoint/policy")
-error2 = env.train(1000, model)
+# error2 = env.train(1000, model)
 evaluate(model, env)
 
 # print('check2')

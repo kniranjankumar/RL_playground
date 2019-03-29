@@ -255,30 +255,30 @@ class PPO2(ActorCriticRLModel):
 
         if writer is not None:
                     # run loss backprop with summary, but once every 10 runs save the metadata (memory, compute time, ...)
-                    if (1 + update) % 10 == 0:
-                        run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
-                        run_metadata = tf.RunMetadata()
-                        while True:
-                            try:
+            if (1 + update) % 10 == 0:
+                run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+                run_metadata = tf.RunMetadata()
+                while True:
+                    try:
                         summary, policy_loss, value_loss, policy_entropy, approxkl, clipfrac, _ = self.sess.run(
-                            [self.summary, self.pg_loss, self.vf_loss, self.entropy, self.approxkl, self.clipfrac,
-                             self._train],
-                            td_map, options=run_options, run_metadata=run_metadata)
+                        [self.summary, self.pg_loss, self.vf_loss, self.entropy, self.approxkl, self.clipfrac,
+                         self._train],
+                           td_map, options=run_options, run_metadata=run_metadata)
                         break
-                            except:
-                                pass
-                        # writer.add_run_metadata(run_metadata, 'step%d' % (update * update_fac))
-                    else:
-                        while True:
-                            try:
+                    except:
+                        pass
+                # writer.add_run_metadata(run_metadata, 'step%d' % (update * update_fac))
+            else:
+                while True:
+                    try:
                         summary, policy_loss, value_loss, policy_entropy, approxkl, clipfrac, _ = self.sess.run(
                             [self.summary, self.pg_loss, self.vf_loss, self.entropy, self.approxkl, self.clipfrac,
                              self._train],
                             td_map)
                         break
-                            except:
-                                pass
-                        writer.add_summary(summary, (update))
+                    except:
+                        pass
+                writer.add_summary(summary, (update))
         else:
             policy_loss, value_loss, policy_entropy, approxkl, clipfrac, _ = self.sess.run(
                 [self.pg_loss, self.vf_loss, self.entropy, self.approxkl, self.clipfrac, self._train], td_map)
@@ -346,7 +346,7 @@ class PPO2(ActorCriticRLModel):
                     self.episode_reward = total_episode_reward_logger(self.episode_reward,
                                                                       true_reward.T,
                                                                       masks.reshape((self.n_envs, self.n_steps)),
-                                                                      writer, update * (self.n_batch + 1))
+                                                                      writer, update* (self.n_batch + 1))
                     # self.episode_reward = total_episode_reward_logger(self.episode_reward,
                     #                                                   true_reward.reshape((self.n_envs, self.n_steps)),
                     #                                                   masks.reshape((self.n_envs, self.n_steps)),

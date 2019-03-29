@@ -18,6 +18,7 @@ class Controller2:
         self.action_space = action_space
         self.tau = [0 for i in range(action_space)]
         self.tau[0] = 50
+        self.tau[1]= 0.02
         self.enable_flip = enable_flip
 
         self.enabled = True
@@ -87,9 +88,15 @@ class Controller2:
             self.skel.world.fresh_reset = False
 
         self.target = np.array([0, 0, 0, np.abs(self.tau[0]), 0, 0])
+        # self.target = np.array([0, 0, 0, 50, 0, 0])
+
         tau = np.array(self.target) * self.skel.mass()
         names = [i.name for i in self.skel.world.collision_result.contacted_bodies]
         if "palm" in names:
+            forces = np.array([i.force for i in self.skel.world.collision_result.contacts])
+            forces = np.sum(forces, axis=0)
+            contact = self.skel.world.collision_result
+
             self.skel.world.t_0 = self.skel.world.t
             self.enabled = False
             self.skel.set_velocities(self.skel.dq * 0)
@@ -101,7 +108,7 @@ class Controller2:
 
 class MyWorld(pydart.World):
 
-    def __init__(self, num_bodies, action_space=1, is_flip=False):
+    def __init__(self, num_bodies, action_space=2, is_flip=False):
         self.action_space = action_space
         self.is_flip = is_flip
         self.num_bodies = num_bodies
@@ -174,6 +181,7 @@ class MyWorld(pydart.World):
             # self.box = self.add_skeleto   n("./examples/data/skel/cubes.skel")
             self.robot = self.add_skeleton(
                 "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/sphere.urdf")
+            self.robot.bodynodes[-1].set_mass(2.3)
             self.robot.bodynodes[0].set_gravity_mode(False)
             # positions = self.robot.positions()
             WTR_new = self.box.joints[0].transform_from_parent_body_node()
