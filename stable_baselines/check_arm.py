@@ -10,7 +10,7 @@ from stable_baselines.bench import Monitor
 import os
 from stable_baselines import PPO2, Runner
 from stable_baselines.common.policies import MlpPolicy, MlpLstmPolicy
-
+import argparse
 from glob import glob
 from tqdm import tqdm
 import cv2
@@ -362,6 +362,15 @@ def evaluate(policy, env):
 # pydart2.init()
 # #
 # env_id = "DartBlockPushEnvAct2Body3Wrapped-v0"
+folders = glob(os.path.join(the_path, 'checkpoint_predict_constrained') + '/*')
+latest = int(len(folders))-1
+parser = argparse.ArgumentParser()
+parser.add_argument("--is_fresh", help='Train on fresh dataset', default=True, type=bool,nargs='?', const=True)
+parser.add_argument("--train_predictor", help='Train predictor from scratch ', default=True, type=bool,nargs='?', const=True)
+parser.add_argument("--checkpoint_num", help='Checkpoint number to restore', default=latest, type=int,nargs='?', const=latest)
+parser.add_argument("--PPO_steps", help='Number of PPO steps', default=31000, type=int,nargs='?', const=31000)
+
+args = parser.parse_args()
 env_id = 'ArmAccEnv-v0'
 # env_id = 'PREnv-v0'
 
@@ -377,19 +386,21 @@ env.sess = model.sess
 env.graph = model.graph
 # env.model.graph = model.graph
 env.model.setup_feedable_training(model.sess)
-error1 = env.train(1000, is_fresh=False)
-# env.restore_model(os.path.join(env.path, 'checkpoint_predict_constrained', str(15), '15.ckpt'))
+if args.train_predictor:
+    error1 = env.train(1000, is_fresh=args.is_fresh)
+else:
+    env.restore_model(os.path.join(env.path, 'checkpoint_predict_constrained', str(args.checkpoint_num), args.checkpoint_num + '.ckpt'))
 
 # evaluate(model, env)
 # env.save_model()
 # while True:
 #     env.step([env.action_space.sample() for i in range(num)])
 # print('check')
-model.learn(total_timesteps=25000)
-# os.makedirs(the_path+ "/checkpoint", exist_ok=True)
-# model.save(the_path+ "/checkpoint/policy")
+model.learn(total_timesteps=args.PPO_steps)
+os.makedirs(the_path+ "/checkpoint", exist_ok=True)
+model.save(the_path+ "/checkpoint/policy"+str(latest+1))
 error2 = env.train(1000, model)
-model.learn(total_timesteps=31000)
+model.learn(total_timesteps=args.PPO_steps)
 
 # print('check2')
 # print(error2)
