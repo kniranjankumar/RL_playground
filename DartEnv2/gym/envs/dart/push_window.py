@@ -3,7 +3,8 @@ import OpenGL.GLU as GLU
 import OpenGL.GLUT as GLUT
 import sys
 import numpy as np
-from pydart2.gui.opengl.scene_split import OpenGLScene_split
+# from pydart2.gui.opengl.scene_split import OpenGLScene_split
+from pydart2.gui.opengl.scene import OpenGLScene as OpenGLScene_split
 from pydart2.gui.glut.window import *
 import os
 
