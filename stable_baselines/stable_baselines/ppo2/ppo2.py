@@ -14,7 +14,7 @@ from stable_baselines.common import explained_variance, ActorCriticRLModel, tf_u
 from stable_baselines.common.runners import AbstractEnvRunner
 from stable_baselines.common.policies import LstmPolicy, ActorCriticPolicy
 from stable_baselines.a2c.utils import total_episode_reward_logger
-from DartEnv2.examples.agents.mass_prediction.supervised_dynamics_model import CnnModel
+# from DartEnv2.examples.agents.mass_prediction.supervised_dynamics_model import CnnModel
 
 
 class PPO2(ActorCriticRLModel):
@@ -128,12 +128,12 @@ class PPO2(ActorCriticRLModel):
                     n_batch_train = self.n_batch // self.nminibatches
 
                 act_model = self.policy(self.sess, self.observation_space, self.action_space, self.n_envs, 1,
-                                        n_batch_step, reuse=False)
+                                        n_batch_step, layers=[256,256,256], reuse=False)
                 with tf.variable_scope("train_model", reuse=True,
                                        custom_getter=tf_util.outer_scope_getter("train_model")):
                     train_model = self.policy(self.sess, self.observation_space, self.action_space,
                                               self.n_envs // self.nminibatches, self.n_steps, n_batch_train,
-                                              reuse=True)
+                                              reuse=True,layers=[256,256,256])
 
                 with tf.variable_scope("loss", reuse=False):
                     self.action_ph = train_model.pdtype.sample_placeholder([None], name="action_ph")

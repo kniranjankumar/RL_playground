@@ -16,7 +16,7 @@ from tqdm import tqdm
 import cv2
 
 num = 16  # Number of processes to use
-the_path = "/home/niranjan/Projects/vis_inst/experiments/KR5_arm/2b_2a_10k_constrained_no_flip_resized"
+the_path = "/home/niranjan/Projects/vis_inst/experiments/KR5_arm/2b_2a_10k_constrained_no_flip_resized_acc_arm_soft"
 
 
 class NetworkVecEnv(SubprocVecEnv):
@@ -240,6 +240,8 @@ class NetworkVecEnv(SubprocVecEnv):
         return error
 
     def step(self, actions):
+        # actions[-1] += np.random.normal(0, 0.2)
+        actions = np.clip(actions,-1,1)
         if not self.ticker:
             obs, rew, done, _ = super(NetworkVecEnv, self).step(actions)
             if self.obs_buffer is None:
@@ -326,6 +328,19 @@ def make_env(env_id, rank, seed=0):
     set_global_seeds(seed)
     return _init
 
+def constfn(val):
+    """
+    Create a function that returns a constant
+    It is useful for learning rate schedule (to avoid code duplication)
+
+    :param val: (float)
+    :return: (function)
+    """
+
+    def func(_):
+        return val
+
+    return func
 
 def evaluate(policy, env):
     state = None
@@ -347,33 +362,35 @@ def evaluate(policy, env):
 # pydart2.init()
 # #
 # env_id = "DartBlockPushEnvAct2Body3Wrapped-v0"
-
-env_id = 'PREnv-v0'
+env_id = 'ArmAccEnv-v0'
+# env_id = 'PREnv-v0'
 
 env_list = [make_env(env_id, i) for i in range(num)]
 env = NetworkVecEnv(env_list)
 env.reset()
 policy_tensorboard, _ = os.path.split(env.path)
-# model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=1e-4, tensorboard_log=policy_tensorboard+"/policy_tensorboard/"+ _)
-model = PPO2.load(the_path + "/checkpoint/policy", env, verbose=1, learning_rate=1e-4,
-                  tensorboard_log=policy_tensorboard + "/policy_tensorboard/" + _)
+model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=1e-4, tensorboard_log=policy_tensorboard+"/policy_tensorboard/"+ _)
+# model = PPO2.load(the_path + "/checkpoint/policy", env, verbose=1, learning_rate=constfn(2.5e-4),
+#                   tensorboard_log=policy_tensorboard + "/policy_tensorboard/" + _)
 
 env.sess = model.sess
 env.graph = model.graph
 # env.model.graph = model.graph
 env.model.setup_feedable_training(model.sess)
 error1 = env.train(1000, is_fresh=False)
-# env.restore_model(os.path.join(env.path, 'checkpoint_predict_constrained', str(5), '5.ckpt'))
+# env.restore_model(os.path.join(env.path, 'checkpoint_predict_constrained', str(15), '15.ckpt'))
 
 # evaluate(model, env)
 # env.save_model()
 # while True:
 #     env.step([env.action_space.sample() for i in range(num)])
 # print('check')
-# model.learn(total_timesteps=25000)
+model.learn(total_timesteps=25000)
 # os.makedirs(the_path+ "/checkpoint", exist_ok=True)
 # model.save(the_path+ "/checkpoint/policy")
 error2 = env.train(1000, model)
+model.learn(total_timesteps=31000)
+
 # print('check2')
 # print(error2)
 # obs = env.reset()
