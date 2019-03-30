@@ -33,7 +33,7 @@ class ArmAccEnv(gym.Env):
         self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1], self.num_bodies)
         self.size = np.random.uniform(self.size_range[0], self.size_range[1], [self.num_bodies, 2])
         self.mu = np.random.uniform(0.5, 0.5)
-
+        self.coverage_factor = 0
         # self.size = np.sort(self.size)
         # pydart.init()
         print('pydart initialization OK')
@@ -168,7 +168,7 @@ class ArmAccEnv(gym.Env):
         action = np.clip(action, -1, 1)
         action[0] = action[0] * 100 + 200
         # action[0] = -300
-        action[1] = action[1] * self.size[0, 0] * 0.40
+        action[1] = action[1] * self.size[0, 0] * 0.5 * self.coverage_factor
         # action[1] = 0
         # action[0] = 600
         self.count_act += 1

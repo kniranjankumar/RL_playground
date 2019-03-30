@@ -365,10 +365,10 @@ def evaluate(policy, env):
 folders = glob(os.path.join(the_path, 'checkpoint_predict_constrained') + '/*')
 latest = int(len(folders))-1
 parser = argparse.ArgumentParser()
-parser.add_argument("--is_fresh", help='Train on fresh dataset', default=True, type=bool,nargs='?', const=True)
-parser.add_argument("--train_predictor", help='Train predictor from scratch ', default=True, type=bool,nargs='?', const=True)
+parser.add_argument("--is_fresh", help='Train on fresh dataset', default=False, action='store_true')
+parser.add_argument("--train_predictor", help='Train predictor from scratch', default=False, action='store_true')
 parser.add_argument("--checkpoint_num", help='Checkpoint number to restore', default=latest, type=int,nargs='?', const=latest)
-parser.add_argument("--PPO_steps", help='Number of PPO steps', default=31000, type=int,nargs='?', const=31000)
+parser.add_argument("--PPO_steps", help='Number of PPO steps', default=31000, type=int,nargs='?', const=61000)
 
 args = parser.parse_args()
 env_id = 'ArmAccEnv-v0'
@@ -378,18 +378,19 @@ env_list = [make_env(env_id, i) for i in range(num)]
 env = NetworkVecEnv(env_list)
 env.reset()
 policy_tensorboard, _ = os.path.split(env.path)
-model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=1e-4, tensorboard_log=policy_tensorboard+"/policy_tensorboard/"+ _)
+model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=1e-5, tensorboard_log=policy_tensorboard+"/policy_tensorboard/"+ _)
 # model = PPO2.load(the_path + "/checkpoint/policy", env, verbose=1, learning_rate=constfn(2.5e-4),
 #                   tensorboard_log=policy_tensorboard + "/policy_tensorboard/" + _)
 
 env.sess = model.sess
 env.graph = model.graph
 # env.model.graph = model.graph
+print(args.is_fresh, args.train_predictor)
 env.model.setup_feedable_training(model.sess)
 if args.train_predictor:
     error1 = env.train(1000, is_fresh=args.is_fresh)
 else:
-    env.restore_model(os.path.join(env.path, 'checkpoint_predict_constrained', str(args.checkpoint_num), args.checkpoint_num + '.ckpt'))
+    env.restore_model(os.path.join(env.path, 'checkpoint_predict_constrained', str(args.checkpoint_num), str(args.checkpoint_num) + '.ckpt'))
 
 # evaluate(model, env)
 # env.save_model()
@@ -401,6 +402,7 @@ os.makedirs(the_path+ "/checkpoint", exist_ok=True)
 model.save(the_path+ "/checkpoint/policy"+str(latest+1))
 error2 = env.train(1000, model)
 model.learn(total_timesteps=args.PPO_steps)
+error3 = env.train(1000, model)
 
 # print('check2')
 # print(error2)
