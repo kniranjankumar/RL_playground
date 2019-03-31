@@ -27,8 +27,8 @@ class ArmAccEnv(gym.Env):
         self.num_actions = 2
         self.variable_size = False
         action_bounds = np.array([[-1 for i in range(self.num_actions)], [1 for i in range(self.num_actions)]])
-        # self.mass_range = np.array([0.1, 0.7])
-        self.mass_range = np.array([1, 7])
+        self.mass_range = np.array([0.1, 0.7])
+        # self.mass_range = np.array([1, 7])
         self.size_range = np.array([0.1,0.15])
         # self.size_range = np.array([0.1, 0.15])
         self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1], self.num_bodies)
