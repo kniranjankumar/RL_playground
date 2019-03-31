@@ -16,7 +16,9 @@ from tqdm import tqdm
 import cv2
 
 num = 16  # Number of processes to use
-the_path = "/home/niranjan/Projects/vis_inst/experiments/KR5_arm/2b_2a_10k_constrained_no_flip_resized_acc_arm_soft"
+path, folder = os.path.split(os.getcwd())
+the_path = os.path.join(path, 'experiments', 'KR5_arm', 'envs', '2b_2a_10k_constrained_no_flip_resized_acc_arm_soft')
+# the_path = "/home/niranjan/Projects/vis_inst/experiments/KR5_arm/2b_2a_10k_constrained_no_flip_resized_acc_arm_soft"
 
 
 class NetworkVecEnv(SubprocVecEnv):
