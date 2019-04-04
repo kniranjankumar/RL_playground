@@ -33,7 +33,7 @@ class ArmAccEnv(gym.Env):
         # self.size_range = np.array([0.1, 0.15])
         self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1], self.num_bodies)
         self.size = np.random.uniform(self.size_range[0], self.size_range[1], [self.num_bodies, 2])
-        self.mu = np.random.uniform(0.9, 0.9)
+        self.mu = np.random.uniform(0.5, 0.5)
         self.coverage_factor = 0.0
         # self.size = np.sort(self.size)
         # pydart.init()
