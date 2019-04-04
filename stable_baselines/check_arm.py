@@ -17,7 +17,7 @@ import cv2
 
 num = 16  # Number of processes to use
 path, folder = os.path.split(os.getcwd())
-the_path = os.path.join(path, 'experiments', 'KR5_arm', 'envs', '2b_2a_10k_constrained_no_flip_resized_acc_arm_soft')
+the_path = os.path.join(path, 'experiments', 'KR5_arm', 'envs', '2b_2a_16k_forward_1_7_0.0_0')
 # the_path = "/home/niranjan/Projects/vis_inst/experiments/KR5_arm/2b_2a_10k_constrained_no_flip_resized_acc_arm_soft"
 
 

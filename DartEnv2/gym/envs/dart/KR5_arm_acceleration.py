@@ -699,6 +699,9 @@ class MyWorld(pydart.World):
         self.robot.joints[1].set_actuator_type(pydart.joint.Joint.LOCKED)
         self.robot.joints[4].set_actuator_type(pydart.joint.Joint.LOCKED)
         self.robot.joints[6].set_actuator_type(pydart.joint.Joint.LOCKED)
+        self.box_skeleton = self.skeletons[1]
+        self.box_skeleton.joints[2].set_position_upper_limit(0, 1.55)
+        self.box_skeleton.joints[2].set_position_lower_limit(0, -1.55)
         self.controller = ControllerF(self.robot)
         self.robot.set_controller(self.controller)
 

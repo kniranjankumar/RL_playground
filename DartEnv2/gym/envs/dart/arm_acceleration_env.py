@@ -27,14 +27,14 @@ class ArmAccEnv(gym.Env):
         self.num_actions = 2
         self.variable_size = False
         action_bounds = np.array([[-1 for i in range(self.num_actions)], [1 for i in range(self.num_actions)]])
-        self.mass_range = np.array([0.1, 7])
-        # self.mass_range = np.array([1, 7])
+        # self.mass_range = np.array([0.1, 7])
+        self.mass_range = np.array([1, 7])
         self.size_range = np.array([0.1,0.15])
         # self.size_range = np.array([0.1, 0.15])
         self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1], self.num_bodies)
         self.size = np.random.uniform(self.size_range[0], self.size_range[1], [self.num_bodies, 2])
-        self.mu = np.random.uniform(0.5, 0.5)
-        self.coverage_factor = 0.5
+        self.mu = np.random.uniform(0.9, 0.9)
+        self.coverage_factor = 0.0
         # self.size = np.sort(self.size)
         # pydart.init()
         print('pydart initialization OK')
@@ -133,7 +133,7 @@ class ArmAccEnv(gym.Env):
         # self.box_skeleton.joints[-1].set_transform_from_child_body_node(CTJ)
         q = self.box_skeleton.positions()
         q[-1] = np.random.uniform(-0.35, 0.35)
-        self.box_skeleton.set_positions(q)
+        # self.box_skeleton.set_positions(q)
         # CTJ = self.box_skeleton.joints[0].transform_from_child_body_node()
         # CTJ[0,3] += (self.size[0, 1]*0.25-0.035)
         # self.box_skeleton.joints[0].set_transform_from_child_body_node(CTJ)
