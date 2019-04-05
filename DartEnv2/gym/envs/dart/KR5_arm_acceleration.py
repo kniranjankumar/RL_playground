@@ -498,46 +498,105 @@ class ControllerOC:
 
 
 class ControllerOCPose:
-    def __init__(self, skel):
+    def __init__(self, skel,action_space=2):
         self.mask = np.array([True for i in range(6)])
-        self.mask[-3:] = False
+        self.start = skel.q
+        self.action_space = action_space
+        self.end_effector_offset = np.array([0.05, 0, 0])
         self.skel = skel
-        self.end_effector = self.skel.bodynodes[-2]
-        self.target_quat = Quaternion(matrix=self.end_effector.T[:3, :3]).normalised
-        self.target_x = self.end_effector.T[:3, 3]
-        self.J = self.end_effector.jacobian()
-        # self.target_dxw = self.skel.bodynodes[-1].com_spatial_velocity()
-        self.Kp = 2
-        self.Kd = 10
-        self.Ko = 2
+        self.box = skel.world.skeletons[1]
+        self.end_effector = self.skel.bodynodes[-1]
+        self.WTR = self.skel.joints[0].transform_from_parent_body_node()
+        self.WTO = self.box.bodynodes[0].T
+        self.OTR = np.linalg.inv(self.WTO).dot(self.WTR)
+        self.target_dx = np.array([0, 0, 0, 0, 0, 0])
+        self.Kp = 300
+        self.Ko = 300
+        self.Ki = 300
+        self.Kd = np.sqrt(self.Kp+self.Ko)*1.5
+        self.FTIME = 10
+        self.timestep_count = self.FTIME
+        self.tau = [0 for i in range(self.action_space)]
+        self.end_effector = self.skel.bodynodes[-1]
+        self.tau[0] = 10
+        self.tau[1] = -0.1
 
-    def compute(self):
-        # quat = Quaternion(matrix=np.linalg.inv(self.end_effector.T[:3,:3]).dot(self.rot))
+    def reset(self, WTR, WTO):
+        self.tau = [0 for i in range(self.action_space)]
+        self.tau[0] = 5
+        self.tau[1] = 0.1
+        self.WTR = WTR
+        self.WTO = WTO
+
+    def get_force(self, target_x, target_quat, target_dx):
         quat = Quaternion(matrix=self.end_effector.T[:3, :3]).normalised
-        R = self.target_quat*quat.conjugate
+        R = (target_quat*quat.conjugate).normalised
         quatR = R.elements
-        J = self.J[self.mask == True,:]
+        J = np.vstack((self.end_effector.angular_jacobian(), self.end_effector.linear_jacobian(offset=self.end_effector_offset)))[self.mask == True,:]
+        dJ = np.vstack((self.end_effector.angular_jacobian_deriv(), self.end_effector.linear_jacobian_deriv()))[self.mask == True, :]
         M = self.skel.mass_matrix()
         M_inv = np.linalg.inv(M)
         Mx_inv = np.dot(J, np.dot(M_inv, J.T))
         if np.linalg.det(Mx_inv) != 0:
-            # do the linalg inverse if matrix is non-singular
-            # because it's faster and more accurate
             Mx = np.linalg.inv(Mx_inv)
         else:
-
-            # using the rcond to set singular values < thresh to 0
-            # singular values < (rcond * max(singular_values)) set to 0
+            print("ops")
             Mx = np.linalg.pinv(Mx_inv, rcond=.005)
         werror = quatR[1:] * np.sign(quatR[0])
-        xerror = self.target_x - self.end_effector.T[:3, 3]
-        error = np.concatenate([werror, xerror])[self.mask == True]
-        # derror = -self.end_effector.com_spatial_velocity()
-        derror = -self.skel.velocities()
-        forces = J.T.dot(
-            Mx.dot(self.Kp * error)) + self.Ko * M.dot(derror)
-        return self.skel.coriolis_and_gravity_forces() + forces
+        xerror = target_x - self.skel.bodynodes[-1].to_world(self.end_effector_offset)
+        error = np.concatenate([self.Ko * werror, self.Kp*xerror])[self.mask == True]
+        derror = target_dx - J.dot(self.skel.velocities())
+        derror *= self.Kd
+        dderror = J.dot(self.skel.accelerations()) + dJ.dot(self.skel.velocities())
+        dderror *= -self.Ki
+        forces = J.T.dot(Mx.dot(error) + Mx.dot(derror)) #+ Mx.dot(dderror)
+        f_net = self.skel.coriolis_and_gravity_forces() + forces
+        return f_net
 
+    def move_arm_base(self):
+        positions = self.box.q
+        positions[0] = 0
+        positions[2] = 0
+        self.box.set_positions(positions)
+        self.skel.world.complete = True
+        WTO_ = self.box.bodynodes[0].T
+        WTR_ = WTO_.dot(self.OTR)
+        self.skel.joints[0].set_transform_from_parent_body_node(WTR_)
+        self.skel.set_positions(self.start)
+        self.timestep_count = self.FTIME
+        self.skel.world.complete = True
+
+    def get_contact_forces(self):
+        f_contact = np.zeros([3, ])
+
+        contact = self.skel.world.collision_result
+        for c in contact.contacts:
+            if c.bodynode1.name == "palm" or c.bodynode2.name == "palm":
+                f_contact += np.abs(c.force)
+        # print('hit', f_contact)
+
+    def compute(self):
+        names = [i.name for i in self.skel.world.collision_result.contacted_bodies]
+        if self.timestep_count > 0:
+            self.target_x = self.box.bodynodes[0].to_world([-self.skel.world.box_shape[0][0] * 0.5, 0, self.tau[1]])
+            self.target_quat = Quaternion(matrix=self.box.bodynodes[0].T[:3, :3]).normalised
+            if "palm" in names:
+                angle = -np.sign(self.target_quat.axis[1]) * self.target_quat.angle
+                self.target_dx = np.array([0, 0, 0, np.cos(angle), 0, np.sin(angle)])*self.tau[0]
+                self.timestep_count -= 1
+            else:
+                self.target_dx = np.array([0, 0, 0, 0, 0, 0])
+            force = self.get_force(self.target_x, self.target_quat, self.target_dx)
+        else:
+            # self.target_dx = np.array([0, 0, 0, 0, 0, 0])
+            # self.target_quat = Quaternion(matrix=self.end_effector.T[:3, :3]).normalised
+            # self.target_x = self.end_effector.to_world(self.end_effector_offset)
+            self.skel.set_velocities(0*self.skel.dq)
+            self.skel.set_positions(self.start)
+            if np.all(self.box.dq < 0.0005):
+                self.move_arm_base()
+            force = self.skel.coriolis_and_gravity_forces()
+        return force
 
 class ControllerPD:
     def __init__(self, skel):
@@ -695,12 +754,18 @@ class MyWorld(pydart.World):
             self.WTR = WTR
             self.set_gravity([0.0, -9.81, 0])
         self.robot.joints[0].set_transform_from_parent_body_node(self.WTR)
-        self.robot.set_positions([0.0, 1.40, 0.4363229, -0.0, -1.50, -0.0])
-        self.robot.joints[1].set_actuator_type(pydart.joint.Joint.LOCKED)
-        self.robot.joints[4].set_actuator_type(pydart.joint.Joint.LOCKED)
-        self.robot.joints[6].set_actuator_type(pydart.joint.Joint.LOCKED)
-        self.controller = ControllerF(self.robot)
+        self.robot.set_positions([0.0, 1.40, 0.4063229, -0.0, -1.50, -0.0])
+        # self.robot.joints[1].set_actuator_type(pydart.joint.Joint.LOCKED)
+        # self.robot.joints[4].set_actuator_type(pydart.joint.Joint.LOCKED)
+        # self.robot.joints[6].set_actuator_type(pydart.joint.Joint.LOCKED)
+        self.controller = ControllerOCPose(self.robot)
         self.robot.set_controller(self.controller)
+        self.box_skeleton = self.skeletons[1]
+        self.box_skeleton.joints[2].set_position_upper_limit(0, 1.55)
+        self.box_skeleton.joints[2].set_position_lower_limit(0, -1.55)
+        for jt in range(0, len(self.box_skeleton.joints)):
+            if self.box_skeleton.joints[jt].has_position_limit(0):
+                self.box_skeleton.joints[jt].set_position_limit_enforced(True)
 
 if __name__ == '__main__':
     pydart.init()

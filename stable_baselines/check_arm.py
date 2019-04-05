@@ -17,7 +17,7 @@ import cv2
 
 num = 16  # Number of processes to use
 path, folder = os.path.split(os.getcwd())
-the_path = os.path.join(path, 'experiments', 'KR5_arm', 'envs', '2b_2a_10k_constrained_no_flip_resized_acc_arm_soft')
+the_path = os.path.join(path, 'experiments', 'KR5_arm', 'envs', '2b_2a_16K_oc_1_7_0.9_rand_start')
 # the_path = "/home/niranjan/Projects/vis_inst/experiments/KR5_arm/2b_2a_10k_constrained_no_flip_resized_acc_arm_soft"
 
 
@@ -146,15 +146,15 @@ class NetworkVecEnv(SubprocVecEnv):
                         [self.train_op_feedable, self.mean_error_feedable, self.merged_summary],
                         feed_dict={self.obs: obs_batch, self.act: act_batch,
                                    self.mass: mass_batch})
-                    if i % 100 == 0:
+                    if i % 1000 == 0:
                         error2, predicted_mass, summary_test = self.sess.run(
                             [self.mean_error_feedable, self.predict_mass, self.merged_summary_test],
                             feed_dict={self.obs: obs_batch1, self.act: act_batch1,
                                        self.mass: mass_batch1})
 
-                    error.append(error2)
-                    train_writer.add_summary(summary, i)
-                    train_writer.add_summary(summary_test, i)
+                        error.append(error2)
+                        train_writer.add_summary(summary, i)
+                        train_writer.add_summary(summary_test, i)
                 data_path = os.path.join(self.path, 'data')
                 np.save(data_path + '/predicted.npy', predicted_mass)
                 np.save(data_path + '/actual.npy', mass_batch1)

@@ -28,13 +28,15 @@ class ArmAccEnv(gym.Env):
         self.variable_size = False
         action_bounds = np.array([[-1 for i in range(self.num_actions)], [1 for i in range(self.num_actions)]])
         # self.mass_range = np.array([0.1, 0.7])
+        # self.mass_range = np.array([0.1, 7])
         self.mass_range = np.array([1, 7])
+
         self.size_range = np.array([0.1,0.15])
-        # self.size_range = np.array([0.1, 0.15])
+        # self.size_range = np.array([0.1, 0.1])
         self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1], self.num_bodies)
         self.size = np.random.uniform(self.size_range[0], self.size_range[1], [self.num_bodies, 2])
-        self.mu = np.random.uniform(0.5, 0.5)
-        self.coverage_factor = 0.0
+        self.mu = np.random.uniform(0.9, 0.9)
+        self.coverage_factor = 0.9
         # self.size = np.sort(self.size)
         # pydart.init()
         print('pydart initialization OK')
@@ -102,7 +104,7 @@ class ArmAccEnv(gym.Env):
         # self.dart_world.reset_box()
         self.mass = self.np_random.uniform(self.mass_range[0], self.mass_range[1], self.num_bodies)
         self.size = self.np_random.uniform(self.size_range[0], self.size_range[1], [self.num_bodies, 2])
-        self.mu = self.np_random.uniform(0.5, 0.5)
+        self.mu = self.np_random.uniform(0.9, 0.9)
         # for i in range(6):
         #     self.dart_world.box.joints[0].set_damping_coefficient(i, self.mu)
         # self.dart_world.box.joints[0].set_coulomb_friction(i, np.random.uniform(0,1))
@@ -133,7 +135,10 @@ class ArmAccEnv(gym.Env):
         # self.box_skeleton.joints[-1].set_transform_from_child_body_node(CTJ)
         q = self.box_skeleton.positions()
         q[-1] = np.random.uniform(-0.75, 0.75)
-        # self.box_skeleton.set_positions(q)
+        for jt in range(0, len(self.box_skeleton.joints)):
+            if self.box_skeleton.joints[jt].has_position_limit(0):
+                self.box_skeleton.joints[jt].set_position_limit_enforced(True)
+        self.box_skeleton.set_positions(q)
         # CTJ = self.box_skeleton.joints[0].transform_from_child_body_node()
         # CTJ[0,3] += (self.size[0, 1]*0.25-0.035)
         # self.box_skeleton.joints[0].set_transform_from_child_body_node(CTJ)
@@ -167,7 +172,8 @@ class ArmAccEnv(gym.Env):
 
     def _step(self, action):
         action = np.clip(action, -1, 1)
-        action[0] = action[0] * 50 + 100
+        action[0] = action[0] * 10 + 10
+        # action[0] = 10
         # action[0] = -300
         action[1] = action[1] * self.size[0, 0] * 0.5 * self.coverage_factor
         # action[1] = 0
