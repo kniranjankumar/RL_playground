@@ -315,8 +315,9 @@ class NetworkVecEnv(SubprocVecEnv):
             predict_mass = self.model.predict(self.sess, self.obs_buffer, self.act_buffer)
             true_mass = obs['mass']
             error = np.mean(np.abs(true_mass - predict_mass), axis=1)
-            rew = 1 - 2 * error / (self.observation_space_dict.spaces['mass'].high[0] -
-                                   self.observation_space_dict.spaces['mass'].low[0])
+            if self.reward_type == 'dense' or np.all(done == True):
+                rew = 1 - 2 * error / (self.observation_space_dict.spaces['mass'].high[0] -
+                                    self.observation_space_dict.spaces['mass'].low[0])
             if np.all(done == True):
                 self.obs_buffer = np.array([])
                 self.act_buffer = np.array([])
@@ -466,7 +467,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--is_fresh", help='Train on fresh dataset', default=False, action='store_true')
 parser.add_argument("--train_predictor", help='Train predictor from scratch', default=False, action='store_true')
 parser.add_argument("--checkpoint_num", help='Checkpoint number to restore', default=latest, type=int,nargs='?', const=latest)
-parser.add_argument("--PPO_steps", help='Number of PPO steps', default=31000, type=int,nargs='?', const=61000)
+parser.add_argument("--PPO_steps", help='Number of PPO steps', default=61000, type=int,nargs='?', const=61000)
+parser.add_argument("--PPO_learning_rate", help='Learning rate of PPO', default=1e-4, type=float,nargs='?', const=1e-4)
 parser.add_argument("--predictor_type", help='FCN or LSTM predictor', default='LSTM', type=str, nargs='?', const='LSTM')
 parser.add_argument("--reward_type", help='sparse or dense', default='sparse', type=str, nargs='?', const='sparse')
 
@@ -478,7 +480,7 @@ env_list = [make_env(env_id, i) for i in range(num)]
 env = NetworkVecEnv(env_list, args.predictor_type, args.reward_type)
 env.reset()
 policy_tensorboard, _ = os.path.split(env.path)
-model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=1e-5, tensorboard_log=policy_tensorboard+"/policy_tensorboard/"+ _)
+model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=args.PPO_learning_rate, tensorboard_log=policy_tensorboard+"/policy_tensorboard/"+ _)
 # model = PPO2.load(the_path + "/checkpoint/policy", env, verbose=1, learning_rate=constfn(2.5e-4),
 #                   tensorboard_log=policy_tensorboard + "/policy_tensorboard/" + _)
 
