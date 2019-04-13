@@ -1,7 +1,7 @@
-from stable_baselines.common.vec_env import SubprocVecEnv
+# from stable_baselines.common.vec_env import SubprocVecEnv
 # from .network_vec_env import NetworkVecEnv
 import gym
-from stable_baselines.common import set_global_seeds
+# from stable_baselines.common import set_global_seeds
 #
 import pydart2
 
@@ -75,7 +75,7 @@ for i in range(1000):
     obs = env1.reset()
     print(obs)
 
-    env1.render(mode="human")
+    # env1.render(mode="human")
 
 # print(sum(reward)/len(reward))
 # env2.reset()

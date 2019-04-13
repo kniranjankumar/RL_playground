@@ -17,12 +17,12 @@ import cv2
 
 num = 16  # Number of processes to use
 path, folder = os.path.split(os.getcwd())
-the_path = os.path.join(path, 'experiments', 'KR5_arm', 'envs', '2b_2a_16k_forward_1_7_0.0_0')
+the_path = os.path.join(path, 'experiments', 'KR5_arm', 'envs', '2b_2a_16K_oc_0.5_7_0.9_rand_start')
 # the_path = "/home/niranjan/Projects/vis_inst/experiments/KR5_arm/2b_2a_10k_constrained_no_flip_resized_acc_arm_soft"
 
 
 class NetworkVecEnv(SubprocVecEnv):
-    def __init__(self, env_fns1):
+    def __init__(self, env_fns1,predictor_type, reward_type):
         pydart2.init()
         SubprocVecEnv.__init__(self, env_fns1)
         self.num_envs = num
@@ -31,17 +31,20 @@ class NetworkVecEnv(SubprocVecEnv):
         # self.graph = tf.Graph()
         self.graph = None
         self.sess = None
-        self.obs_buffer = None
-        self.act_buffer = None
+        self.obs_buffer = np.array([])
+        self.act_buffer = np.array([])
+        self.reward_type = reward_type
         self.model = self.FCModel(self.path, self.sess, num_steps=2, act_dim=self.action_space.shape[0],
                                   mass_dim=self.observation_space.spaces['mass'].shape[0],
-                                  obs_dim=self.observation_space.spaces['observation'].shape[0])
+                                  obs_dim=self.observation_space.spaces['observation'].shape[0], mass_range = [self.observation_space.spaces['mass'].low, self.observation_space.spaces['mass'].high],
+                                  model_type=predictor_type)
         self.observation_space_dict = self.observation_space
         self.observation_space = self.observation_space.spaces['observation']
         self.ticker = False
+        self.dummy_step = False
 
     class FCModel:
-        def __init__(self, path, sess, num_steps, act_dim, mass_dim, obs_dim):
+        def __init__(self, path, sess, num_steps, act_dim, mass_dim, obs_dim, mass_range, model_type='LSTM'):
             self.path = path
             self.mass_dim = mass_dim
             self.num_steps = num_steps
@@ -49,13 +52,52 @@ class NetworkVecEnv(SubprocVecEnv):
             self.obs_dim = obs_dim
             self.sess = None
             self.graph = tf.get_default_graph()
-            self.obs = tf.placeholder(dtype=tf.float64, shape=[None, self.num_steps * self.obs_dim],
+            self.mass_range = mass_range
+            self.model_type = model_type
+            self.obs = tf.placeholder(dtype=tf.float64, shape=[None, (self.num_steps+1) * self.obs_dim],
                                       name='obs_placeholder')
             self.act = tf.placeholder(dtype=tf.float64, shape=[None, self.num_steps * self.act_dim],
                                       name='act_placeholder')
             self.mass = tf.placeholder(dtype=tf.float64, shape=[None, self.mass_dim], name='mass_placeholder')
-            self.predict_mass = self.fc_model(self.obs, self.act)
-            # self.setup_feedable_training()
+            # self.predict_mass = self.fc_model(self.obs, self.act)
+            if self.model_type == 'LSTM':
+                # self.predict_mass = self.fc_model(self.obs, self.act)
+                self.predict_mass = self.LSTM_model(self.obs, self.act, self.mass_range)
+            else:
+                self.predict_mass = self.fc_model(self.obs, self.act)
+
+        # self.setup_feedable_training()
+
+        def LSTM_model(self, net_obs, net_act, mass_range):
+            with self.graph.as_default():
+                with tf.variable_scope('LSTM_model', reuse=tf.AUTO_REUSE):
+                    with slim.arg_scope([slim.fully_connected],
+                                        activation_fn=tf.nn.relu,
+                                        weights_initializer=tf.truncated_normal_initializer(0.0, 0.01),
+                                        weights_regularizer=slim.l2_regularizer(0.0005)):
+                        obs = tf.split(net_obs,num_or_size_splits=self.num_steps+1, axis=1)
+                        act = tf.split(net_act,num_or_size_splits=self.num_steps, axis=1)
+                        # mass_init = tf.fill()
+                        rnn_input = [tf.concat([obs[i+1], act[i]],axis=1) for i in range(len(act))]
+                        c0 = slim.fully_connected(obs[0], 64, scope='c0')
+                        m0 = slim.fully_connected(obs[0], 64, scope='m0')
+                        lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=64, state_is_tuple=True)
+                        # lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=64, state_is_tuple=True)
+                        # lstm_residual_cell = tf.nn.rnn_cell.ResidualWrapper(lstm_cell)
+                        lstm_output, state = tf.nn.static_rnn(lstm_cell, initial_state=(c0, m0), inputs=rnn_input)
+                        output = slim.fully_connected(lstm_output, self.mass_dim, activation_fn=None, scope='out')
+                        ##CUDNN RNN
+                        # rnn_input = tf.stack([tf.concat([obs[i+1], act[i]],axis=1) for i in range(len(act))], axis=0)
+                        # c0 = tf.expand_dims(slim.fully_connected(obs[0], 64, scope='c0'),axis=0)
+                        # m0 = tf.expand_dims(slim.fully_connected(obs[0], 64, scope='m0'), axis=0)
+                        # lstm_cell = tf.contrib.cudnn_rnn.CudnnLSTM(num_layers=1,num_units=64, dtype=tf.float64)
+                        # lstm_output, state = lstm_cell(initial_state=(c0, m0), inputs=rnn_input)
+                        # output = slim.fully_connected(lstm_output, self.mass_dim, activation_fn=None, scope='out')
+                        # var_error = slim.fully_connected(output, self.mass_dim, scope='out')
+                        # output = tf.distributions.Normal(loc=(mean_error+ 0.5*(mass_range[0]+mass_range[1])),scale=var_error)
+                        return output
+                        # output_mean = tf.add_n(output)/len(output)
+                        # return tf.cast(output, tf.float64)
 
         def fc_model(self, net_obs, net_act):
             with self.graph.as_default():
@@ -89,10 +131,24 @@ class NetworkVecEnv(SubprocVecEnv):
 
         def setup_feedable_training(self, sess, lr=1e-1):
             self.sess = sess
-            abs_error = tf.losses.absolute_difference(self.mass, self.predict_mass)
-            self.mean_error_feedable = tf.reduce_mean(abs_error)
-            percent = tf.reduce_mean(
-                tf.reduce_mean(tf.divide(abs_error, tf.cast(0.0001 + tf.abs(self.mass), tf.float32)), axis=1))
+            if self.model_type == 'LSTM':
+                mass = tf.tile(tf.expand_dims(self.mass,0),multiples=[self.num_steps,1,1])
+                abs_error_rnn = tf.losses.absolute_difference(mass, self.predict_mass)
+                self.mean_error_feedable = tf.reduce_mean(abs_error_rnn)
+                abs_error = tf.losses.absolute_difference(self.mass, self.predict_mass[-1])
+                percent = tf.reduce_mean(
+                    tf.reduce_mean(tf.divide(abs_error, tf.cast(0.0001 + tf.abs(self.mass), tf.float32)), axis=1))
+                # mass = tf.tile(tf.expand_dims(self.mass,0),multiples=[2,1,1])
+                # self.mean_error_feedable = tf.reduce_mean(-self.predict_mass_dist.log_prob(mass))
+                # # mass = tf.tile(tf.expand_dims(self.mass,0),multiples=[2,1,1])
+                # abs_error = tf.losses.absolute_difference(self.mass, self.predict_mass[-1])
+                # percent = tf.reduce_mean(
+                #     tf.reduce_mean(tf.divide(abs_error, tf.cast(0.0001 + tf.abs(self.mass), tf.float32)), axis=1))
+            else:
+                abs_error = tf.losses.absolute_difference(self.mass, self.predict_mass)
+                self.mean_error_feedable = tf.reduce_mean(abs_error)
+                percent = tf.reduce_mean(
+                    tf.reduce_mean(tf.divide(abs_error, tf.cast(0.0001 + tf.abs(self.mass), tf.float32)), axis=1))
 
             optimizer = tf.train.GradientDescentOptimizer(lr)
             self.train_op_feedable = optimizer.minimize(self.mean_error_feedable)
@@ -146,15 +202,15 @@ class NetworkVecEnv(SubprocVecEnv):
                         [self.train_op_feedable, self.mean_error_feedable, self.merged_summary],
                         feed_dict={self.obs: obs_batch, self.act: act_batch,
                                    self.mass: mass_batch})
-                    if i % 100 == 0:
+                    if i % 1000 == 0:
                         error2, predicted_mass, summary_test = self.sess.run(
                             [self.mean_error_feedable, self.predict_mass, self.merged_summary_test],
                             feed_dict={self.obs: obs_batch1, self.act: act_batch1,
                                        self.mass: mass_batch1})
 
-                    error.append(error2)
-                    train_writer.add_summary(summary, i)
-                    train_writer.add_summary(summary_test, i)
+                        error.append(error2)
+                        train_writer.add_summary(summary, i)
+                        train_writer.add_summary(summary_test, i)
                 data_path = os.path.join(self.path, 'data')
                 np.save(data_path + '/predicted.npy', predicted_mass)
                 np.save(data_path + '/actual.npy', mass_batch1)
@@ -167,8 +223,14 @@ class NetworkVecEnv(SubprocVecEnv):
             # obs_in, act_in = normalize_data(obs_in,np.expand_dims(act_in, axis=-1))
             obs = np.array(obs_in)
             act = np.array(act_in)
-            return sess.run(self.predict_mass, feed_dict={self.obs: obs,
-                                                          self.act: act})
+            time_step = int(obs_in.shape[1] /self.obs_dim- 1)
+            if time_step < self.num_steps:
+                obs_zeros = np.zeros([obs_in.shape[0], (self.num_steps-time_step)*self.obs_dim])
+                obs = np.hstack((obs,obs_zeros))
+                act_zeros = np.zeros([act_in.shape[0], (self.num_steps-time_step)*self.act_dim])
+                act = np.hstack((act,act_zeros))
+            mass = sess.run(self.predict_mass[time_step-1] if self.model_type == 'LSTM' else self.predict_mass, feed_dict={self.obs: obs, self.act: act})
+            return mass
 
     def run_rollouts(self, num_eps, policy=None):
         rollout_obs = []
@@ -181,6 +243,7 @@ class NetworkVecEnv(SubprocVecEnv):
         for i in tqdm(range(num_eps)):
             state = None
             obs = super(NetworkVecEnv, self).reset()
+            obs_list.append(obs['observation'].copy())
             while np.all(done == False):
                 if policy is None:
                     act = [env.action_space.sample() for j in range(num)]
@@ -242,39 +305,72 @@ class NetworkVecEnv(SubprocVecEnv):
         return error
 
     def step(self, actions):
+        if not self.dummy_step:
+            obs, rew, done, _ = super(NetworkVecEnv, self).step(actions)
+            self.obs_buffer = np.hstack((self.obs_buffer,obs['observation']))
+            if self.act_buffer.size == 0:
+                self.act_buffer = actions
+            else:
+                self.act_buffer = np.hstack((self.act_buffer, actions))
+            predict_mass = self.model.predict(self.sess, self.obs_buffer, self.act_buffer)
+            true_mass = obs['mass']
+            error = np.mean(np.abs(true_mass - predict_mass), axis=1)
+            if self.reward_type == 'dense' or np.all(done == True):
+                rew = 1 - 2 * error / (self.observation_space_dict.spaces['mass'].high[0] -
+                                    self.observation_space_dict.spaces['mass'].low[0])
+            if np.all(done == True):
+                self.obs_buffer = np.array([])
+                self.act_buffer = np.array([])
+                obs = super(NetworkVecEnv, self).reset()
+                self.obs_buffer = obs['observation']
+                self.dummy_step = True
+                self.dummy_step_buffer = [obs['observation'], rew, done, _]
+
+            out = obs['observation'], rew, np.bitwise_not(done), _
+        else:
+            self.dummy_step = False
+            out = self.dummy_step_buffer
+
+        return out
+
+    def step2(self, actions):
         # actions[-1] += np.random.normal(0, 0.2)
         actions = np.clip(actions,-1,1)
         if not self.ticker:
             obs, rew, done, _ = super(NetworkVecEnv, self).step(actions)
-            if self.obs_buffer is None:
+            if self.act_buffer is None:
                 self.obs_buffer = obs['observation']
                 self.act_buffer = actions
             else:
                 self.obs_buffer = np.hstack((self.obs_buffer, obs['observation']))
                 self.act_buffer = np.hstack((self.act_buffer, actions))
 
+
             if np.all(done == True):
-                if (self.obs_buffer.shape[1] == 4):
-                    print('cray cray')
                 predict_mass = self.model.predict(self.sess, self.obs_buffer, self.act_buffer)
-                self.obs_buffer = None
-                self.act_buffer = None
                 true_mass = obs['mass']
                 # print(predict_mass, true_mass)
                 error = np.mean(np.abs(true_mass - predict_mass), axis=1)
                 rew = 1 - 2 * error / (self.observation_space_dict.spaces['mass'].high[0] -
                                        self.observation_space_dict.spaces['mass'].low[0])
-                print(rew)
+                self.obs_buffer = None
+                self.act_buffer = None
+            elif self.reward_type == 'dense':
+                predict_mass = self.model.predict(self.sess, self.obs_buffer, self.act_buffer)
+                true_mass = obs['mass']
+                # print(predict_mass, true_mass)
+                error = np.mean(np.abs(true_mass - predict_mass), axis=1)
+                rew = 1 - 2 * error / (self.observation_space_dict.spaces['mass'].high[0] -
+                                        self.observation_space_dict.spaces['mass'].low[0])
+            print(rew)
+
                 # error/(self.observation_space.spaces['mass'].high- self.observation_space.spaces['mass'].low)
         else:
+
             obs = super(NetworkVecEnv, self).reset()
+            self.obs_buffer = obs['observation']
             self.ticker = False
-            return obs['observation'], np.zeros([self.num_envs, ]), np.array([True for i in range(self.num_envs)]), [{}
-                                                                                                                     for
-                                                                                                                     i
-                                                                                                                     in
-                                                                                                                     range(
-                                                                                                                         self.num_envs)]  # {'episode': {'r': 0, 'l': 3, 't': 163.622605}
+            return obs['observation'], np.zeros([self.num_envs, ]), np.array([True for i in range(self.num_envs)]), [{} for i in range(self.num_envs)]  # {'episode': {'r': 0, 'l': 3, 't': 163.622605}
         if np.all(done == True):
             self.ticker = True  # set done flag in next iteration to work with ppo
             return obs['observation'], rew, np.bitwise_not(done), _
@@ -284,9 +380,10 @@ class NetworkVecEnv(SubprocVecEnv):
         return obs['observation'], rew, done, _
 
     def reset(self):
-        self.obs_buffer = None
-        self.act_buffer = None
+        self.obs_buffer = np.array([])
+        self.act_buffer = np.array([])
         obs = super(NetworkVecEnv, self).reset()
+        self.obs_buffer = obs['observation']
         return obs['observation']
 
     def save_model(self, path):
@@ -370,17 +467,20 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--is_fresh", help='Train on fresh dataset', default=False, action='store_true')
 parser.add_argument("--train_predictor", help='Train predictor from scratch', default=False, action='store_true')
 parser.add_argument("--checkpoint_num", help='Checkpoint number to restore', default=latest, type=int,nargs='?', const=latest)
-parser.add_argument("--PPO_steps", help='Number of PPO steps', default=31000, type=int,nargs='?', const=61000)
+parser.add_argument("--PPO_steps", help='Number of PPO steps', default=61000, type=int,nargs='?', const=61000)
+parser.add_argument("--PPO_learning_rate", help='Learning rate of PPO', default=1e-4, type=float,nargs='?', const=1e-4)
+parser.add_argument("--predictor_type", help='FCN or LSTM predictor', default='LSTM', type=str, nargs='?', const='LSTM')
+parser.add_argument("--reward_type", help='sparse or dense', default='sparse', type=str, nargs='?', const='sparse')
 
 args = parser.parse_args()
 env_id = 'ArmAccEnv-v0'
 # env_id = 'PREnv-v0'
 
 env_list = [make_env(env_id, i) for i in range(num)]
-env = NetworkVecEnv(env_list)
+env = NetworkVecEnv(env_list, args.predictor_type, args.reward_type)
 env.reset()
 policy_tensorboard, _ = os.path.split(env.path)
-model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=1e-5, tensorboard_log=policy_tensorboard+"/policy_tensorboard/"+ _)
+model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=args.PPO_learning_rate, tensorboard_log=policy_tensorboard+"/policy_tensorboard/"+ _)
 # model = PPO2.load(the_path + "/checkpoint/policy", env, verbose=1, learning_rate=constfn(2.5e-4),
 #                   tensorboard_log=policy_tensorboard + "/policy_tensorboard/" + _)
 
