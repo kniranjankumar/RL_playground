@@ -199,7 +199,7 @@ register(
     max_episode_steps=200,
 )
 register(
-    id='ArmAccEnv-v0',
+    id='ArmAccEnvBall2-v0',
     entry_point='gym.envs.dart:ArmAccEnvBall2',
     reward_threshold=950.0,
     timestep_limit=10,
