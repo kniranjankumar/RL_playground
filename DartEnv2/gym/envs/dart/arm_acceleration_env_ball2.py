@@ -18,7 +18,7 @@ except ImportError as e:
     raise error.DependencyNotInstalled("{}. (HINT: you need to install pydart2.)".format(e))
 
 
-class ArmAccEnv(gym.Env):
+class ArmAccEnvBall2(gym.Env):
     """Superclass for all Dart environments.
     """
 
@@ -41,7 +41,7 @@ class ArmAccEnv(gym.Env):
         # pydart.init()
         print('pydart initialization OK')
 
-        self.dart_world = MyWorld(num_bodies=self.num_bodies, action_space=self.num_actions, is_flip=False, ball=1)
+        self.dart_world = MyWorld(num_bodies=self.num_bodies, action_space=self.num_actions, is_flip=False, ball=2)
         self.box_skeleton = self.dart_world.skeletons[1]  # select block skeleton
         self.action_space = spaces.Box(action_bounds[0, :], action_bounds[1, :])
         self.obs_dim = 2 + self.num_bodies * 2

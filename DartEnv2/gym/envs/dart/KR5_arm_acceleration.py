@@ -599,6 +599,8 @@ class ControllerOCPose:
         return force
 
 class ControllerPD:
+
+
     def __init__(self, skel):
         self.skel =skel
         # self.target_q = self.skel.positions()
@@ -608,7 +610,6 @@ class ControllerPD:
         self.Kd = 25
 
     def compute(self):
-
         end_effector = self.skel.bodynodes[-1]
         self.target = [-20, 0, 0, 0, 0, 0]
         self.J = end_effector.jacobian(offset=np.array([-0.04849, 0.0087, -0.004])*0)
@@ -622,8 +623,6 @@ class ControllerPD:
         if "palm" in names:
             forces = np.array([i.force for i in self.skel.world.collision_result.contacts])
             forces = np.sum(forces, axis=0)
-
-
         return self.skel.coriolis_and_gravity_forces()+forcePD#+ self.J.T.dot(self.target)
 
 class ControllerF:
@@ -718,12 +717,12 @@ class ControllerF:
 
 class MyWorld(pydart.World):
 
-    def __init__(self,action_space=2,is_flip=False,num_bodies=2):
+    def __init__(self,action_space=2,is_flip=False,num_bodies=2, ball=1):
         self.action_space = action_space
         self.is_flip = is_flip
         self.num_bodies = num_bodies
         self.complete = False
-        self.is_ball = True
+        self.ball = ball
         path, folder = os.path.split(os.getcwd())
         self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets','KR5')
         # self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
@@ -736,20 +735,26 @@ class MyWorld(pydart.World):
     def reset(self):
         super(MyWorld, self).reset()
         if len(self.skeletons) == 2:
-            if self.is_ball:
+            if self.ball == 0:
+                self.robot = self.add_skeleton(
+                    self.asset_path+"/KR5 sixx R650.urdf")
+            elif self.ball == 1:
                 self.robot = self.add_skeleton(
                     self.asset_path+"/KR5 sixx R650 ball.urdf")
-            else:
+            elif self.ball == 2:
                 self.robot = self.add_skeleton(
-                    self.asset_path+"/KR5 sixx R650 ball.urdf")
+                    self.asset_path + "/KR5 sixx R650 ellipsoid.urdf")
+
             self.box_shape = [self.skeletons[1].bodynodes[i].shapenodes[0].shape.size() for i in
                               range(0, 2, len(self.skeletons[1].bodynodes))]
             WTR = self.robot.joints[0].transform_from_parent_body_node()
             WTR[:3, 3] = 0  # move robot to world origin
-            if self.is_ball:
-                WTR[0, 3] -= 0.55  # move robot base from the articulated body
-            else:
-                WTR[0, 3] -= 0.52
+            if self.ball == 0:
+                WTR[0, 3] -= 0.52  # move robot base from the articulated body
+            elif self.ball == 1:
+                WTR[0, 3] -= 0.55
+            elif self.ball == 2:
+                WTR[0, 3] -= 0.55
             WTR[2, 3] -= (self.box_shape[0][0] * 0.5 + self.box_shape[0][2] * 0.5)
             self.WTR = WTR
             self.set_gravity([0.0, -9.81, 0])
