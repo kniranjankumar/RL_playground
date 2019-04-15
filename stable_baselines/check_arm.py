@@ -374,7 +374,7 @@ class NetworkVecEnv(SubprocVecEnv):
         # rollout_act = rollout_act.reshape(-1, rollout_act.shape[-1])
         # self.restore_model(os.path.join(self.path, 'checkpoint_predict', str(0), '0.ckpt'))
         error = 0
-        error = self.model.feedable_train(rollout_obs, rollout_act, rollout_mass, 500, self.graph, batch_size=16)
+        error = self.model.feedable_train(rollout_obs, rollout_act, rollout_mass, 500000, self.graph, batch_size=16)
         model_save_num = self.save_model(os.path.join(save_dir, 'checkpoint_predict_constrained'))
         return error, model_save_num
 
@@ -579,7 +579,7 @@ if args.only_test:
     error = env.evaluate(30,model)
     print(np.mean(np.array(error)))
 else:
-    model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=args.PPO_learning_rate, tensorboard_log=policy_tensorboard+"/policy_tensorboard/"+ _)
+    model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=args.PPO_learning_rate, tensorboard_log=policy_tensorboard+"/policy_tensorboard/")
     # model = PPO2.load(the_path + "/checkpoint/policy", env, verbose=1, learning_rate=constfn(2.5e-4),
     #                   tensorboard_log=policy_tensorboard + "/policy_tensorboard/" + _)
 
