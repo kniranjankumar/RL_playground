@@ -134,7 +134,7 @@ class ArmAccEnv(gym.Env):
         # CTJ[2,3] = -(self.size[0,0]+self.size[1,0]-0.1-0.08)*0.5
         # self.box_skeleton.joints[-1].set_transform_from_child_body_node(CTJ)
         q = self.box_skeleton.positions()
-        q[-1] = 0.0
+        q[-1] = 0.7
         # q[-1] = self.np_random.uniform(-0.75, 0.75)
         for jt in range(0, len(self.box_skeleton.joints)):
             if self.box_skeleton.joints[jt].has_position_limit(0):
