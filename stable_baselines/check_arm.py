@@ -129,14 +129,14 @@ class NetworkVecEnv(SubprocVecEnv):
                         # net = tf.clip_by_value(net,1,4)
                         return tf.cast(net, tf.float64)
 
-        def setup_feedable_training(self, sess, lr=1e-1):
+        def setup_feedable_training(self, sess, lr=1e-1, is_init_all=True):
             self.sess = sess
             if self.model_type == 'LSTM':
                 mass = tf.tile(tf.expand_dims(self.mass,0),multiples=[self.num_steps,1,1])
                 abs_error_rnn = tf.losses.absolute_difference(mass, self.predict_mass)
                 self.mean_error_feedable = tf.reduce_mean(abs_error_rnn)
                 abs_error = tf.losses.absolute_difference(self.mass, self.predict_mass[-1])
-                percent = tf.reduce_mean(
+                self.percent = tf.reduce_mean(
                     tf.reduce_mean(tf.divide(abs_error, tf.cast(0.0001 + tf.abs(self.mass), tf.float32)), axis=1))
                 # mass = tf.tile(tf.expand_dims(self.mass,0),multiples=[2,1,1])
                 # self.mean_error_feedable = tf.reduce_mean(-self.predict_mass_dist.log_prob(mass))
@@ -147,21 +147,24 @@ class NetworkVecEnv(SubprocVecEnv):
             else:
                 abs_error = tf.losses.absolute_difference(self.mass, self.predict_mass)
                 self.mean_error_feedable = tf.reduce_mean(abs_error)
-                percent = tf.reduce_mean(
+                self.percent = tf.reduce_mean(
                     tf.reduce_mean(tf.divide(abs_error, tf.cast(0.0001 + tf.abs(self.mass), tf.float32)), axis=1))
 
             optimizer = tf.train.GradientDescentOptimizer(lr)
             self.train_op_feedable = optimizer.minimize(self.mean_error_feedable)
             error_summary = tf.summary.scalar('error-abs', self.mean_error_feedable)
-            percentage_error = tf.summary.scalar('error-percentage', percent)
+            percentage_error = tf.summary.scalar('error-percentage', self.percent)
             # self.log_dir = './model_ckpt/'
             self.merged_summary = tf.summary.merge([error_summary, percentage_error])
 
             error_summary_test = tf.summary.scalar('error-abs_test', self.mean_error_feedable)
-            percentage_error_test = tf.summary.scalar('error-percentage_test', percent)
+            percentage_error_test = tf.summary.scalar('error-percentage_test', self.percent)
             # self.log_dir = './model_ckpt/'
             self.merged_summary_test = tf.summary.merge([error_summary_test, percentage_error_test])
-            init = tf.global_variables_initializer()
+            if is_init_all:
+                init = tf.global_variables_initializer()
+            else:
+                init = tf.initialize_variables(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='LSTM_model'))
             self.sess.run(init)
 
         def feedable_test(self, obs, act, mass, graph, batch_size=64):
@@ -186,12 +189,12 @@ class NetworkVecEnv(SubprocVecEnv):
                 act_batch1 = act[current:, :]
                 mass_batch1 = mass[current:, :]
                 with graph.as_default():
-                    error2, predicted_mass, summary_test = self.sess.run(
-                        [self.mean_error_feedable, self.predict_mass, self.merged_summary_test],
+                    percent, predicted_mass, summary_test = self.sess.run(
+                        [self.percent, self.predict_mass, self.merged_summary_test],
                         feed_dict={self.obs: obs_batch1, self.act: act_batch1,
                                    self.mass: mass_batch1})
-                error.append(error2)
-            return error2
+                error.append(percent)
+            return percent
 
         def feedable_train(self, obs, act, mass, num_iter, graph, batch_size=64):
             # print(sess.run(tf.get_collection(tf.GraphKeys.VARIABLES)))
@@ -241,9 +244,9 @@ class NetworkVecEnv(SubprocVecEnv):
                         train_writer.add_summary(summary, i)
                         train_writer.add_summary(summary_test, i)
                 # data_path = os.path.join(self.path, 'data')
-                data_path = self.path+'data'
-                np.save(data_path + '/predicted.npy', predicted_mass)
-                np.save(data_path + '/actual.npy', mass_batch1)
+                # data_path = self.path+'data'
+                # np.save(data_path + '/predicted.npy', predicted_mass)
+                # np.save(data_path + '/actual.npy', mass_batch1)
 
             return error
 
@@ -347,10 +350,10 @@ class NetworkVecEnv(SubprocVecEnv):
         print('mean', np.mean(data, axis=0), 'var', np.var(data, axis=0))
         return (data - np.mean(data, axis=0)) / (np.var(data, axis=0) + 1e-8)
 
-    def train(self, num_eps, policy=None, is_fresh=True, save_dir=path):
+    def train(self, num_eps, data_path, save_dir, policy=None, is_fresh=True ):
 
         # data_path = os.path.join(self.path, 'data')
-        data_path = self.path + 'data'
+        # data_path = self.path + 'data'
         if policy is not None or is_fresh:
             os.makedirs(data_path, exist_ok=True)
             rollout_obs, rollout_act, rollout_mass = self.run_rollouts(num_eps, policy)
@@ -374,8 +377,8 @@ class NetworkVecEnv(SubprocVecEnv):
         # rollout_act = rollout_act.reshape(-1, rollout_act.shape[-1])
         # self.restore_model(os.path.join(self.path, 'checkpoint_predict', str(0), '0.ckpt'))
         error = 0
-        error = self.model.feedable_train(rollout_obs, rollout_act, rollout_mass, 500000, self.graph, batch_size=16)
-        model_save_num = self.save_model(os.path.join(save_dir, 'checkpoint_predict_constrained'))
+        error = self.model.feedable_train(rollout_obs, rollout_act, rollout_mass, 500, self.graph, batch_size=16)
+        model_save_num = self.save_model(save_dir)
         return error, model_save_num
 
     def step(self, actions):
@@ -461,14 +464,21 @@ class NetworkVecEnv(SubprocVecEnv):
         return obs['observation']
 
     def save_model(self, path):
-        self.saver = tf.train.Saver()
-        folders = glob(path + '/*')
-        i = int(len(folders))-1
-        data_path = path + '/' + str(i)
-        os.makedirs(data_path)
-        save_path = self.saver.save(self.sess, data_path + '/' + str(i) + ".ckpt")
+        if self.model.model_type == 'LSTM':
+            self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='LSTM_model'))
+        else:
+            self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='model'))
+        os.makedirs(path,exist_ok=True)
+        save_path = self.saver.save(self.sess, path + "/model.ckpt")
         print("Model saved in path: %s" % save_path)
-        return i
+        # self.saver = tf.train.Saver()
+        # folders = glob(path + '/*')
+        # i = int(len(folders))-1
+        # data_path = path + '/' + str(i)
+        # os.makedirs(data_path)
+        # save_path = self.saver.save(self.sess, data_path + '/' + str(i) + ".ckpt")
+        # print("Model saved in path: %s" % save_path)
+        # return i
 
     def restore_model(self, data_path):
         if self.model.model_type == 'LSTM':
@@ -476,7 +486,7 @@ class NetworkVecEnv(SubprocVecEnv):
         else:
             self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='model'))
         # data_path = "./mass_prediction/model_ckpt/" + comment + '/' + str(int(i)) + '/' + str(int(i)) + ".ckpt"
-        self.saver.restore(self.sess, data_path)
+        self.saver.restore(self.sess, data_path+"/model.ckpt")
 
 
 def make_env(env_id, rank, seed=0):
@@ -493,7 +503,7 @@ def make_env(env_id, rank, seed=0):
     def _init():
         env = gym.make(env_id)
         # print(seed)
-        log_dir = the_path + "/" + str(rank)  # {}".format(int(time.time()))
+        log_dir = the_path + "/monitor_log/" + str(rank)  # {}".format(int(time.time()))
         os.makedirs(log_dir, exist_ok=True)
         env = Monitor(env, log_dir, allow_early_resets=True)
         env.seed(seed + 2 * rank)
@@ -535,16 +545,21 @@ def evaluate(policy, env):
         rew_list.append(np.mean(rew))
     print(np.sum(np.array(rew_list)) / eps_count)
 
-
-# pydart2.init()
-# #
-# env_id = "DartBlockPushEnvAct2Body3Wrapped-v0"
+def save_argparse(save_path, args):
+    fout = os.path.join(save_path, 'hyperparameters.txt')
+    fo = open(fout, "w")
+    for k, v in args.__dict__.items():
+        print(str(k), str(v))
+        fo.write(str(k) + ' >>> ' + str(v) + '\n\n')
+    fo.close()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--is_fresh", help='Train on fresh dataset', default=False, action='store_true')
 parser.add_argument("--train_predictor", help='Train predictor from scratch', default=False, action='store_true')
 parser.add_argument("--checkpoint_num", help='Checkpoint number to restore', default=0, type=int,nargs='?', const=0)
+parser.add_argument("--policy_checkpoint_num", help='Policy Checkpoint number to restore', default=0, type=int,nargs='?', const=0)
 parser.add_argument("--PPO_steps", help='Number of PPO steps', default=61000, type=int,nargs='?', const=61000)
+parser.add_argument("--predictor_dataset", help='Size of the predictor dataset', default=1000, type=int,nargs='?', const=1000)
 parser.add_argument("--PPO_learning_rate", help='Learning rate of PPO', default=1e-5, type=float,nargs='?', const=1e-5)
 parser.add_argument("--predictor_type", help='FCN or LSTM predictor', default='LSTM', type=str, nargs='?', const='LSTM')
 parser.add_argument("--reward_type", help='sparse or dense', default='dense', type=str, nargs='?', const='dense')
@@ -554,62 +569,55 @@ parser.add_argument("--num_meta_iter", help='Number of meta training iterations'
 parser.add_argument("--only_test", help='Test Env with given predictor and policy', default=False, action='store_true')
 args = parser.parse_args()
 the_path = os.path.join(path, 'experiments', 'KR5_arm', args.folder_name)
-folders = glob(os.path.join(the_path, 'checkpoint_predict_constrained') + '/*')
-latest = int(len(folders))-1
-save_dir = os.path.join(the_path, 'checkpoint_predict_constrained',str(latest+1))
-os.makedirs(save_dir, exist_ok=True)
-fout = os.path.join(save_dir,'hyperparameters.txt')
-fo = open(fout, "w")
-for k,v in args.__dict__.items():
-    print(str(k), str(v))
-    fo.write(str(k) + ' >>> '+ str(v) + '\n\n')
-fo.close()
+folders = glob(os.path.join(the_path, '*'))
+latest = int(len(folders))
 env_id = args.env_id
 env_list = [make_env(env_id, i) for i in range(num)]
 env = NetworkVecEnv(env_list, args.predictor_type, args.reward_type, the_path)
 env.reset()
-policy_tensorboard, _ = os.path.split(env.path)
-policy_ckpt, _ = os.path.split(fout)
 if args.only_test:
-
-    model = PPO2.load(policy_ckpt + "/checkpoint/policy", env, verbose=1, learning_rate=constfn(1e-5),
-                      tensorboard_log=policy_tensorboard + "/policy_tensorboard/" + _)
-    env.restore_model(os.path.join(env.path, 'checkpoint_predict_constrained', str(args.checkpoint_num),
-                                   str(args.checkpoint_num) + '.ckpt'))
+    policy_ckpt_path = os.path.join(the_path, 'policy_ckpt', args.policy_checkpoint_num)
+    model = PPO2.load(policy_ckpt_path , env, verbose=1, learning_rate=constfn(1e-5))
+    env.sess = model.sess
+    env.graph = model.graph
+    env.model.setup_feedable_training(model.sess,is_init_all=False)
+    predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(args.checkpoint_num),
+                                       str(args.checkpoint_num) + '.ckpt')
+    env.restore_model(predictor_ckpt_path)
     error = env.evaluate(30,model)
     print(np.mean(np.array(error)))
 else:
-    model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=args.PPO_learning_rate, tensorboard_log=policy_tensorboard+"/policy_tensorboard/")
+    predictor_tensorboard_path = os.path.join(path, 'experiments', 'KR5_arm', 'predictor_tensorboard', args.folder_name)
+    predictor_data_path = os.path.join(the_path, 'data')
+    policy_tensorboard_path = os.path.join(path, 'experiments', 'KR5_arm', 'policy_tensorboard', args.folder_name)
+    log_folders = glob(predictor_tensorboard_path + '/*')
+    predictor_tensorboard_path = os.path.join(predictor_tensorboard_path, str(int(len(log_folders))))
+    predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(int(len(log_folders))))
+    policy_tensorboard_path = os.path.join(policy_tensorboard_path, str(int(len(log_folders))))
+    policy_ckpt_path = os.path.join(the_path, 'policy_ckpt', str(int(len(log_folders))))
+    arg_save_path = os.path.join(the_path, str(latest))  # current run path
+
+    os.makedirs(arg_save_path, exist_ok=True)
+    save_argparse(arg_save_path, args)
+    model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=args.PPO_learning_rate, tensorboard_log=policy_tensorboard_path)
     # model = PPO2.load(the_path + "/checkpoint/policy", env, verbose=1, learning_rate=constfn(2.5e-4),
     #                   tensorboard_log=policy_tensorboard + "/policy_tensorboard/" + _)
 
     env.sess = model.sess
     env.graph = model.graph
-    env.model.setup_feedable_training(model.sess)
+    env.model.setup_feedable_training(model.sess,is_init_all=True)
     if args.train_predictor or args.is_fresh:
-        error1, policy_save_number = env.train(1000, is_fresh=args.is_fresh, save_dir=save_dir)
+        error1, policy_save_number = env.train(args.predictor_dataset, is_fresh=args.is_fresh, save_dir=predictor_ckpt_path, data_path=predictor_data_path)
     else:
-        env.restore_model(os.path.join(env.path, 'checkpoint_predict_constrained', str(args.checkpoint_num), str(args.checkpoint_num) + '.ckpt'))
+        predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(args.checkpoint_num), str(args.checkpoint_num)+'.ckpt')
+        env.restore_model(predictor_ckpt_path)
         policy_save_number = args.checkpoint_num
-    # evaluate(model, env)
-    # env.save_model()
-    # while True:
-    #     env.step([env.action_space.sample() for i in range(num)])
-    # print('check')
-    model.learn(total_timesteps=args.PPO_steps)
-    os.makedirs(policy_ckpt+ "/checkpoint", exist_ok=True)
-    model.save(policy_ckpt+ "/checkpoint/policy"+str(policy_save_number))
-    error2 = env.train(1000, model)
-    print(env.evaluate(10,model))
-    model.learn(total_timesteps=args.PPO_steps)
-    error3 = env.train(1000, model)
 
-    # print('check2')
-    # print(error2)
-    # obs = env.reset()
-    # obs, rew, done, _ = env.step([env.action_space.sample() for i in range(num)])
-    # print(rew)
-    # obs, rew, done, _ = env.step([env.action_space.sample() for i in range(num)])
-    # print(rew)
-    # obs, rew, done, _ = env.step([env.action_space.sample() for i in range(num)])
-    # print(rew)
+    model.learn(total_timesteps=args.PPO_steps)
+    os.makedirs(policy_ckpt_path, exist_ok=True)
+    model.save(policy_ckpt_path)
+    log_folders = glob(predictor_tensorboard_path + '/*')
+    predictor_tensorboard_path = os.path.join(predictor_tensorboard_path, str(int(len(log_folders))))
+    predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(int(len(log_folders))))
+    error2 = env.train(args.predictor_dataset, policy=model, is_fresh=True, save_dir=predictor_ckpt_path, data_path=predictor_data_path)
+    print(env.evaluate(10,model))
