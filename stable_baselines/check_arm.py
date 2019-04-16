@@ -377,7 +377,7 @@ class NetworkVecEnv(SubprocVecEnv):
         # rollout_act = rollout_act.reshape(-1, rollout_act.shape[-1])
         # self.restore_model(os.path.join(self.path, 'checkpoint_predict', str(0), '0.ckpt'))
         error = 0
-        error = self.model.feedable_train(rollout_obs, rollout_act, rollout_mass, 500, self.graph, batch_size=16)
+        error = self.model.feedable_train(rollout_obs, rollout_act, rollout_mass, 500000, self.graph, batch_size=16)
         model_save_num = self.save_model(save_dir)
         return error, model_save_num
 
