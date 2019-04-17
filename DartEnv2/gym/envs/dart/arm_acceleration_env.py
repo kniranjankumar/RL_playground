@@ -22,7 +22,7 @@ class ArmAccEnv(gym.Env):
     """Superclass for all Dart environments.
     """
 
-    def __init__(self):
+    def __init__(self, ball_type=1):
         self.num_bodies = 2
         self.num_actions = 2
         self.variable_size = False
@@ -41,7 +41,7 @@ class ArmAccEnv(gym.Env):
         # pydart.init()
         print('pydart initialization OK')
 
-        self.dart_world = MyWorld(num_bodies=self.num_bodies, action_space=self.num_actions, is_flip=False, ball=1)
+        self.dart_world = MyWorld(num_bodies=self.num_bodies, action_space=self.num_actions, is_flip=False, ball=ball_type)
         self.box_skeleton = self.dart_world.skeletons[1]  # select block skeleton
         self.action_space = spaces.Box(action_bounds[0, :], action_bounds[1, :])
         self.obs_dim = 2 + self.num_bodies * 2

@@ -1,6 +1,7 @@
 from stable_baselines.common.vec_env import SubprocVecEnv, DummyVecEnv
 # from .network_vec_env import NetworkVecEnv
 import gym
+from gym.envs.registration import register
 from stable_baselines.common import set_global_seeds
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
@@ -564,14 +565,25 @@ parser.add_argument("--PPO_learning_rate", help='Learning rate of PPO', default=
 parser.add_argument("--predictor_type", help='FCN or LSTM predictor', default='LSTM', type=str, nargs='?', const='LSTM')
 parser.add_argument("--reward_type", help='sparse or dense', default='dense', type=str, nargs='?', const='dense')
 parser.add_argument("--folder_name", help='name of the log folder', default='2b_2a_16K_oc_0.5_7_0.9_rand_start', type=str, nargs='?', const='2b_2a_16K_oc_0.5_7_0.9_rand_start')
-parser.add_argument("--env_id", help='EnvID', default='ArmAccEnv-v0', type=str, nargs='?', const='ArmAccEnv-v0')
+parser.add_argument("--env_id", help='EnvID', default='ArmAccEnvCustom-v0', type=str, nargs='?', const='ArmAccEnvCustom-v0')
 parser.add_argument("--num_meta_iter", help='Number of meta training iterations', default=1, type=int,nargs='?', const=1)
 parser.add_argument("--only_test", help='Test Env with given predictor and policy', default=False, action='store_true')
+parser.add_argument("--ball_type", help='1->Low curvature 2->High Curvature', default=1, type=int,nargs='?', const=1)
+
 args = parser.parse_args()
 the_path = os.path.join(path, 'experiments', 'KR5_arm', args.folder_name)
 folders = glob(os.path.join(the_path, '*'))
 latest = int(len(folders))
 env_id = args.env_id
+assert args.ball_type == 1 or args.ball_type == 2
+register(
+    id=args.env_id,
+    entry_point='gym.envs.dart:ArmAccEnv',
+    kwargs={'ball_type':args.ball_type},
+    reward_threshold=2,
+    timestep_limit=10,
+    max_episode_steps=20,
+)
 env_list = [make_env(env_id, i) for i in range(num)]
 env = NetworkVecEnv(env_list, args.predictor_type, args.reward_type, the_path)
 env.reset()
