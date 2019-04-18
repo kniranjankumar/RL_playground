@@ -26,6 +26,7 @@ class ArmAccEnv(gym.Env):
         self.num_bodies = 2
         self.num_actions = 2
         self.variable_size = False
+        self.flip_enabled = True
         action_bounds = np.array([[-1 for i in range(self.num_actions)], [1 for i in range(self.num_actions)]])
         # self.mass_range = np.array([0.1, 0.7])
         # self.mass_range = np.array([0.1, 7])
@@ -41,7 +42,7 @@ class ArmAccEnv(gym.Env):
         # pydart.init()
         print('pydart initialization OK')
 
-        self.dart_world = MyWorld(num_bodies=self.num_bodies, action_space=self.num_actions, is_flip=False)
+        self.dart_world = MyWorld(num_bodies=self.num_bodies, action_space=self.num_actions, is_flip=True)
         self.box_skeleton = self.dart_world.skeletons[1]  # select block skeleton
         self.action_space = spaces.Box(action_bounds[0, :], action_bounds[1, :])
         self.obs_dim = 2 + self.num_bodies * 2
@@ -134,7 +135,8 @@ class ArmAccEnv(gym.Env):
         # CTJ[2,3] = -(self.size[0,0]+self.size[1,0]-0.1-0.08)*0.5
         # self.box_skeleton.joints[-1].set_transform_from_child_body_node(CTJ)
         q = self.box_skeleton.positions()
-        q[-1] = self.np_random.uniform(-0.75, 0.75)
+        q[-1] = 0.7
+        # q[-1] = self.np_random.uniform(-0.75, 0.75)
         for jt in range(0, len(self.box_skeleton.joints)):
             if self.box_skeleton.joints[jt].has_position_limit(0):
                 self.box_skeleton.joints[jt].set_position_limit_enforced(True)
@@ -172,9 +174,14 @@ class ArmAccEnv(gym.Env):
 
     def _step(self, action):
         action = np.clip(action, -1, 1)
-        action[0] = action[0] * 10 + 10
+        if self.flip_enabled:
+            action[0] = action[0] * 20
+        else:
+            action[0] = action[0] * 10 + 10
+        # action[0]=-19.248407
         # action[0] = 10
         # action[0] = -300
+        # print(action[0])
         action[1] = action[1] * self.size[0, 0] * 0.5 * self.coverage_factor
         # action[1] = 0
         # action[0] = 600

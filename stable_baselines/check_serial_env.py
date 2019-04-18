@@ -1,6 +1,7 @@
 # from stable_baselines.common.vec_env import SubprocVecEnv
 # from .network_vec_env import NetworkVecEnv
 import gym
+from gym.envs.registration import register
 # from stable_baselines.common import set_global_seeds
 #
 import pydart2
@@ -65,7 +66,7 @@ for i in range(1000):
     while not done:
         count += 1
         obs, rew, done, _ = env1.step(action=env1.action_space.sample())
-        print(obs)
+        # print(obs)
 
         env1.render(mode="human")
     print('done')

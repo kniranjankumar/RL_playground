@@ -520,6 +520,8 @@ class ControllerOCPose:
         self.end_effector = self.skel.bodynodes[-1]
         self.tau[0] = 10
         self.tau[1] = -0.1
+        self.flipped = False
+        self.move_arm_base()
 
     def reset(self, WTR, WTO):
         self.tau = [0 for i in range(self.action_space)]
@@ -558,13 +560,12 @@ class ControllerOCPose:
         positions[0] = 0
         positions[2] = 0
         self.box.set_positions(positions)
-        self.skel.world.complete = True
         WTO_ = self.box.bodynodes[0].T
         WTR_ = WTO_.dot(self.OTR)
         self.skel.joints[0].set_transform_from_parent_body_node(WTR_)
         self.skel.set_positions(self.start)
         self.timestep_count = self.FTIME
-        self.skel.world.complete = True
+
 
     def get_contact_forces(self):
         f_contact = np.zeros([3, ])
@@ -574,27 +575,51 @@ class ControllerOCPose:
             if c.bodynode1.name == "palm" or c.bodynode2.name == "palm":
                 f_contact += np.abs(c.force)
         # print('hit', f_contact)
+    def flip_arm(self):
+        WTO_ = self.box.bodynodes[0].T
+        flip = np.eye(4)
+        flip[0, 0] = -1
+        flip[2, 2] = -1
+        WTR_ = WTO_.dot(flip.dot(self.OTR))
+        self.skel.joints[0].set_transform_from_parent_body_node(WTR_)
 
     def compute(self):
         names = [i.name for i in self.skel.world.collision_result.contacted_bodies]
+        if self.tau[0] < 0:
+            if not self.flipped:
+                self.flip_arm()
+            self.flipped = True
+        else:
+            self.flipped = False
         if self.timestep_count > 0:
-            self.target_x = self.box.bodynodes[0].to_world([-self.skel.world.box_shape[0][0] * 0.5, 0, self.tau[1]])
-            self.target_quat = Quaternion(matrix=self.box.bodynodes[0].T[:3, :3]).normalised
+            if self.flipped:
+                self.target_x = self.box.bodynodes[0].to_world([self.skel.world.box_shape[0][0] * 0.5, 0, self.tau[1]])
+                box_quat= Quaternion(matrix=self.box.bodynodes[0].T[:3, :3]).normalised
+                self.target_quat = Quaternion(axis=[0, 1, 0], degrees=180+box_quat.degrees*box_quat.axis[1] % 360)
+                # print(box_quat.axis)
+            else:
+                self.target_x = self.box.bodynodes[0].to_world([-self.skel.world.box_shape[0][0] * 0.5, 0, self.tau[1]])
+                self.target_quat = Quaternion(matrix=self.box.bodynodes[0].T[:3, :3]).normalised
             if "palm" in names:
                 angle = -np.sign(self.target_quat.axis[1]) * self.target_quat.angle
-                self.target_dx = np.array([0, 0, 0, np.cos(angle), 0, np.sin(angle)])*self.tau[0]
+                self.target_dx = np.array([0, 0, 0, np.cos(angle), 0, np.sin(angle)])*abs(self.tau[0])
                 self.timestep_count -= 1
             else:
                 self.target_dx = np.array([0, 0, 0, 0, 0, 0])
+            if "wrist" in names or "elbow" in names:
+                self.timestep_count = 0
+                print("hit robot body")
             force = self.get_force(self.target_x, self.target_quat, self.target_dx)
         else:
             # self.target_dx = np.array([0, 0, 0, 0, 0, 0])
             # self.target_quat = Quaternion(matrix=self.end_effector.T[:3, :3]).normalised
             # self.target_x = self.end_effector.to_world(self.end_effector_offset)
             self.skel.set_velocities(0*self.skel.dq)
-            self.skel.set_positions(self.start)
             if np.all(self.box.dq < 0.0005):
+                self.skel.set_positions(self.start)
+                self.skel.world.complete = True
                 self.move_arm_base()
+                self.flipped = False
             force = self.skel.coriolis_and_gravity_forces()
         return force
 
@@ -725,8 +750,8 @@ class MyWorld(pydart.World):
         self.complete = False
         self.is_ball = True
         path, folder = os.path.split(os.getcwd())
-        self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets','KR5')
-        # self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
+        # self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets','KR5')
+        self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
         self.world = pydart.World.__init__(self, 0.001,
                                            self.asset_path+"/arena2big.skel")
 
@@ -754,7 +779,7 @@ class MyWorld(pydart.World):
             self.WTR = WTR
             self.set_gravity([0.0, -9.81, 0])
         self.robot.joints[0].set_transform_from_parent_body_node(self.WTR)
-        self.robot.set_positions([0.0, 1.40, 0.4063229, -0.0, -1.50, -0.0])
+        self.robot.set_positions([0.0, 1.40, 0.4363229, -0.0, -1.50, -0.0])
         # self.robot.joints[1].set_actuator_type(pydart.joint.Joint.LOCKED)
         # self.robot.joints[4].set_actuator_type(pydart.joint.Joint.LOCKED)
         # self.robot.joints[6].set_actuator_type(pydart.joint.Joint.LOCKED)

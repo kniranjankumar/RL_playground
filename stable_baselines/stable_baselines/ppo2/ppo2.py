@@ -430,12 +430,8 @@ class Runner(AbstractEnvRunner):
         mb_states = self.states
         ep_infos = []
         for _ in range(self.n_steps):
-            while True:
-                try:
-                    actions, values, self.states, neglogpacs = self.model.step(self.obs, self.states, self.dones, True)
-                    break
-                except:
-                    pass
+            actions, values, self.states, neglogpacs = self.model.step(self.obs, self.states, self.dones, True)
+
                     # print('failed')
             mb_obs.append(self.obs.copy())
             mb_actions.append(actions)
