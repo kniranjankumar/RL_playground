@@ -520,6 +520,8 @@ class ControllerOCPose:
         self.end_effector = self.skel.bodynodes[-1]
         self.tau[0] = 10
         self.tau[1] = -0.1
+        self.flipped = False
+        self.move_arm_base()
 
     def reset(self, WTR, WTO):
         self.tau = [0 for i in range(self.action_space)]
@@ -558,13 +560,12 @@ class ControllerOCPose:
         positions[0] = 0
         positions[2] = 0
         self.box.set_positions(positions)
-        self.skel.world.complete = True
         WTO_ = self.box.bodynodes[0].T
         WTR_ = WTO_.dot(self.OTR)
         self.skel.joints[0].set_transform_from_parent_body_node(WTR_)
         self.skel.set_positions(self.start)
         self.timestep_count = self.FTIME
-        self.skel.world.complete = True
+
 
     def get_contact_forces(self):
         f_contact = np.zeros([3, ])
@@ -574,33 +575,55 @@ class ControllerOCPose:
             if c.bodynode1.name == "palm" or c.bodynode2.name == "palm":
                 f_contact += np.abs(c.force)
         # print('hit', f_contact)
+    def flip_arm(self):
+        WTO_ = self.box.bodynodes[0].T
+        flip = np.eye(4)
+        flip[0, 0] = -1
+        flip[2, 2] = -1
+        WTR_ = WTO_.dot(flip.dot(self.OTR))
+        self.skel.joints[0].set_transform_from_parent_body_node(WTR_)
 
     def compute(self):
         names = [i.name for i in self.skel.world.collision_result.contacted_bodies]
+        if self.tau[0] < 0:
+            if not self.flipped:
+                self.flip_arm()
+            self.flipped = True
+        else:
+            self.flipped = False
         if self.timestep_count > 0:
-            self.target_x = self.box.bodynodes[0].to_world([-self.skel.world.box_shape[0][0] * 0.5, 0, self.tau[1]])
-            self.target_quat = Quaternion(matrix=self.box.bodynodes[0].T[:3, :3]).normalised
+            if self.flipped:
+                self.target_x = self.box.bodynodes[0].to_world([self.skel.world.box_shape[0][0] * 0.5, 0, self.tau[1]])
+                box_quat= Quaternion(matrix=self.box.bodynodes[0].T[:3, :3]).normalised
+                self.target_quat = Quaternion(axis=[0, 1, 0], degrees=180+box_quat.degrees*box_quat.axis[1] % 360)
+                # print(box_quat.axis)
+            else:
+                self.target_x = self.box.bodynodes[0].to_world([-self.skel.world.box_shape[0][0] * 0.5, 0, self.tau[1]])
+                self.target_quat = Quaternion(matrix=self.box.bodynodes[0].T[:3, :3]).normalised
             if "palm" in names:
                 angle = -np.sign(self.target_quat.axis[1]) * self.target_quat.angle
-                self.target_dx = np.array([0, 0, 0, np.cos(angle), 0, np.sin(angle)])*self.tau[0]
+                self.target_dx = np.array([0, 0, 0, np.cos(angle), 0, np.sin(angle)])*abs(self.tau[0])
                 self.timestep_count -= 1
             else:
                 self.target_dx = np.array([0, 0, 0, 0, 0, 0])
+            if "wrist" in names or "elbow" in names:
+                self.timestep_count = 0
+                print("hit robot body")
             force = self.get_force(self.target_x, self.target_quat, self.target_dx)
         else:
             # self.target_dx = np.array([0, 0, 0, 0, 0, 0])
             # self.target_quat = Quaternion(matrix=self.end_effector.T[:3, :3]).normalised
             # self.target_x = self.end_effector.to_world(self.end_effector_offset)
             self.skel.set_velocities(0*self.skel.dq)
-            self.skel.set_positions(self.start)
             if np.all(self.box.dq < 0.0005):
+                self.skel.set_positions(self.start)
+                self.skel.world.complete = True
                 self.move_arm_base()
+                self.flipped = False
             force = self.skel.coriolis_and_gravity_forces()
         return force
 
 class ControllerPD:
-
-
     def __init__(self, skel):
         self.skel =skel
         # self.target_q = self.skel.positions()
@@ -610,6 +633,7 @@ class ControllerPD:
         self.Kd = 25
 
     def compute(self):
+
         end_effector = self.skel.bodynodes[-1]
         self.target = [-20, 0, 0, 0, 0, 0]
         self.J = end_effector.jacobian(offset=np.array([-0.04849, 0.0087, -0.004])*0)
@@ -623,6 +647,8 @@ class ControllerPD:
         if "palm" in names:
             forces = np.array([i.force for i in self.skel.world.collision_result.contacts])
             forces = np.sum(forces, axis=0)
+
+
         return self.skel.coriolis_and_gravity_forces()+forcePD#+ self.J.T.dot(self.target)
 
 class ControllerF:
@@ -717,15 +743,15 @@ class ControllerF:
 
 class MyWorld(pydart.World):
 
-    def __init__(self,action_space=2,is_flip=False,num_bodies=2, ball=1):
+    def __init__(self,action_space=2,is_flip=False,num_bodies=2):
         self.action_space = action_space
         self.is_flip = is_flip
         self.num_bodies = num_bodies
         self.complete = False
-        self.ball = ball
+        self.is_ball = True
         path, folder = os.path.split(os.getcwd())
-        self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets','KR5')
-        # self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
+        # self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets','KR5')
+        self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
         self.world = pydart.World.__init__(self, 0.001,
                                            self.asset_path+"/arena2big.skel")
 
@@ -735,31 +761,25 @@ class MyWorld(pydart.World):
     def reset(self):
         super(MyWorld, self).reset()
         if len(self.skeletons) == 2:
-            if self.ball == 0:
-                self.robot = self.add_skeleton(
-                    self.asset_path+"/KR5 sixx R650.urdf")
-            elif self.ball == 1:
+            if self.is_ball:
                 self.robot = self.add_skeleton(
                     self.asset_path+"/KR5 sixx R650 ball.urdf")
-            elif self.ball == 2:
+            else:
                 self.robot = self.add_skeleton(
-                    self.asset_path + "/KR5 sixx R650 ellipsoid.urdf")
-
+                    self.asset_path+"/KR5 sixx R650 ball.urdf")
             self.box_shape = [self.skeletons[1].bodynodes[i].shapenodes[0].shape.size() for i in
                               range(0, 2, len(self.skeletons[1].bodynodes))]
             WTR = self.robot.joints[0].transform_from_parent_body_node()
             WTR[:3, 3] = 0  # move robot to world origin
-            if self.ball == 0:
-                WTR[0, 3] -= 0.52  # move robot base from the articulated body
-            elif self.ball == 1:
-                WTR[0, 3] -= 0.55
-            elif self.ball == 2:
-                WTR[0, 3] -= 0.55
+            if self.is_ball:
+                WTR[0, 3] -= 0.55  # move robot base from the articulated body
+            else:
+                WTR[0, 3] -= 0.52
             WTR[2, 3] -= (self.box_shape[0][0] * 0.5 + self.box_shape[0][2] * 0.5)
             self.WTR = WTR
             self.set_gravity([0.0, -9.81, 0])
         self.robot.joints[0].set_transform_from_parent_body_node(self.WTR)
-        self.robot.set_positions([0.0, 1.40, 0.4063229, -0.0, -1.50, -0.0])
+        self.robot.set_positions([0.0, 1.40, 0.4363229, -0.0, -1.50, -0.0])
         # self.robot.joints[1].set_actuator_type(pydart.joint.Joint.LOCKED)
         # self.robot.joints[4].set_actuator_type(pydart.joint.Joint.LOCKED)
         # self.robot.joints[6].set_actuator_type(pydart.joint.Joint.LOCKED)
