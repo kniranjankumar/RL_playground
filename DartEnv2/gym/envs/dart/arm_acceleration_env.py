@@ -22,7 +22,7 @@ class ArmAccEnv(gym.Env):
     """Superclass for all Dart environments.
     """
 
-    def __init__(self, ball_type=1, flip_enabled=True, start_state=None):
+    def __init__(self, ball_type=1, flip_enabled=True, start_state=None, coverage_factor=0.9):
         self.num_bodies = 2
         self.num_actions = 2
         self.variable_size = False
@@ -37,7 +37,7 @@ class ArmAccEnv(gym.Env):
         self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1], self.num_bodies)
         self.size = np.random.uniform(self.size_range[0], self.size_range[1], [self.num_bodies, 2])
         self.mu = np.random.uniform(0.9, 0.9)
-        self.coverage_factor = 0.9
+        self.coverage_factor = coverage_factor
         # self.size = np.sort(self.size)
         # pydart.init()
         print('pydart initialization OK')
