@@ -774,10 +774,10 @@ class MyWorld(pydart.World):
                               range(0, 2, len(self.skeletons[1].bodynodes))]
             WTR = self.robot.joints[0].transform_from_parent_body_node()
             WTR[:3, 3] = 0  # move robot to world origin
-            if self.is_ball:
-                WTR[0, 3] -= 0.55  # move robot base from the articulated body
+            if self.ball==0:
+                WTR[0, 3] -= 0.52  # move robot base from the articulated body
             else:
-                WTR[0, 3] -= 0.52
+                WTR[0, 3] -= 0.55
             WTR[2, 3] -= (self.box_shape[0][0] * 0.5 + self.box_shape[0][2] * 0.5)
             self.WTR = WTR
             self.set_gravity([0.0, -9.81, 0])
