@@ -569,6 +569,8 @@ parser.add_argument("--env_id", help='EnvID', default='ArmAccEnvCustom-v0', type
 parser.add_argument("--num_meta_iter", help='Number of meta training iterations', default=1, type=int,nargs='?', const=1)
 parser.add_argument("--only_test", help='Test Env with given predictor and policy', default=False, action='store_true')
 parser.add_argument("--ball_type", help='1->Low curvature 2->High Curvature', default=1, type=int,nargs='?', const=1)
+parser.add_argument("--start_state", help='Starting configuration angle for articulated object', default=None, type=float, nargs='?', const=None)
+parser.add_argument("--flip_enabled", help='Allow negative forces', default=False, action='store_true')
 
 args = parser.parse_args()
 the_path = os.path.join(path, 'experiments', 'KR5_arm', args.folder_name)
@@ -579,7 +581,7 @@ assert args.ball_type == 1 or args.ball_type == 2
 register(
     id=args.env_id,
     entry_point='gym.envs.dart:ArmAccEnv',
-    kwargs={'ball_type':args.ball_type},
+    kwargs={'ball_type':args.ball_type, 'start_state':args.start_state, 'flip_enabled':args.flip_enabled},
     reward_threshold=2,
     timestep_limit=10,
     max_episode_steps=20,

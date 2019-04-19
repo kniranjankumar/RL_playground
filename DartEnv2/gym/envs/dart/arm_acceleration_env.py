@@ -22,15 +22,16 @@ class ArmAccEnv(gym.Env):
     """Superclass for all Dart environments.
     """
 
-    def __init__(self, ball_type=1):
+    def __init__(self, ball_type=1, flip_enabled=True, start_state=None):
         self.num_bodies = 2
         self.num_actions = 2
         self.variable_size = False
+        self.flip_enabled = flip_enabled
         action_bounds = np.array([[-1 for i in range(self.num_actions)], [1 for i in range(self.num_actions)]])
         # self.mass_range = np.array([0.1, 0.7])
         # self.mass_range = np.array([0.1, 7])
         self.mass_range = np.array([0.5, 7])
-
+        self.start_state = start_state
         self.size_range = np.array([0.1,0.15])
         # self.size_range = np.array([0.1, 0.1])
         self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1], self.num_bodies)
@@ -135,7 +136,10 @@ class ArmAccEnv(gym.Env):
         # self.box_skeleton.joints[-1].set_transform_from_child_body_node(CTJ)
         q = self.box_skeleton.positions()
         # q[-1] = -0.7
-        q[-1] = self.np_random.uniform(-0.75, 0.75)
+        if self.start_state is None:
+            q[-1] = self.np_random.uniform(-0.75, 0.75)
+        else:
+            q[-1] = self.start_state
         for jt in range(0, len(self.box_skeleton.joints)):
             if self.box_skeleton.joints[jt].has_position_limit(0):
                 self.box_skeleton.joints[jt].set_position_limit_enforced(True)
@@ -173,7 +177,10 @@ class ArmAccEnv(gym.Env):
 
     def _step(self, action):
         action = np.clip(action, -1, 1)
-        action[0] = action[0] * 10 + 10
+        if self.flip_enabled:
+            action[0] = action[0] * 20
+        else:
+            action[0] = action[0] * 10 + 10
         # action[0] = 10
         # action[0] = -300
         action[1] = action[1] * self.size[0, 0] * 0.5 * self.coverage_factor
