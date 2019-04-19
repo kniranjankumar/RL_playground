@@ -606,7 +606,7 @@ class ControllerOCPose:
                 self.timestep_count -= 1
             else:
                 self.target_dx = np.array([0, 0, 0, 0, 0, 0])
-            if "wrist" in names or "elbow" in names:
+            if "wrist" in names or "forearm" in names:
                 self.timestep_count = 0
                 print("hit robot body")
             force = self.get_force(self.target_x, self.target_quat, self.target_dx)
