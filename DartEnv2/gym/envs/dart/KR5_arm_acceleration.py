@@ -743,12 +743,12 @@ class ControllerF:
 
 class MyWorld(pydart.World):
 
-    def __init__(self,action_space=2,is_flip=False,num_bodies=2):
+    def __init__(self,action_space=2,is_flip=False,num_bodies=2, ball=1):
         self.action_space = action_space
         self.is_flip = is_flip
         self.num_bodies = num_bodies
         self.complete = False
-        self.is_ball = True
+        self.ball = ball
         path, folder = os.path.split(os.getcwd())
         # self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets','KR5')
         self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
@@ -761,12 +761,15 @@ class MyWorld(pydart.World):
     def reset(self):
         super(MyWorld, self).reset()
         if len(self.skeletons) == 2:
-            if self.is_ball:
+            if self.ball == 0:
+                self.robot = self.add_skeleton(
+                    self.asset_path+"/KR5 sixx R650.urdf")
+            elif self.ball == 1:
                 self.robot = self.add_skeleton(
                     self.asset_path+"/KR5 sixx R650 ball.urdf")
-            else:
+            elif self.ball == 2:
                 self.robot = self.add_skeleton(
-                    self.asset_path+"/KR5 sixx R650 ball.urdf")
+                    self.asset_path + "/KR5 sixx R650 ellipsoid.urdf")
             self.box_shape = [self.skeletons[1].bodynodes[i].shapenodes[0].shape.size() for i in
                               range(0, 2, len(self.skeletons[1].bodynodes))]
             WTR = self.robot.joints[0].transform_from_parent_body_node()
