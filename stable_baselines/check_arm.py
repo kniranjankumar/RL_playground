@@ -628,11 +628,12 @@ else:
         env.restore_model(predictor_ckpt_path)
         policy_save_number = args.checkpoint_num
 
-    model.learn(total_timesteps=args.PPO_steps)
-    os.makedirs(policy_ckpt_path, exist_ok=True)
-    model.save(policy_ckpt_path)
-    log_folders = glob(predictor_tensorboard_path + '/*')
-    predictor_tensorboard_path = os.path.join(predictor_tensorboard_path, str(int(len(log_folders))))
-    predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(int(len(log_folders))))
-    error2 = env.train(args.predictor_dataset, policy=model, is_fresh=True, save_dir=predictor_ckpt_path, data_path=predictor_data_path)
+    for i in range(args.num_meta_iter):
+        model.learn(total_timesteps=args.PPO_steps)
+        os.makedirs(policy_ckpt_path, exist_ok=True)
+        model.save(policy_ckpt_path)
+        log_folders = glob(predictor_tensorboard_path + '/*')
+        predictor_tensorboard_path = os.path.join(predictor_tensorboard_path, str(int(len(log_folders))))
+        predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(int(len(log_folders))))
+        error2 = env.train(args.predictor_dataset, policy=model, is_fresh=True, save_dir=predictor_ckpt_path, data_path=predictor_data_path)
     print(env.evaluate(10,model))
