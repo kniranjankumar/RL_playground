@@ -395,9 +395,11 @@ class NetworkVecEnv(SubprocVecEnv):
             true_mass = obs['mass']
             error = np.mean(np.abs(true_mass - predict_mass), axis=1)
             if self.reward_type == 'dense' or np.all(done == True):
-                if rew > -1:
-                    rew = 1 - 2 * error / (self.observation_space_dict.spaces['mass'].high[0] -
+                rew1 = 1 - 2 * error / (self.observation_space_dict.spaces['mass'].high[0] -
                                         self.observation_space_dict.spaces['mass'].low[0])
+                idx = rew == -1
+                rew = rew1
+                rew[idx] = -1
                 rew *= self.reward_scale
             if np.all(done == True):
                 self.obs_buffer = np.array([])
