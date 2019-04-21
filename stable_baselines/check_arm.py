@@ -23,7 +23,7 @@ the_path = os.path.join(path, 'experiments', 'KR5_arm', 'envs', '2b_2a_16K_oc_0.
 
 
 class NetworkVecEnv(SubprocVecEnv):
-    def __init__(self, env_fns1,predictor_type, reward_type, path):
+    def __init__(self, env_fns1,predictor_type, reward_type, path, reward_scale=1):
         pydart2.init()
         SubprocVecEnv.__init__(self, env_fns1)
         self.num_envs = num
@@ -35,6 +35,7 @@ class NetworkVecEnv(SubprocVecEnv):
         self.obs_buffer = np.array([])
         self.act_buffer = np.array([])
         self.reward_type = reward_type
+        self.reward_scale = reward_scale
         self.model = self.FCModel(self.path, self.sess, num_steps=2, act_dim=self.action_space.shape[0],
                                   mass_dim=self.observation_space.spaces['mass'].shape[0],
                                   obs_dim=self.observation_space.spaces['observation'].shape[0], mass_range = [self.observation_space.spaces['mass'].low, self.observation_space.spaces['mass'].high],
@@ -397,6 +398,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 if rew > -1:
                     rew = 1 - 2 * error / (self.observation_space_dict.spaces['mass'].high[0] -
                                         self.observation_space_dict.spaces['mass'].low[0])
+                rew *= self.reward_scale
             if np.all(done == True):
                 self.obs_buffer = np.array([])
                 self.act_buffer = np.array([])
@@ -573,6 +575,8 @@ parser.add_argument("--ball_type", help='1->Low curvature 2->High Curvature', de
 parser.add_argument("--start_state", help='Starting configuration angle for articulated object', default=None, type=float, nargs='?', const=None)
 parser.add_argument("--flip_enabled", help='Allow negative forces', default=False, action='store_true')
 parser.add_argument("--coverage_factor", help='fraction of the block covered by the controller',  default=0.9, type=float,nargs='?', const=0.9)
+parser.add_argument("--reward_scale", help='Factor by which the reward will be scaled from [-1,1]', default=1.0, type=float, nargs='?', const=1.0)
+
 
 args = parser.parse_args()
 the_path = os.path.join(path, 'experiments', 'KR5_arm', args.folder_name)
@@ -589,7 +593,7 @@ register(
     max_episode_steps=20,
 )
 env_list = [make_env(env_id, i) for i in range(num)]
-env = NetworkVecEnv(env_list, args.predictor_type, args.reward_type, the_path)
+env = NetworkVecEnv(env_list, args.predictor_type, args.reward_type, the_path, reward_scale=args.reward_scale)
 env.reset()
 if args.only_test:
     policy_ckpt_path = os.path.join(the_path, 'policy_ckpt', args.policy_checkpoint_num)
