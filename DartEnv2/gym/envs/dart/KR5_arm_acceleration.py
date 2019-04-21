@@ -607,6 +607,7 @@ class ControllerOCPose:
             else:
                 self.target_dx = np.array([0, 0, 0, 0, 0, 0])
             if "wrist" in names or "forearm" in names:
+                self.skel.is_failure = True
                 self.timestep_count = 0
                 print("hit robot body")
             force = self.get_force(self.target_x, self.target_quat, self.target_dx)
@@ -748,6 +749,7 @@ class MyWorld(pydart.World):
         self.is_flip = is_flip
         self.num_bodies = num_bodies
         self.complete = False
+        self.is_failure = False
         self.ball = ball
         path, folder = os.path.split(os.getcwd())
         self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets','KR5')

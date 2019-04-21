@@ -209,9 +209,13 @@ class ArmAccEnv(gym.Env):
             self.count_act = 0
         else:
             done = False
-        reward = 0
+        if self.dart_world.is_failure:
+            reward = -1
+            self.dart_world.is_failure = False
+        else:
+            reward = 0
 
-        return obs, 0, done, {}
+        return obs, reward, done, {}
 
     def get_obs(self):
         joints = [6 + i for i in range(self.num_bodies - 1)]
