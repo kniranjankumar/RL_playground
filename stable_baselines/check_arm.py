@@ -604,7 +604,7 @@ if args.only_test:
     env.graph = model.graph
     env.model.setup_feedable_training(model.sess,is_init_all=False)
     predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(args.checkpoint_num),
-                                       str(args.checkpoint_num) + '.ckpt')
+                                      'model.ckpt')
     env.restore_model(predictor_ckpt_path)
     error = env.evaluate(30,model)
     print(np.mean(np.array(error)))
