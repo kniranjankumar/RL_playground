@@ -599,13 +599,22 @@ env = NetworkVecEnv(env_list, args.predictor_type, args.reward_type, the_path, r
 env.reset()
 if args.only_test:
     policy_ckpt_path = os.path.join(the_path, 'policy_ckpt', str(args.policy_checkpoint_num))
-    model = PPO2.load(policy_ckpt_path+'.pkl' , env, verbose=1, learning_rate=constfn(1e-5))
-    env.sess = model.sess
-    env.graph = model.graph
-    env.model.setup_feedable_training(model.sess,is_init_all=False)
+    try:
+        model = PPO2.load(policy_ckpt_path+'.pkl' , env, verbose=1, learning_rate=constfn(1e-5))
+        env.sess = model.sess
+        env.graph = model.graph
+        env.model.setup_feedable_training(model.sess,is_init_all=False)
+        policy = model
+    except:
+        print("error loading model. Using uniform policy")
+        model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=args.PPO_learning_rate)
+        env.sess = model.sess
+        env.graph = model.graph
+        env.model.setup_feedable_training(model.sess,is_init_all=True)
+        policy = None
     predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(args.checkpoint_num))
     env.restore_model(predictor_ckpt_path)
-    error = env.evaluate(30,model)
+    error = env.evaluate(30,policy)
     print(np.mean(np.array(error)))
 else:
     predictor_tensorboard_path = os.path.join(path, 'experiments', 'KR5_arm', 'predictor_tensorboard', args.folder_name)
