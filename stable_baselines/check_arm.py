@@ -598,7 +598,7 @@ env_list = [make_env(env_id, i) for i in range(num)]
 env = NetworkVecEnv(env_list, args.predictor_type, args.reward_type, the_path, reward_scale=args.reward_scale)
 env.reset()
 if args.only_test:
-    policy_ckpt_path = os.path.join(the_path, 'policy_ckpt', args.policy_checkpoint_num)
+    policy_ckpt_path = os.path.join(the_path, 'policy_ckpt', str(args.policy_checkpoint_num))
     model = PPO2.load(policy_ckpt_path , env, verbose=1, learning_rate=constfn(1e-5))
     env.sess = model.sess
     env.graph = model.graph
