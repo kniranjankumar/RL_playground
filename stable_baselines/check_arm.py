@@ -8,6 +8,7 @@ import tensorflow.contrib.slim as slim
 import pydart2
 import numpy as np
 from stable_baselines.bench import Monitor
+from stable_baselines.a2c.utils import batch_to_seq, seq_to_batch
 import os
 from stable_baselines import PPO2, Runner
 from stable_baselines.common.policies import MlpPolicy, MlpLstmPolicy
@@ -81,7 +82,9 @@ class NetworkVecEnv(SubprocVecEnv):
                         act = tf.split(net_act,num_or_size_splits=self.num_steps, axis=1)
                         # mass_init = tf.fill()
                         rnn_input1 = [tf.concat([obs[i+1], act[i]],axis=1) for i in range(len(act))]
-                        rnn_input = slim.fully_connected(rnn_input1, self.mass_dim, activation_fn=None, scope='in1')
+                        rnn_input1 = seq_to_batch(rnn_input1)
+                        rnn_input = slim.fully_connected(rnn_input1, 128, activation_fn=None, scope='in1')
+                        rnn_input = batch_to_seq(rnn_input)
                         c0 = slim.fully_connected(obs[0], 64, scope='c0')
                         m0 = slim.fully_connected(obs[0], 64, scope='m0')
                         lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=128, state_is_tuple=True)
