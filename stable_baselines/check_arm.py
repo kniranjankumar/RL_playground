@@ -115,7 +115,7 @@ class NetworkVecEnv(SubprocVecEnv):
                                         weights_initializer=tf.truncated_normal_initializer(0.0, 0.01),
                                         weights_regularizer=slim.l2_regularizer(0.0005)):
                         obs = tf.split(net_obs,num_or_size_splits=self.num_steps+1, axis=1)
-                        net_obs = tf.stack(obs[1:], axis=0)
+                        net_obs = tf.stack(obs[1:], axis=1)
                         net_obs = tf.reshape(net_obs, shape=[-1,self.num_steps*self.obs_dim])
                         input = tf.concat([net_obs,net_act], axis=1)
                         rnn_input = tf.split(input,num_or_size_splits=self.num_steps, axis=1)
@@ -260,7 +260,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 # if self.subset_save == None:
                 #     self.subset_save = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="model")[:6])
                 #     self.subset_save.restore(sess, path)
-                for i in range(num_iter):
+                for i in tqdm(range(num_iter)):
                     idx = np.random.choice(range(mass.shape[0]), batch_size)
                     obs_batch = obs[idx, :]
                     act_batch = act[idx, :]
