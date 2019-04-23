@@ -118,6 +118,7 @@ class NetworkVecEnv(SubprocVecEnv):
                         net_obs = tf.stack(obs[1:], axis=1)
                         net_obs = tf.reshape(net_obs, shape=[-1,self.num_steps*self.obs_dim])
                         input = tf.concat([net_obs,net_act], axis=1)
+                        input = slim.fully_connected(input, 128,scope='fc1')
                         rnn_input = tf.split(input,num_or_size_splits=self.num_steps, axis=1)
                         c0 = slim.fully_connected(obs[0], 64, scope='c0')
                         m0 = slim.fully_connected(obs[0], 64, scope='m0')
