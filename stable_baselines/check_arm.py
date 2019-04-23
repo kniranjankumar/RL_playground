@@ -85,13 +85,13 @@ class NetworkVecEnv(SubprocVecEnv):
 
                         rnn_input = slim.fully_connected(rnn_input1, 128, activation_fn=None, scope='in1')
                         rnn_input = tf.reshape(rnn_input,shape=[self.num_steps,-1 ,128])
-                        rnn_input = tf.unstack(rnn_input, axis=0)
+                        rnn_input_ = tf.unstack(rnn_input, axis=0)
                         c0 = slim.fully_connected(obs[0], 64, scope='c0')
                         m0 = slim.fully_connected(obs[0], 64, scope='m0')
                         lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=128, state_is_tuple=True)
                         # lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=64, state_is_tuple=True)
                         # lstm_residual_cell = tf.nn.rnn_cell.ResidualWrapper(lstm_cell)
-                        lstm_output, state = tf.nn.static_rnn(lstm_cell, initial_state=(c0, m0), inputs=rnn_input)
+                        lstm_output, state = tf.nn.static_rnn(lstm_cell, initial_state=(c0, m0), inputs=rnn_input_)
                         output = slim.fully_connected(lstm_output, self.mass_dim, activation_fn=None, scope='out')
                         ##CUDNN RNN
                         # rnn_input = tf.stack([tf.concat([obs[i+1], act[i]],axis=1) for i in range(len(act))], axis=0)
