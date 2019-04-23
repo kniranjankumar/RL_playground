@@ -115,7 +115,7 @@ class NetworkVecEnv(SubprocVecEnv):
                                         weights_initializer=tf.truncated_normal_initializer(0.0, 0.01),
                                         weights_regularizer=slim.l2_regularizer(0.0005)):
                         obs = tf.split(net_obs,num_or_size_splits=self.num_steps+1, axis=1)
-                        net_obs = tf.unstack(obs[1:], axis=1)
+                        net_obs = tf.unstack(obs[1:], axis=0)
                         input = tf.concat([net_obs,net_act], axis=1)
                         rnn_input = tf.split(input,num_or_size_splits=self.num_steps, axis=1)
                         c0 = slim.fully_connected(obs[0], 64, scope='c0')
