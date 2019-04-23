@@ -81,18 +81,18 @@ class NetworkVecEnv(SubprocVecEnv):
                         act = tf.split(net_act,num_or_size_splits=self.num_steps, axis=1)
                         # mass_init = tf.fill()
                         rnn_input1 = [tf.concat([obs[i+1], act[i]],axis=1) for i in range(len(act))]
-                        rnn_input1 = tf.concat(rnn_input1, axis=0)
-                        rnn_input1 = tf.reshape(rnn_input1,shape=[-1,self.act_dim+self.obs_dim])
+                        # rnn_input1 = tf.concat(rnn_input1, axis=0)
+                        rnn_input1 = tf.reshape(rnn_input1,shape=[-1, self.act_dim+self.obs_dim])
                         # rnn_input = slim.fully_connected(rnn_input1, 128, scope='in1')
-                        rnn_input = tf.reshape(rnn_input1,shape=[-1, self.num_steps ,rnn_input1.get_shape().as_list()[-1]])
-                        rnn_input_ = tf.unstack(rnn_input, axis=1)
-                        print(len(rnn_input_))
+                        # rnn_input = tf.reshape(rnn_input1,shape=[-1, self.num_steps ,rnn_input1.get_shape().as_list()[-1]])
+                        # rnn_input_ = tf.unstack(rnn_input, axis=1)
+                        # print(len(rnn_input_))
                         c0 = slim.fully_connected(obs[0], 64, scope='c0')
                         m0 = slim.fully_connected(obs[0], 64, scope='m0')
                         lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=128, state_is_tuple=True)
                         # lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=64, state_is_tuple=True)
                         # lstm_residual_cell = tf.nn.rnn_cell.ResidualWrapper(lstm_cell)
-                        lstm_output, state = tf.nn.static_rnn(lstm_cell, initial_state=(c0, m0), inputs=rnn_input_)
+                        lstm_output, state = tf.nn.static_rnn(lstm_cell, initial_state=(c0, m0), inputs=rnn_input1)
                         output = slim.fully_connected(lstm_output, self.mass_dim, activation_fn=None, scope='out')
                         ##CUDNN RNN
                         # rnn_input = tf.stack([tf.concat([obs[i+1], act[i]],axis=1) for i in range(len(act))], axis=0)
@@ -106,6 +106,35 @@ class NetworkVecEnv(SubprocVecEnv):
                         return output
                         # output_mean = tf.add_n(output)/len(output)
                         # return tf.cast(output, tf.float64)
+
+        def LSTM_model2(self, net_obs, net_act, mass_range):
+            with self.graph.as_default():
+                with tf.variable_scope('LSTM_model', reuse=tf.AUTO_REUSE):
+                    with slim.arg_scope([slim.fully_connected],
+                                        activation_fn=tf.nn.relu,
+                                        weights_initializer=tf.truncated_normal_initializer(0.0, 0.01),
+                                        weights_regularizer=slim.l2_regularizer(0.0005)):
+                        obs = tf.split(net_obs,num_or_size_splits=self.num_steps+1, axis=1)
+                        net_obs = tf.unstack(obs[1:], axis=1)
+                        input = tf.concat([net_obs,net_act], axis=1)
+                        rnn_input = tf.split(input,num_or_size_splits=self.num_steps, axis=1)
+                        c0 = slim.fully_connected(obs[0], 64, scope='c0')
+                        m0 = slim.fully_connected(obs[0], 64, scope='m0')
+                        lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=128, state_is_tuple=True)
+                        # lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=64, state_is_tuple=True)
+                        # lstm_residual_cell = tf.nn.rnn_cell.ResidualWrapper(lstm_cell)
+                        lstm_output, state = tf.nn.static_rnn(lstm_cell, initial_state=(c0, m0), inputs=rnn_input)
+                        output = slim.fully_connected(lstm_output, self.mass_dim, activation_fn=None, scope='out')
+                        ##CUDNN RNN
+                        # rnn_input = tf.stack([tf.concat([obs[i+1], act[i]],axis=1) for i in range(len(act))], axis=0)
+                        # c0 = tf.expand_dims(slim.fully_connected(obs[0], 64, scope='c0'),axis=0)
+                        # m0 = tf.expand_dims(slim.fully_connected(obs[0], 64, scope='m0'), axis=0)
+                        # lstm_cell = tf.contrib.cudnn_rnn.CudnnLSTM(num_layers=1,num_units=64, dtype=tf.float64)
+                        # lstm_output, state = lstm_cell(initial_state=(c0, m0), inputs=rnn_input)
+                        # output = slim.fully_connected(lstm_output, self.mass_dim, activation_fn=None, scope='out')
+                        # var_error = slim.fully_connected(output, self.mass_dim, scope='out')
+                        # output = tf.distributions.Normal(loc=(mean_error+ 0.5*(mass_range[0]+mass_range[1])),scale=var_error)
+                        return output
 
         def fc_model(self, net_obs, net_act):
             with self.graph.as_default():
