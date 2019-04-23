@@ -85,7 +85,7 @@ class NetworkVecEnv(SubprocVecEnv):
                         rnn_input1 = tf.reshape(rnn_input1,shape=[-1,self.act_dim+self.obs_dim])
                         # rnn_input = slim.fully_connected(rnn_input1, 128, scope='in1')
                         rnn_input = tf.reshape(rnn_input1,shape=[-1, self.num_steps ,rnn_input1.get_shape().as_list()[-1]])
-                        rnn_input_ = tf.unstack(rnn_input, axis=0)
+                        rnn_input_ = tf.unstack(rnn_input, axis=1)
                         c0 = slim.fully_connected(obs[0], 64, scope='c0')
                         m0 = slim.fully_connected(obs[0], 64, scope='m0')
                         lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=128, state_is_tuple=True)
