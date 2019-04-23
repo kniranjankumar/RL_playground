@@ -263,7 +263,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 #     self.subset_save = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="model")[:6])
                 #     self.subset_save.restore(sess, path)
                 for i in tqdm(range(num_iter)):
-                    lr = learning_rate[int(num_iter/len(learning_rate)/i)]
+                    lr = learning_rate[int(i/num_iter*len(learning_rate))]
                     idx = np.random.choice(range(mass.shape[0]), batch_size)
                     obs_batch = obs[idx, :]
                     act_batch = act[idx, :]
