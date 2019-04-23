@@ -64,7 +64,7 @@ class NetworkVecEnv(SubprocVecEnv):
             # self.predict_mass = self.fc_model(self.obs, self.act)
             if self.model_type == 'LSTM':
                 # self.predict_mass = self.fc_model(self.obs, self.act)
-                self.predict_mass = self.LSTM_model(self.obs, self.act, self.mass_range)
+                self.predict_mass = self.LSTM_model2(self.obs, self.act, self.mass_range)
             else:
                 self.predict_mass = self.fc_model(self.obs, self.act)
 
