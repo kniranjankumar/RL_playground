@@ -81,9 +81,10 @@ class NetworkVecEnv(SubprocVecEnv):
                         act = tf.split(net_act,num_or_size_splits=self.num_steps, axis=1)
                         # mass_init = tf.fill()
                         rnn_input = [tf.concat([obs[i+1], act[i]],axis=1) for i in range(len(act))]
+                        rnn_input = slim.fully_connected(rnn_input, 128, scope='fc_obs2')
                         c0 = slim.fully_connected(obs[0], 64, scope='c0')
                         m0 = slim.fully_connected(obs[0], 64, scope='m0')
-                        lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=64, state_is_tuple=True)
+                        lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=128, state_is_tuple=True)
                         # lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=64, state_is_tuple=True)
                         # lstm_residual_cell = tf.nn.rnn_cell.ResidualWrapper(lstm_cell)
                         lstm_output, state = tf.nn.static_rnn(lstm_cell, initial_state=(c0, m0), inputs=rnn_input)
@@ -345,8 +346,8 @@ class NetworkVecEnv(SubprocVecEnv):
         rollout_obs = rollout_obs.reshape(-1, rollout_obs.shape[-1])
         rollout_act = (rollout_act.reshape(-1, rollout_act.shape[-1]))
         rollout_mass = rollout_mass.reshape(-1, rollout_mass.shape[-1])
-        error = self.model.feedable_test(rollout_obs, rollout_act, rollout_mass, self.graph, batch_size=100)
-        return error
+        percent_error = self.model.feedable_test(rollout_obs, rollout_act, rollout_mass, self.graph, batch_size=100)
+        return percent_error
 
     def normalize(self, data):
         print('mean', np.mean(data, axis=0), 'var', np.var(data, axis=0))
