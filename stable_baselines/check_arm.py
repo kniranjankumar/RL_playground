@@ -81,7 +81,7 @@ class NetworkVecEnv(SubprocVecEnv):
                         act = tf.split(net_act,num_or_size_splits=self.num_steps, axis=1)
                         # mass_init = tf.fill()
                         rnn_input1 = [tf.concat([obs[i+1], act[i]],axis=1) for i in range(len(act))]
-                        rnn_input1 = tf.concat(rnn_input1)
+                        rnn_input1 = tf.concat(rnn_input1, axis=0)
                         rnn_input = slim.fully_connected(rnn_input1, 128, activation_fn=None, scope='in1')
                         rnn_input = tf.unstack(rnn_input, axis=0)
                         c0 = slim.fully_connected(obs[0], 64, scope='c0')
