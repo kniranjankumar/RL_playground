@@ -121,7 +121,7 @@ class NetworkVecEnv(SubprocVecEnv):
                         rnn_input = tf.split(input,num_or_size_splits=self.num_steps, axis=1)
                         c0 = slim.fully_connected(obs[0], 64, scope='c0')
                         m0 = slim.fully_connected(obs[0], 64, scope='m0')
-                        lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=128, state_is_tuple=True)
+                        lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=64, state_is_tuple=True)
                         # lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=64, state_is_tuple=True)
                         # lstm_residual_cell = tf.nn.rnn_cell.ResidualWrapper(lstm_cell)
                         lstm_output, state = tf.nn.static_rnn(lstm_cell, initial_state=(c0, m0), inputs=rnn_input)
