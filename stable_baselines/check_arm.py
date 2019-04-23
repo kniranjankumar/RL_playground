@@ -61,6 +61,7 @@ class NetworkVecEnv(SubprocVecEnv):
             self.act = tf.placeholder(dtype=tf.float64, shape=[None, self.num_steps * self.act_dim],
                                       name='act_placeholder')
             self.mass = tf.placeholder(dtype=tf.float64, shape=[None, self.mass_dim], name='mass_placeholder')
+            self.lr = tf.placeholder(dtype=tf.float64,shape=[], name='learning_rate')
             # self.predict_mass = self.fc_model(self.obs, self.act)
             if self.model_type == 'LSTM':
                 # self.predict_mass = self.fc_model(self.obs, self.act)
@@ -189,7 +190,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 self.percent = tf.reduce_mean(
                     tf.reduce_mean(tf.divide(abs_error, tf.cast(0.0001 + tf.abs(self.mass), tf.float32)), axis=1))
 
-            optimizer = tf.train.GradientDescentOptimizer(lr)
+            optimizer = tf.train.GradientDescentOptimizer(self.lr)
             self.train_op_feedable = optimizer.minimize(self.mean_error_feedable)
             error_summary = tf.summary.scalar('error-abs', self.mean_error_feedable)
             percentage_error = tf.summary.scalar('error-percentage', self.percent)
@@ -235,7 +236,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 error.append(percent)
             return percent
 
-        def feedable_train(self, obs, act, mass, num_iter, graph, batch_size=64):
+        def feedable_train(self, obs, act, mass, num_iter, graph, batch_size=64, learning_rate=[1e-1,1e-2]):
             # print(sess.run(tf.get_collection(tf.GraphKeys.VARIABLES)))
             # self.run_with_location_trace(sess, self.train_op_feedable,
             #                              feed_dict={self.obs: obs, self.act: act, self.mass: mass})
@@ -262,6 +263,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 #     self.subset_save = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="model")[:6])
                 #     self.subset_save.restore(sess, path)
                 for i in tqdm(range(num_iter)):
+                    lr = learning_rate[int(num_iter/len(learning_rate)/i)]
                     idx = np.random.choice(range(mass.shape[0]), batch_size)
                     obs_batch = obs[idx, :]
                     act_batch = act[idx, :]
@@ -272,7 +274,7 @@ class NetworkVecEnv(SubprocVecEnv):
                     _, error1, summary = self.sess.run(
                         [self.train_op_feedable, self.mean_error_feedable, self.merged_summary],
                         feed_dict={self.obs: obs_batch, self.act: act_batch,
-                                   self.mass: mass_batch})
+                                   self.mass: mass_batch, self.lr: lr})
                     if i % 1000 == 0:
                         error2, predicted_mass, summary_test = self.sess.run(
                             [self.mean_error_feedable, self.predict_mass, self.merged_summary_test],
