@@ -554,7 +554,7 @@ def make_env(env_id, rank, seed=0):
         os.makedirs(log_dir, exist_ok=True)
         env = Monitor(env, log_dir, allow_early_resets=True)
         env.seed(seed + 2 * rank)
-        print('seed', rank)
+        # print('seed', rank)
         # server1.start()
         # print('starting server', rank)
         return env

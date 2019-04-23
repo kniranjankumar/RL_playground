@@ -95,7 +95,7 @@ class ArmAccEnv(gym.Env):
         }
 
     def _seed(self, seed=None):
-        print('set_seed', seed)
+        # print('set_seed', seed)
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
