@@ -391,7 +391,7 @@ class NetworkVecEnv(SubprocVecEnv):
         print('mean', np.mean(data, axis=0), 'var', np.var(data, axis=0))
         return (data - np.mean(data, axis=0)) / (np.var(data, axis=0) + 1e-8)
 
-    def train(self, num_eps, data_path, save_dir, policy=None, is_fresh=True ):
+    def train(self, num_eps, data_path, save_dir, policy=None, is_fresh=True,lr=1):
 
         # data_path = os.path.join(self.path, 'data')
         # data_path = self.path + 'data'
@@ -418,7 +418,9 @@ class NetworkVecEnv(SubprocVecEnv):
         # rollout_act = rollout_act.reshape(-1, rollout_act.shape[-1])
         # self.restore_model(os.path.join(self.path, 'checkpoint_predict', str(0), '0.ckpt'))
         error = 0
-        error = self.model.feedable_train(rollout_obs, rollout_act, rollout_mass, 500000, self.graph, batch_size=16)
+        lr_list = [1e-1*0.5**i for i in range(lr+1)]
+        error = self.model.feedable_train(rollout_obs, rollout_act, rollout_mass, 500000, self.graph,
+                                          batch_size=16, learning_rate=lr_list)
         model_save_num = self.save_model(save_dir)
         return error, model_save_num
 
@@ -517,13 +519,13 @@ class NetworkVecEnv(SubprocVecEnv):
         save_path = self.saver.save(self.sess, path + "/model.ckpt")
         print("Model saved in path: %s" % save_path)
         # self.saver = tf.train.Saver()
-        # folders = glob(path + '/*')
-        # i = int(len(folders))-1
+        folders = glob(path + '/*')
+        i = int(len(folders))-1
         # data_path = path + '/' + str(i)
         # os.makedirs(data_path)
         # save_path = self.saver.save(self.sess, data_path + '/' + str(i) + ".ckpt")
         # print("Model saved in path: %s" % save_path)
-        # return i
+        return i
 
     def restore_model(self, data_path):
         if self.model.model_type == 'LSTM':
@@ -617,7 +619,7 @@ parser.add_argument("--start_state", help='Starting configuration angle for arti
 parser.add_argument("--flip_enabled", help='Allow negative forces', default=False, action='store_true')
 parser.add_argument("--coverage_factor", help='fraction of the block covered by the controller',  default=0.9, type=float,nargs='?', const=0.9)
 parser.add_argument("--reward_scale", help='Factor by which the reward will be scaled from [-1,1]', default=1.0, type=float, nargs='?', const=1.0)
-
+parser.add_argument("--predictor_lr_steps", help='Number of times learning rate will be halved', default=0, type=int,nargs='?', const=0)
 
 args = parser.parse_args()
 the_path = os.path.join(path, 'experiments', 'KR5_arm', args.folder_name)
@@ -676,7 +678,8 @@ else:
     env.graph = model.graph
     env.model.setup_feedable_training(model.sess,is_init_all=True)
     if args.train_predictor or args.is_fresh:
-        error1, policy_save_number = env.train(args.predictor_dataset, is_fresh=args.is_fresh, save_dir=predictor_ckpt_path, data_path=predictor_data_path)
+        error1, policy_save_number = env.train(args.predictor_dataset, is_fresh=args.is_fresh,
+                                               save_dir=predictor_ckpt_path, data_path=predictor_data_path,lr=args.predictor_lr_steps)
     else:
         predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(args.checkpoint_num), str(args.checkpoint_num)+'.ckpt')
         env.restore_model(predictor_ckpt_path)
