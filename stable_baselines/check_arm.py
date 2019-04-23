@@ -81,7 +81,7 @@ class NetworkVecEnv(SubprocVecEnv):
                         act = tf.split(net_act,num_or_size_splits=self.num_steps, axis=1)
                         # mass_init = tf.fill()
                         rnn_input = [tf.concat([obs[i+1], act[i]],axis=1) for i in range(len(act))]
-                        rnn_input = slim.fully_connected(rnn_input, 128, scope='fc_obs2')
+                        rnn_input = tf.layers.dense(rnn_input, 128)
                         c0 = slim.fully_connected(obs[0], 64, scope='c0')
                         m0 = slim.fully_connected(obs[0], 64, scope='m0')
                         lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=128, state_is_tuple=True)
