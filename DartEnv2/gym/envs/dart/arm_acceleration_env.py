@@ -211,6 +211,7 @@ class ArmAccEnv(gym.Env):
             done = False
         if self.dart_world.is_failure:
             reward = -1
+            print(reward)
             self.dart_world.is_failure = False
         else:
             reward = 0

@@ -575,6 +575,7 @@ class ControllerOCPose:
             if c.bodynode1.name == "palm" or c.bodynode2.name == "palm":
                 f_contact += np.abs(c.force)
         # print('hit', f_contact)
+
     def flip_arm(self):
         WTO_ = self.box.bodynodes[0].T
         flip = np.eye(4)
@@ -762,6 +763,7 @@ class MyWorld(pydart.World):
 
     def reset(self):
         super(MyWorld, self).reset()
+        self.is_failure = False
         if len(self.skeletons) == 2:
             if self.ball == 0:
                 self.robot = self.add_skeleton(

@@ -173,7 +173,7 @@ class NetworkVecEnv(SubprocVecEnv):
             self.sess = sess
             if self.model_type == 'LSTM':
                 mass = tf.tile(tf.expand_dims(self.mass,0),multiples=[self.num_steps,1,1])
-                abs_error_rnn = tf.losses.huber_loss(mass, self.predict_mass)
+                abs_error_rnn = tf.losses.huber_loss( mass, self.predict_mass)
                 # abs_error_rnn = tf.losses.absolute_difference(mass, self.predict_mass)
                 self.mean_error_feedable = tf.reduce_mean(abs_error_rnn)
                 abs_error = tf.losses.absolute_difference(self.mass, self.predict_mass[-1])
@@ -326,6 +326,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 else:
                     act, state = policy.predict(obs['observation'], state, mask, deterministic=True)
                 obs, rew, done, _ = super(NetworkVecEnv, self).step(act)
+                print(rew)
                 # mask = done
                 # imgs = self.get_images()
                 # cv2.imshow('win',cv2.resize(np.vstack(imgs), (0,0,), fx=0.2, fy=0.2))
