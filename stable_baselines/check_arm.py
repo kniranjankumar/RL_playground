@@ -173,7 +173,7 @@ class NetworkVecEnv(SubprocVecEnv):
             self.sess = sess
             if self.model_type == 'LSTM':
                 mass = tf.tile(tf.expand_dims(self.mass,0),multiples=[self.num_steps,1,1])
-                abs_error_rnn = tf.losses.hinge_loss(mass, self.predict_mass)
+                abs_error_rnn = tf.losses.huber_loss(mass, self.predict_mass)
                 # abs_error_rnn = tf.losses.absolute_difference(mass, self.predict_mass)
                 self.mean_error_feedable = tf.reduce_mean(abs_error_rnn)
                 abs_error = tf.losses.absolute_difference(self.mass, self.predict_mass[-1])
@@ -187,7 +187,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 #     tf.reduce_mean(tf.divide(abs_error, tf.cast(0.0001 + tf.abs(self.mass), tf.float32)), axis=1))
             else:
                 # abs_error = tf.losses.absolute_difference(self.mass, self.predict_mass)
-                abs_error = tf.losses.hinge_loss(self.mass, self.predict_mass)
+                abs_error = tf.losses.huber_loss(self.mass, self.predict_mass)
                 self.mean_error_feedable = tf.reduce_mean(abs_error)
                 self.percent = tf.reduce_mean(
                     tf.reduce_mean(tf.divide(abs_error, tf.cast(0.0001 + tf.abs(self.mass), tf.float32)), axis=1))
