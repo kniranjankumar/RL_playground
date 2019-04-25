@@ -326,7 +326,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 else:
                     act, state = policy.predict(obs['observation'], state, mask, deterministic=True)
                 obs, rew, done, _ = super(NetworkVecEnv, self).step(act)
-                print(rew)
+                # print(rew)
                 # mask = done
                 # imgs = self.get_images()
                 # cv2.imshow('win',cv2.resize(np.vstack(imgs), (0,0,), fx=0.2, fy=0.2))
