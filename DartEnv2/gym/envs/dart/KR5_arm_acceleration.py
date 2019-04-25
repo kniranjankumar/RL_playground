@@ -793,8 +793,10 @@ class MyWorld(pydart.World):
         self.controller = ControllerOCPose(self.robot)
         self.robot.set_controller(self.controller)
         self.box_skeleton = self.skeletons[1]
-        self.box_skeleton.joints[2].set_position_upper_limit(0, 1.55)
-        self.box_skeleton.joints[2].set_position_lower_limit(0, -1.55)
+        self.box_skeleton.joints[2].set_position_upper_limit(0, 1.40)
+        self.box_skeleton.joints[2].set_position_lower_limit(0, -1.40)
+        # self.box_skeleton.joints[2].set_position_upper_limit(0, 1.55)
+        # self.box_skeleton.joints[2].set_position_lower_limit(0, -1.55)
         for jt in range(0, len(self.box_skeleton.joints)):
             if self.box_skeleton.joints[jt].has_position_limit(0):
                 self.box_skeleton.joints[jt].set_position_limit_enforced(True)
