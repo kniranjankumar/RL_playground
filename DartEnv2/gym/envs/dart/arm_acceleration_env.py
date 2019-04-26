@@ -182,7 +182,7 @@ class ArmAccEnv(gym.Env):
         block_idx = int(num_bodies * (action + 1) / 2)
         x = lambda a, d: (a + 1) / d - int((a + 1) / d)
         block_idx = (num_bodies - 1) if block_idx == (
-                num_bodies + 1) else block_idx  # identify the block where force should be applied
+                num_bodies) else block_idx  # identify the block where force should be applied
         offset = x(action, 2 / num_bodies)
         return offset, block_idx
 
