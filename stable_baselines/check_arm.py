@@ -514,10 +514,11 @@ class NetworkVecEnv(SubprocVecEnv):
         return obs['observation']
 
     def save_model(self, path):
-        if self.model.model_type == 'LSTM':
-            self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='LSTM_model'))
-        else:
-            self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='model'))
+        # if self.model.model_type == 'LSTM':
+        #     self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='LSTM_model'))
+        # else:
+        #     self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='model'))
+        self.saver = tf.train.Saver()
         os.makedirs(path,exist_ok=True)
         save_path = self.saver.save(self.sess, path + "/model.ckpt")
         print("Model saved in path: %s" % save_path)
@@ -531,10 +532,11 @@ class NetworkVecEnv(SubprocVecEnv):
         return i
 
     def restore_model(self, data_path):
-        if self.model.model_type == 'LSTM':
-            self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='LSTM_model'))
-        else:
-            self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='model'))
+        self.saver = tf.train.Saver()
+        # if self.model.model_type == 'LSTM':
+        #     self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='LSTM_model'))
+        # else:
+        #     self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='model'))
         # data_path = "./mass_prediction/model_ckpt/" + comment + '/' + str(int(i)) + '/' + str(int(i)) + ".ckpt"
         self.saver.restore(self.sess, data_path+"/model.ckpt")
 
