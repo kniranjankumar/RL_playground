@@ -498,17 +498,18 @@ class ControllerOC:
 
 
 class ControllerOCPose:
-    def __init__(self, skel,action_space=2):
+    def __init__(self, skel,action_space=1):
         self.mask = np.array([True for i in range(6)])
         self.start = skel.q
+        self.select_block = 2
         self.action_space = action_space
         self.end_effector_offset = np.array([0.05, 0, 0])
         self.skel = skel
         self.box = skel.world.skeletons[1]
         self.end_effector = self.skel.bodynodes[-1]
         self.WTR = self.skel.joints[0].transform_from_parent_body_node()
-        self.WTO = self.box.bodynodes[0].T
-        self.OTR = np.linalg.inv(self.WTO).dot(self.WTR)
+        self.WTO = [self.box.bodynodes[0].T, self.box.bodynodes[2].T]
+        self.OTR = np.linalg.inv(self.WTO[0]).dot(self.WTR)
         self.target_dx = np.array([0, 0, 0, 0, 0, 0])
         self.Kp = 300
         self.Ko = 300
@@ -519,8 +520,10 @@ class ControllerOCPose:
         self.tau = [0 for i in range(self.action_space)]
         self.end_effector = self.skel.bodynodes[-1]
         self.tau[0] = 10
-        self.tau[1] = -0.1
+        self.offset = 0
+        # self.tau[1] = -0.1
         self.flipped = False
+        self.moved_arm_base = False
         self.move_arm_base()
 
     def reset(self, WTR, WTO):
@@ -560,11 +563,12 @@ class ControllerOCPose:
         positions[0] = 0
         positions[2] = 0
         self.box.set_positions(positions)
-        WTO_ = self.box.bodynodes[0].T
+        WTO_ = self.box.bodynodes[self.select_block].T
+
         WTR_ = WTO_.dot(self.OTR)
         self.skel.joints[0].set_transform_from_parent_body_node(WTR_)
         self.skel.set_positions(self.start)
-        self.timestep_count = self.FTIME
+        # self.timestep_count = self.FTIME
 
 
     def get_contact_forces(self):
@@ -577,30 +581,34 @@ class ControllerOCPose:
         # print('hit', f_contact)
 
     def flip_arm(self):
-        WTO_ = self.box.bodynodes[0].T
+        WTO_ = self.box.bodynodes[self.select_block].T
         flip = np.eye(4)
         flip[0, 0] = -1
         flip[2, 2] = -1
         WTR_ = WTO_.dot(flip.dot(self.OTR))
         self.skel.joints[0].set_transform_from_parent_body_node(WTR_)
 
+    def switch_arm(self):
+        WTO_ = self.box.bodynodes[self.select_block].T
+        WTR_ = WTO_.dot(self.OTR[int(self.select_block/2)])
+        self.skel.joints[0].set_transform_from_parent_body_node(WTR_)
+
     def compute(self):
         names = [i.name for i in self.skel.world.collision_result.contacted_bodies]
-        if self.tau[0] < 0:
-            if not self.flipped:
+        if not self.moved_arm_base:
+            # self.select_block = 2 if self.offset < 0 else 0
+            self.move_arm_base()
+            # self.switch_arm()
+            if self.tau[0] < 0:
                 self.flip_arm()
-            self.flipped = True
-        else:
-            self.flipped = False
+                self.flipped = True
+            self.moved_arm_base = True
         if self.timestep_count > 0:
-            if self.flipped:
-                self.target_x = self.box.bodynodes[0].to_world([self.skel.world.box_shape[0][0] * 0.5, 0, self.tau[1]])
-                box_quat= Quaternion(matrix=self.box.bodynodes[0].T[:3, :3]).normalised
-                self.target_quat = Quaternion(axis=[0, 1, 0], degrees=180+box_quat.degrees*box_quat.axis[1] % 360)
-                # print(box_quat.axis)
-            else:
-                self.target_x = self.box.bodynodes[0].to_world([-self.skel.world.box_shape[0][0] * 0.5, 0, self.tau[1]])
-                self.target_quat = Quaternion(matrix=self.box.bodynodes[0].T[:3, :3]).normalised
+            self.target_x = self.box.bodynodes[self.select_block].to_world([np.sign(self.tau[0])*-self.skel.world.box_shape[0][0] * 0.5, 0, self.offset])
+            box_quat= Quaternion(matrix=self.box.bodynodes[self.select_block].T[:3, :3]).normalised
+            rotation = 180 if self.tau[0] < 0 else 0
+            self.target_quat = Quaternion(axis=[0, 1, 0], degrees=rotation+box_quat.degrees*box_quat.axis[1] % 360)
+
             if "palm" in names:
                 angle = -np.sign(self.target_quat.axis[1]) * self.target_quat.angle
                 self.target_dx = np.array([0, 0, 0, np.cos(angle), 0, np.sin(angle)])*abs(self.tau[0])
@@ -620,8 +628,10 @@ class ControllerOCPose:
             if np.all(self.box.dq < 0.0005):
                 self.skel.set_positions(self.start)
                 self.skel.world.complete = True
-                self.move_arm_base()
                 self.flipped = False
+                self.moved_arm_base = False
+                self.timestep_count = self.FTIME
+
             force = self.skel.coriolis_and_gravity_forces()
         return force
 

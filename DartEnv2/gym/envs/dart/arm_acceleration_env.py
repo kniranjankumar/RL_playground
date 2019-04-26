@@ -171,10 +171,20 @@ class ArmAccEnv(gym.Env):
     def dt(self):
         return self.dart_world.dt
 
-    def do_simulation(self, tau):
+    def do_simulation(self, tau, offset, block_id):
         self.dart_world.controller.tau = tau
+        self.dart_world.controller.offset = offset
+        self.dart_world.controller.select_block = int(block_id * 2)
         # self.dart_world.controller.offset = offset
         self.dart_world.step()
+
+    def get_offset(self, action, num_bodies):
+        block_idx = int(num_bodies * (action + 1) / 2)
+        x = lambda a, d: (a + 1) / d - int((a + 1) / d)
+        block_idx = (num_bodies - 1) if block_idx == (
+                num_bodies + 1) else block_idx  # identify the block where force should be applied
+        offset = x(action, 2 / num_bodies)
+        return offset, block_idx
 
     def _step(self, action):
         action = np.clip(action, -1, 1)
@@ -184,7 +194,10 @@ class ArmAccEnv(gym.Env):
             action[0] = action[0] * 10 + 10
         # action[0] = 10
         # action[0] = -300
-        action[1] = action[1] * self.size[0, 0] * 0.5 * self.coverage_factor
+        offset, block_id = self.get_offset(action[1], self.num_bodies)
+        offset -= 0.5
+        offset *= self.coverage_factor * self.size[block_id, 0]
+        # action[1] = action[1] * self.size[0, 0] * 0.5 * self.coverage_factor
         # action[1] = 0
         # action[0] = 600
         self.count_act += 1
@@ -193,7 +206,7 @@ class ArmAccEnv(gym.Env):
             if self.dart_world.complete:
                 break
             # self.render(mode='human')
-            self.do_simulation(action)
+            self.do_simulation(action, offset, block_id)
             if self.dart_world.t > 10:
                 print(action)
                 print("Gone mad")
