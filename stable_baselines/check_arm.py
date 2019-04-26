@@ -443,7 +443,7 @@ class NetworkVecEnv(SubprocVecEnv):
                                         self.observation_space_dict.spaces['mass'].low[0])
                 idx = rew == -1
                 rew = rew1
-                rew[idx] = -1
+                # rew[idx] = -1
                 rew *= self.reward_scale
             if np.all(done == True):
                 self.obs_buffer = np.array([])
