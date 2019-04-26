@@ -684,7 +684,7 @@ else:
         error1, policy_save_number = env.train(args.predictor_dataset, is_fresh=args.is_fresh,
                                                save_dir=predictor_ckpt_path, data_path=predictor_data_path,lr=args.predictor_lr_steps)
     else:
-        predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(args.checkpoint_num), str(args.checkpoint_num)+'.ckpt')
+        predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(args.checkpoint_num), 'model.ckpt')
         env.restore_model(predictor_ckpt_path)
         policy_save_number = args.checkpoint_num
 
