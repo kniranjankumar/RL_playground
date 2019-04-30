@@ -558,7 +558,7 @@ def make_env(env_id, rank, seed=0):
         log_dir = the_path + "/monitor_log/" + str(rank)  # {}".format(int(time.time()))
         os.makedirs(log_dir, exist_ok=True)
         env = Monitor(env, log_dir, allow_early_resets=True)
-        env.seed(seed + 2 * rank)
+        env.seed(seed +  rank)
         # print('seed', rank)
         # server1.start()
         # print('starting server', rank)
