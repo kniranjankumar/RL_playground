@@ -394,7 +394,7 @@ class NetworkVecEnv(SubprocVecEnv):
         print('mean', np.mean(data, axis=0), 'var', np.var(data, axis=0))
         return (data - np.mean(data, axis=0)) / (np.var(data, axis=0) + 1e-8)
 
-    def train(self, num_eps, data_path, save_dir, policy=None, is_fresh=True,lr=1):
+    def train(self, num_eps, data_path, save_dir, policy=None, is_fresh=True,lr=1, steps=500000):
 
         # data_path = os.path.join(self.path, 'data')
         # data_path = self.path + 'data'
@@ -422,7 +422,7 @@ class NetworkVecEnv(SubprocVecEnv):
         # self.restore_model(os.path.join(self.path, 'checkpoint_predict', str(0), '0.ckpt'))
         error = 0
         lr_list = [1e-1*0.5**i for i in range(lr+1)]
-        error = self.model.feedable_train(rollout_obs, rollout_act, rollout_mass, 500000, self.graph,
+        error = self.model.feedable_train(rollout_obs, rollout_act, rollout_mass, num_iter=steps, graph=self.graph,
                                           batch_size=16, learning_rate=lr_list)
         model_save_num = self.save_model(save_dir)
         return error, model_save_num
@@ -514,10 +514,10 @@ class NetworkVecEnv(SubprocVecEnv):
         return obs['observation']
 
     def save_model(self, path):
-        # if self.model.model_type == 'LSTM':
-        #     self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='LSTM_model'))
-        # else:
-        #     self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='model'))
+        if self.model.model_type == 'LSTM':
+            self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='LSTM_model'))
+        else:
+            self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='model'))
         self.saver = tf.train.Saver()
         os.makedirs(path,exist_ok=True)
         save_path = self.saver.save(self.sess, path + "/model.ckpt")
@@ -533,12 +533,16 @@ class NetworkVecEnv(SubprocVecEnv):
 
     def restore_model(self, data_path):
         self.saver = tf.train.Saver()
-        # if self.model.model_type == 'LSTM':
-        #     self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='LSTM_model'))
-        # else:
-        #     self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='model'))
+        if self.model.model_type == 'LSTM':
+            self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='LSTM_model'))
+        else:
+            self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='model'))
         # data_path = "./mass_prediction/model_ckpt/" + comment + '/' + str(int(i)) + '/' + str(int(i)) + ".ckpt"
-        self.saver.restore(self.sess, data_path+"/model.ckpt")
+        # print('/home/niranjan/Projects/vis_inst/experiments/KR5_arm/check_folder_structure/predictor_ckpt/0/model.ckpt')
+        # print( data_path)
+        # self.saver.restore(self.sess,'/home/niranjan/Projects/vis_inst/experiments/KR5_arm/check_folder_structure/predictor_ckpt/0/model.ckpt')
+        self.saver.restore(self.sess, data_path)
+        print("success")
 
 
 def make_env(env_id, rank, seed=0):
@@ -558,7 +562,7 @@ def make_env(env_id, rank, seed=0):
         log_dir = the_path + "/monitor_log/" + str(rank)  # {}".format(int(time.time()))
         os.makedirs(log_dir, exist_ok=True)
         env = Monitor(env, log_dir, allow_early_resets=True)
-        env.seed(seed +  rank)
+        env.seed(seed + 2 * rank)
         # print('seed', rank)
         # server1.start()
         # print('starting server', rank)
@@ -608,6 +612,7 @@ def save_argparse(save_path, args):
 parser = argparse.ArgumentParser()
 parser.add_argument("--is_fresh", help='Train on fresh dataset', default=False, action='store_true')
 parser.add_argument("--train_predictor", help='Train predictor from scratch', default=False, action='store_true')
+parser.add_argument("--predictor_steps", help='Number of steps the predictor will be trained', default=500000, type=int,nargs='?', const=500000)
 parser.add_argument("--checkpoint_num", help='Checkpoint number to restore', default=0, type=int,nargs='?', const=0)
 parser.add_argument("--policy_checkpoint_num", help='Policy Checkpoint number to restore', default=0, type=int,nargs='?', const=0)
 parser.add_argument("--PPO_steps", help='Number of PPO steps', default=61000, type=int,nargs='?', const=61000)
@@ -646,6 +651,7 @@ env.reset()
 if args.only_test:
     policy_ckpt_path = os.path.join(the_path, 'policy_ckpt', str(args.policy_checkpoint_num))
     try:
+        print(policy_ckpt_path+'.pkl')
         model = PPO2.load(policy_ckpt_path+'.pkl' , env, verbose=1, learning_rate=constfn(1e-5))
         env.sess = model.sess
         env.graph = model.graph
@@ -658,9 +664,9 @@ if args.only_test:
         env.graph = model.graph
         env.model.setup_feedable_training(model.sess,is_init_all=True)
         policy = None
-    predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(args.checkpoint_num))
+    predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(args.checkpoint_num),'model.ckpt')
     env.restore_model(predictor_ckpt_path)
-    error = env.evaluate(30,policy)
+    error = env.evaluate(10,policy)
     print(np.mean(np.array(error)))
 else:
     predictor_tensorboard_path = os.path.join(path, 'experiments', 'KR5_arm', 'predictor_tensorboard', args.folder_name)
@@ -683,8 +689,12 @@ else:
     env.graph = model.graph
     env.model.setup_feedable_training(model.sess,is_init_all=True)
     if args.train_predictor or args.is_fresh:
-        error1, policy_save_number = env.train(args.predictor_dataset, is_fresh=args.is_fresh,
-                                               save_dir=predictor_ckpt_path, data_path=predictor_data_path,lr=args.predictor_lr_steps)
+        error1, policy_save_number = env.train(args.predictor_dataset,
+                                               is_fresh=args.is_fresh,
+                                               save_dir=predictor_ckpt_path,
+                                               data_path=predictor_data_path,
+                                               lr=args.predictor_lr_steps,
+                                               steps=args.predictor_steps)
     else:
         predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(args.checkpoint_num), 'model.ckpt')
         env.restore_model(predictor_ckpt_path)
@@ -697,5 +707,10 @@ else:
         log_folders = glob(predictor_tensorboard_path + '/*')
         predictor_tensorboard_path = os.path.join(predictor_tensorboard_path, str(int(len(log_folders))))
         predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(int(len(log_folders))))
-        error2 = env.train(args.predictor_dataset, policy=model, is_fresh=True, save_dir=predictor_ckpt_path, data_path=predictor_data_path)
+        error2 = env.train(args.predictor_dataset,
+                           policy=model,
+                           is_fresh=True,
+                           save_dir=predictor_ckpt_path,
+                           data_path=predictor_data_path,
+                           steps=args.predictor_steps)
     print(env.evaluate(10,model))
