@@ -2,7 +2,7 @@
 # from .network_vec_env import NetworkVecEnv
 import gym
 # from stable_baselines.common import set_global_seeds
-#
+import numpy as np
 import pydart2
 
 num = 4  # Number of processes to use
@@ -53,7 +53,7 @@ env1 = gym.make(env_id)
 # print(env1.reset())
 obs = env1.reset()
 print(obs)
-
+offset = np.arange(-1.0,1.0,0.2)
 # print(env1.action_space)
 env1.render(mode="human")
 done = False
@@ -64,7 +64,7 @@ for i in range(1000):
     count = 0
     while not done:
         count += 1
-        obs, rew, done, _ = env1.step(action=env1.action_space.sample())
+        obs, rew, done, _ = env1.step(action=[-1.0,offset[i]])
         print(obs)
 
         env1.render(mode="human")

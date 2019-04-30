@@ -781,9 +781,12 @@ class MyWorld(pydart.World):
             elif self.ball == 1:
                 self.robot = self.add_skeleton(
                     self.asset_path+"/KR5 sixx R650 ball.urdf")
+                print('Loading spherical end-effector')
+
             elif self.ball == 2:
                 self.robot = self.add_skeleton(
                     self.asset_path + "/KR5 sixx R650 ellipsoid.urdf")
+                print('Loading ellipsoid end-effector')
             self.box_shape = [self.skeletons[1].bodynodes[i].shapenodes[0].shape.size() for i in
                               range(0, 2, len(self.skeletons[1].bodynodes))]
             WTR = self.robot.joints[0].transform_from_parent_body_node()
