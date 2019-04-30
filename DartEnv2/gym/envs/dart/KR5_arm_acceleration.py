@@ -763,10 +763,12 @@ class MyWorld(pydart.World):
         self.is_failure = False
         self.ball = ball
         path, folder = os.path.split(os.getcwd())
-        self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets','KR5')
+        # self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets','KR5')
         # self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
+        self.asset_path = "/home/niranjan/Projects/vis_inst/skynet/RL_playground/DartEnv2/gym/envs/dart/assets/KR5/"
+
         self.world = pydart.World.__init__(self, 0.001,
-                                           self.asset_path+"/arena2big.skel")
+                                           self.asset_path+"/arena3big.skel")
 
         # self.robot.set_positions([0.0, 1.4054258, 0.4363229, -0.0, 1.5695383, -0.0])
         # self.robot.set_positions([0.0, 0, 0.0, -0.0, 0, 0])
@@ -808,8 +810,10 @@ class MyWorld(pydart.World):
         self.box_skeleton = self.skeletons[1]
         # self.box_skeleton.joints[2].set_position_upper_limit(0, 1.30)
         # self.box_skeleton.joints[2].set_position_lower_limit(0, -1.30)
-        self.box_skeleton.joints[2].set_position_upper_limit(0, 1.55)
-        self.box_skeleton.joints[2].set_position_lower_limit(0, -1.55)
+        for joint in self.box_skeleton.joints:
+            if isinstance(joint, pydart.joint.RevoluteJoint):
+                joint.set_position_upper_limit(0, 1.55)
+                joint.set_position_lower_limit(0, -1.55)
         for jt in range(0, len(self.box_skeleton.joints)):
             if self.box_skeleton.joints[jt].has_position_limit(0):
                 self.box_skeleton.joints[jt].set_position_limit_enforced(True)
