@@ -765,8 +765,8 @@ class MyWorld(pydart.World):
         self.is_failure = False
         self.ball = ball
         path, folder = os.path.split(os.getcwd())
-        # self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets','KR5')
-        self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
+        self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets','KR5')
+        # self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
         # self.asset_path = "/home/niranjan/Projects/vis_inst/skynet/RL_playground/DartEnv2/gym/envs/dart/assets/KR5/"
 
         self.world = pydart.World.__init__(self, 0.001,
