@@ -205,7 +205,7 @@ class ArmAccEnv(gym.Env):
         while self.dart_world.t < 10:
             if self.dart_world.complete:
                 break
-            # self.render(mode='human')
+            self.render(mode='human')
             self.do_simulation(action, offset, block_id)
             if self.dart_world.t > 10:
                 print(action)
@@ -259,7 +259,7 @@ class ArmAccEnv(gym.Env):
     def getViewer(self, sim, title=None):
         # glutInit(sys.argv)
         win = StaticGLUTWindow(sim, title)
-        win.scene.add_camera(Trackball(theta=-45.0, phi=0.0, zoom=0.1), 'gym_camera')
+        win.scene.add_camera(Trackball(theta=-45.0, phi=0.0, zoom=0.01), 'gym_camera')
         win.scene.set_camera(win.scene.num_cameras() - 1)
         win.run()
         return win

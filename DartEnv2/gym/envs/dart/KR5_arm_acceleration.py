@@ -501,7 +501,7 @@ class ControllerOCPose:
     def __init__(self, skel,action_space=1):
         self.mask = np.array([True for i in range(6)])
         self.start = skel.q
-        self.select_block = 2
+        self.select_block = 0
         self.action_space = action_space
         self.end_effector_offset = np.array([0.05, 0, 0])
         self.skel = skel
@@ -618,14 +618,16 @@ class ControllerOCPose:
             if "wrist" in names or "forearm" in names:
                 self.skel.world.is_failure = True
                 self.timestep_count = 0
-                print("hit robot body")
+                # print("hit robot body")
             force = self.get_force(self.target_x, self.target_quat, self.target_dx)
         else:
             # self.target_dx = np.array([0, 0, 0, 0, 0, 0])
             # self.target_quat = Quaternion(matrix=self.end_effector.T[:3, :3]).normalised
             # self.target_x = self.end_effector.to_world(self.end_effector_offset)
             self.skel.set_velocities(0*self.skel.dq)
-            if np.all(self.box.dq < 0.0005):
+            # self.skel.set_accelerations(0*self.skel.dq)
+
+            if np.all(self.box.dq < 0.05):
                 self.skel.set_positions(self.start)
                 self.skel.world.complete = True
                 self.flipped = False
@@ -764,11 +766,11 @@ class MyWorld(pydart.World):
         self.ball = ball
         path, folder = os.path.split(os.getcwd())
         # self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets','KR5')
-        # self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
-        self.asset_path = "/home/niranjan/Projects/vis_inst/skynet/RL_playground/DartEnv2/gym/envs/dart/assets/KR5/"
+        self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
+        # self.asset_path = "/home/niranjan/Projects/vis_inst/skynet/RL_playground/DartEnv2/gym/envs/dart/assets/KR5/"
 
         self.world = pydart.World.__init__(self, 0.001,
-                                           self.asset_path+"/arena3big.skel")
+                                           self.asset_path+"/"+str(num_bodies)+"body_chain.skel")
 
         # self.robot.set_positions([0.0, 1.4054258, 0.4363229, -0.0, 1.5695383, -0.0])
         # self.robot.set_positions([0.0, 0, 0.0, -0.0, 0, 0])
@@ -797,7 +799,7 @@ class MyWorld(pydart.World):
                 WTR[0, 3] -= 0.52  # move robot base from the articulated body
             else:
                 WTR[0, 3] -= 0.55
-            WTR[2, 3] -= (self.box_shape[0][0] * 0.5 + self.box_shape[0][2] * 0.5)
+            # WTR[2, 3] -= (self.box_shape[0][0] * 0.5 + self.box_shape[0][2] * 0.5)
             self.WTR = WTR
             self.set_gravity([0.0, -9.81, 0])
         self.robot.joints[0].set_transform_from_parent_body_node(self.WTR)
@@ -822,7 +824,7 @@ if __name__ == '__main__':
     pydart.init()
     print('pydart initialization OK')
 
-    world = MyWorld()
+    world = MyWorld(num_bodies=3)
 
     # win = pydart.gui.viewer.PydartWindow(world)
     win = GLUTWindow(world, None)

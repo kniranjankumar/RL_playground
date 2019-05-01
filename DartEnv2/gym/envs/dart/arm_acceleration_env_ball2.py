@@ -22,26 +22,28 @@ class ArmAccEnvBall2(gym.Env):
     """Superclass for all Dart environments.
     """
 
-    def __init__(self):
-        self.num_bodies = 2
+    def __init__(self, ball_type=1, flip_enabled=False, start_state=None, coverage_factor=0.9, num_bodies=2):
+        self.num_bodies = num_bodies
         self.num_actions = 2
         self.variable_size = False
+        self.flip_enabled = flip_enabled
         action_bounds = np.array([[-1 for i in range(self.num_actions)], [1 for i in range(self.num_actions)]])
         # self.mass_range = np.array([0.1, 0.7])
         # self.mass_range = np.array([0.1, 7])
         self.mass_range = np.array([0.5, 7])
-
+        self.start_state = start_state
         self.size_range = np.array([0.1,0.15])
         # self.size_range = np.array([0.1, 0.1])
         self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1], self.num_bodies)
         self.size = np.random.uniform(self.size_range[0], self.size_range[1], [self.num_bodies, 2])
         self.mu = np.random.uniform(0.9, 0.9)
-        self.coverage_factor = 0.9
+        print(coverage_factor)
+        self.coverage_factor = coverage_factor
         # self.size = np.sort(self.size)
         # pydart.init()
         print('pydart initialization OK')
 
-        self.dart_world = MyWorld(num_bodies=self.num_bodies, action_space=self.num_actions, is_flip=False, ball=2)
+        self.dart_world = MyWorld(num_bodies=self.num_bodies, is_flip=False, ball=ball_type)
         self.box_skeleton = self.dart_world.skeletons[1]  # select block skeleton
         self.action_space = spaces.Box(action_bounds[0, :], action_bounds[1, :])
         self.obs_dim = 2 + self.num_bodies * 2
@@ -69,17 +71,34 @@ class ArmAccEnvBall2(gym.Env):
                 self.box_skeleton.bodynodes[i].set_friction_coeff(self.mu)
 
                 print(block_count)
-                if block_count == 0:
-                    CTJ = self.box_skeleton.joints[block_count + 1].transform_from_parent_body_node()
-                    CTJ[2, 3] = (self.size[block_count, 0] + 0.075 * 2) * 0.5
+            # if isinstance(self.box_skeleton.bodynodes[i].shapenodes[0].shape, pydart.shape.CylinderShape):
+
+                # if block_count == 0:
+                #     CTJ = self.box_skeleton.joints[block_count + 1].transform_from_parent_body_node()
+                #     CTJ[2, 3] = (self.size[block_count, 0] + 0.075 * 2) * 0.5
+                #     # CTJ[2,3] = -(self.size[0,0]+self.size[1,0]-0.1)*0.5
+                #     # self.box_skeleton.joints[block_count + 1].set_transform_from_parent_body_node(CTJ)
+                # else:
+                #     CTJ = self.box_skeleton.joints[block_count + 1].transform_from_child_body_node()
+                #     CTJ[2, 3] = -(self.size[block_count, 0] + 0.075 * 2) * 0.5
                     # CTJ[2,3] = -(self.size[0,0]+self.size[1,0]-0.1)*0.5
-                    self.box_skeleton.joints[block_count + 1].set_transform_from_parent_body_node(CTJ)
-                else:
-                    CTJ = self.box_skeleton.joints[block_count + 1].transform_from_child_body_node()
-                    CTJ[2, 3] = -(self.size[block_count, 0] + 0.075 * 2) * 0.5
-                    # CTJ[2,3] = -(self.size[0,0]+self.size[1,0]-0.1)*0.5
-                    self.box_skeleton.joints[block_count + 1].set_transform_from_child_body_node(CTJ)
+                    # self.box_skeleton.joints[block_count + 1].set_transform_from_child_body_node(CTJ)
                 block_count += 1
+        for joint in self.box_skeleton.joints:
+            if isinstance(joint, pydart.joint.RevoluteJoint):
+                PTJ = joint.transform_from_parent_body_node()
+                size = joint.parent_bodynode.shapenodes[0].shape.size()[2]
+                PTJ[2, 3] = size * 0.5 + 0.075
+                joint.set_transform_from_parent_body_node(PTJ)
+                CTJ = joint.transform_from_child_body_node()
+                size = joint.child_bodynode.shapenodes[0].shape.size()[2]
+                CTJ[2, 3] = -(size * 0.5 + 0.075)
+                joint.set_transform_from_child_body_node(CTJ)
+            if isinstance(joint, pydart.joint.WeldJoint):
+                PTJ = joint.transform_from_parent_body_node()
+                size = joint.parent_bodynode.shapenodes[0].shape.size()[2]
+                PTJ[2, 3] = size * 0.5 + 0.075
+                joint.set_transform_from_parent_body_node(PTJ)
 
         # CTJ = self.box_skeleton.joints[0].transform_from_child_body_node()
         # CTJ[0,3] += (self.size[0, 1]*0.25-0.035)
@@ -93,7 +112,7 @@ class ArmAccEnvBall2(gym.Env):
         }
 
     def _seed(self, seed=None):
-        print('set_seed', seed)
+        # print('set_seed', seed)
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
@@ -118,23 +137,35 @@ class ArmAccEnvBall2(gym.Env):
                 self.box_skeleton.bodynodes[i].shapenodes[0].shape.set_size([0.15, 0.1, self.size[block_count, 0]])
                 self.box_skeleton.bodynodes[i].shapenodes[1].shape.set_size([0.15, 0.1, self.size[block_count, 0]])
                 self.box_skeleton.bodynodes[i].set_friction_coeff(self.mu)
-                if block_count == 0:
-                    CTJ = self.box_skeleton.joints[block_count + 1].transform_from_parent_body_node()
-                    CTJ[2, 3] = (self.size[block_count, 0] + 0.075 * 2) * 0.5
-                    # CTJ[2,3] = -(self.size[0,0]+self.size[1,0]-0.1)*0.5
-                    self.box_skeleton.joints[block_count + 1].set_transform_from_parent_body_node(CTJ)
-                else:
-                    CTJ = self.box_skeleton.joints[block_count + 1].transform_from_child_body_node()
-                    CTJ[2, 3] = -(self.size[block_count, 0] + 0.075 * 2) * 0.5
-                    # CTJ[2,3] = -(self.size[0,0]+self.size[1,0]-0.1)*0.5
-                    self.box_skeleton.joints[block_count + 1].set_transform_from_child_body_node(CTJ)
-                block_count += 1
 
+                    # CTJ[2,3] = -(self.size[0,0]+self.size[1,0]-0.1)*0.5
+                    # self.box_skeleton.joints[block_count + 1].set_transform_from_child_body_node(CTJ)
+                block_count += 1
+        for joint in self.box_skeleton.joints:
+            if isinstance(joint, pydart.joint.RevoluteJoint):
+                PTJ = joint.transform_from_parent_body_node()
+                size = joint.parent_bodynode.shapenodes[0].shape.size()[2]
+                PTJ[2, 3] = size * 0.5 + 0.075
+                joint.set_transform_from_parent_body_node(PTJ)
+                CTJ = joint.transform_from_child_body_node()
+                size = joint.child_bodynode.shapenodes[0].shape.size()[2]
+                CTJ[2, 3] = -(size * 0.5 + 0.075)
+                joint.set_transform_from_child_body_node(CTJ)
+            if isinstance(joint, pydart.joint.WeldJoint):
+                PTJ = joint.transform_from_parent_body_node()
+                size = joint.parent_bodynode.shapenodes[0].shape.size()[2]
+                PTJ[2, 3] = size * 0.5 + 0.075
+                joint.set_transform_from_parent_body_node(PTJ)
         # CTJ = self.box_skeleton.joints[-1].transform_from_child_body_node()
         # CTJ[2,3] = -(self.size[0,0]+self.size[1,0]-0.1-0.08)*0.5
         # self.box_skeleton.joints[-1].set_transform_from_child_body_node(CTJ)
         q = self.box_skeleton.positions()
-        q[-1] = self.np_random.uniform(-0.75, 0.75)
+        # q[-1] = -0.7
+        if self.start_state is None:
+            for i in range(1,self.num_bodies):
+                q[-i] = self.np_random.uniform(-0.75, 0.75)
+        else:
+            q[-1] = self.start_state
         for jt in range(0, len(self.box_skeleton.joints)):
             if self.box_skeleton.joints[jt].has_position_limit(0):
                 self.box_skeleton.joints[jt].set_position_limit_enforced(True)
@@ -165,27 +196,43 @@ class ArmAccEnvBall2(gym.Env):
     def dt(self):
         return self.dart_world.dt
 
-    def do_simulation(self, tau):
+    def do_simulation(self, tau, offset, block_id):
         self.dart_world.controller.tau = tau
+        self.dart_world.controller.offset = offset
+        self.dart_world.controller.select_block = int(block_id)
         # self.dart_world.controller.offset = offset
         self.dart_world.step()
 
+    def get_offset(self, action, num_bodies):
+        block_idx = int(num_bodies * (action + 1) / 2)
+        x = lambda a, d: (a + 1) / d - int((a + 1) / d)
+        block_idx = (num_bodies - 1) if block_idx == (
+                num_bodies) else block_idx  # identify the block where force should be applied
+        offset = x(action, 2 / num_bodies)
+        return offset, block_idx
+
     def _step(self, action):
         action = np.clip(action, -1, 1)
-        action[0] = action[0] * 10 + 10
+        if self.flip_enabled:
+            action[0] = action[0] * 20
+        else:
+            action[0] = action[0] * 10 + 10
         # action[0] = 10
         # action[0] = -300
-        action[1] = action[1] * self.size[0, 0] * 0.5 * self.coverage_factor
+        offset, block_id = self.get_offset(action[1], self.num_bodies)
+        offset -= 0.5
+        offset *= self.coverage_factor * self.size[block_id, 0]
+        # action[1] = action[1] * self.size[0, 0] * 0.5 * self.coverage_factor
         # action[1] = 0
         # action[0] = 600
         self.count_act += 1
         # print(self.count_act)
-        while self.dart_world.t < 10:
+        while self.dart_world.t < 5:
             if self.dart_world.complete:
                 break
             # self.render(mode='human')
-            self.do_simulation(action)
-            if self.dart_world.t > 10:
+            self.do_simulation(action, offset, block_id)
+            if self.dart_world.t > 5:
                 print(action)
                 print("Gone mad")
                 # self.render(mode='human')
@@ -200,9 +247,14 @@ class ArmAccEnvBall2(gym.Env):
             self.count_act = 0
         else:
             done = False
-        reward = 0
+        if self.dart_world.is_failure:
+            reward = -1
+            # print(reward)
+            self.dart_world.is_failure = False
+        else:
+            reward = 0
 
-        return obs, 0, done, {}
+        return obs, reward, done, {}
 
     def get_obs(self):
         joints = [6 + i for i in range(self.num_bodies - 1)]
@@ -232,7 +284,7 @@ class ArmAccEnvBall2(gym.Env):
     def getViewer(self, sim, title=None):
         # glutInit(sys.argv)
         win = StaticGLUTWindow(sim, title)
-        win.scene.add_camera(Trackball(theta=-45.0, phi=0.0, zoom=0.1), 'gym_camera')
+        win.scene.add_camera(Trackball(theta=-45.0, phi=0.0, zoom=0.01), 'gym_camera')
         win.scene.set_camera(win.scene.num_cameras() - 1)
         win.run()
         return win

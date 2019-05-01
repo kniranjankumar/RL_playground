@@ -3,6 +3,7 @@
 import gym
 # from stable_baselines.common import set_global_seeds
 import numpy as np
+from gym.envs.registration import register
 import pydart2
 
 num = 4  # Number of processes to use
@@ -46,7 +47,15 @@ pydart2.init()
 # env_id = 'DartBlockPushEnvAct2Body3Wrapped-v0'
 # env_id = 'DartBlockPushMassAct2Body3-v0'
 # # env_id = 'DartBlockPushMassNWarpped-v0'
-env_id = 'ArmAccEnv-v0'
+env_id = 'ArmAccEnvBall2-v0'
+# register(
+#     id=env_id,
+#     entry_point='gym.envs.dart:ArmAccEnv',
+#     kwargs={'ball_type':args.ball_type, 'start_state':args.start_state, 'flip_enabled':args.flip_enabled, 'coverage_factor':args.coverage_factor},
+#     reward_threshold=2,
+#     timestep_limit=10,
+#     max_episode_steps=20,
+# )
 env1 = gym.make(env_id)
 # env2 = gym.make(env_id)
 #
@@ -64,7 +73,9 @@ for i in range(1000):
     count = 0
     while not done:
         count += 1
-        obs, rew, done, _ = env1.step(action=[-1.0,offset[i]])
+        # obs, rew, done, _ = env1.step(action=[-1.0,offset[i]])
+        obs, rew, done, _ = env1.step(action=env1.action_space.sample())
+
         print(obs)
 
         env1.render(mode="human")
