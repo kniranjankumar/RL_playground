@@ -1,0 +1,127 @@
+<?xml version="1.0"?>
+<skel version="1.0">
+  <world name="world1">
+    <physics>
+      <timestep>0.001</timestep>
+      <collision_detector>fcl_mesh</collision_detector>
+    </physics>
+    <skeleton name="ground">
+      <body name="ground">
+        <gravity>1</gravity>
+        <transformation>0 -0.05 0 0 0 </transformation>
+        <inertia>
+          <mass>0.4</mass>
+          <offset>0 0 0</offset>
+        </inertia>
+        <visualization_shape>
+          <geometry>
+            <box>
+              <size>2.5 0.1 2.5 </size>
+            </box>
+          </geometry>
+          <color>0.95 0.95 0.95 </color>
+        </visualization_shape>
+        <collision_shape>
+          <geometry>
+            <box>
+              <size>2.5 0.1 2.5 </size>
+            </box>
+          </geometry>
+        </collision_shape>
+      </body>
+      <joint type="weld" name="joint 0">
+        <parent>world</parent>
+        <child>ground</child>
+      </joint>
+    </skeleton>
+    <skeleton name="box_skeleton">
+      <body name="link0">
+        <gravity>1</gravity>
+        <transformation>0 0.05 0.0 0 0 0 </transformation>
+        <inertia>
+          <mass>0.4</mass>
+          <offset>0 0 0</offset>
+        </inertia>
+        <visualization_shape>
+          <geometry>
+            <box>
+              <size>0.15 0.1 0.2 </size>
+            </box>
+          </geometry>
+          <color>0.8 0.3 0.3 </color>
+        </visualization_shape>
+        <collision_shape>
+          <geometry>
+            <box>
+              <size>0.15 0.1 0.2 </size>
+            </box>
+          </geometry>
+        </collision_shape>
+      </body>
+      <body name="link1">
+        <gravity>1</gravity>
+        <transformation>0 0.05 0.35 0 0 0 </transformation>
+        <inertia>
+          <mass>0.4</mass>
+          <offset>0 0 0</offset>
+        </inertia>
+        <visualization_shape>
+          <geometry>
+            <box>
+              <size>0.15 0.1 0.2 </size>
+            </box>
+          </geometry>
+          <color>0.8 0.3 0.3 </color>
+        </visualization_shape>
+        <collision_shape>
+          <geometry>
+            <box>
+              <size>0.15 0.1 0.2 </size>
+            </box>
+          </geometry>
+        </collision_shape>
+      </body>
+      <body name="link0cyl">
+        <gravity>1</gravity>
+        <transformation>0 0.05 0.175 1.57 0 0 </transformation>
+        <inertia>
+          <mass>0.0001</mass>
+          <offset>0 0 0</offset>
+        </inertia>
+        <visualization_shape>
+          <geometry>
+            <cylinder>
+              <radius>0.075</radius>
+              <height>0.1</height>
+            </cylinder>
+          </geometry>
+          <color>0.1 0.9 0.1 </color>
+        </visualization_shape>
+        <collision_shape>
+          <geometry>
+            <cylinder>
+              <radius>0.075</radius>
+              <height>0.1</height>
+            </cylinder>
+          </geometry>
+        </collision_shape>
+      </body>
+      <joint type="free" name="joint0">
+        <parent>world</parent>
+        <child>link0</child>
+      </joint>
+      <joint type="revolute" name="joint1">
+        <transformation>0 0 -0.175 0 0 0 </transformation>
+        <parent>link0</parent>
+        <child>link1</child>
+        <axis>
+          <xyz>0 1 0</xyz>
+        </axis>
+      </joint>
+      <joint type="weld" name="joint_cyl0">
+        <parent>link0</parent>
+        <child>link0cyl</child>
+      </joint>
+    </skeleton>
+  </world>
+</skel>
