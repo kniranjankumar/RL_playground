@@ -169,11 +169,18 @@ class NetworkVecEnv(SubprocVecEnv):
                         # net = tf.clip_by_value(net,1,4)
                         return tf.cast(net, tf.float64)
 
-        def setup_feedable_training(self, sess, lr=1e-1, is_init_all=True):
+        def setup_feedable_training(self, sess, lr=1e-1, loss='huber', is_init_all=True):
             self.sess = sess
+            if loss=='huber':
+                loss_fn = tf.losses.huber_loss
+            elif loss=='L1':
+                loss_fn = tf.losses.absolute_difference
+            elif loss=='L2':
+                loss_fn = tf.losses.mean_squared_error
+
             if self.model_type == 'LSTM':
                 mass = tf.tile(tf.expand_dims(self.mass,0),multiples=[self.num_steps,1,1])
-                abs_error_rnn = tf.losses.huber_loss( mass, self.predict_mass)
+                abs_error_rnn = loss_fn(mass, self.predict_mass)
                 # abs_error_rnn = tf.losses.absolute_difference(mass, self.predict_mass)
                 self.mean_error_feedable = tf.reduce_mean(abs_error_rnn)
                 abs_error = tf.losses.absolute_difference(self.mass, self.predict_mass[-1])
@@ -187,7 +194,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 #     tf.reduce_mean(tf.divide(abs_error, tf.cast(0.0001 + tf.abs(self.mass), tf.float32)), axis=1))
             else:
                 # abs_error = tf.losses.absolute_difference(self.mass, self.predict_mass)
-                abs_error = tf.losses.huber_loss(self.mass, self.predict_mass)
+                abs_error = loss_fn(self.mass, self.predict_mass)
                 self.mean_error_feedable = tf.reduce_mean(abs_error)
                 self.percent = tf.reduce_mean(
                     tf.reduce_mean(tf.divide(abs_error, tf.cast(0.0001 + tf.abs(self.mass), tf.float32)), axis=1))
@@ -630,6 +637,8 @@ parser.add_argument("--flip_enabled", help='Allow negative forces', default=Fals
 parser.add_argument("--coverage_factor", help='fraction of the block covered by the controller',  default=0.9, type=float,nargs='?', const=0.9)
 parser.add_argument("--reward_scale", help='Factor by which the reward will be scaled from [-1,1]', default=1.0, type=float, nargs='?', const=1.0)
 parser.add_argument("--predictor_lr_steps", help='Number of times learning rate will be halved', default=0, type=int,nargs='?', const=0)
+parser.add_argument("--chain_length", help='Number of bodies in the chain', default=2, type=int,nargs='?', const=2)
+parser.add_argument("--predictor_loss", help='Huber, L1 or L2', default='huber', type=str, nargs='?', const='huber')
 
 args = parser.parse_args()
 the_path = os.path.join(path, 'experiments', 'KR5_arm', args.folder_name)
@@ -639,8 +648,12 @@ env_id = args.env_id
 assert args.ball_type == 1 or args.ball_type == 2
 register(
     id=args.env_id,
-    entry_point='gym.envs.dart:ArmAccEnv',
-    kwargs={'ball_type':args.ball_type, 'start_state':args.start_state, 'flip_enabled':args.flip_enabled, 'coverage_factor':args.coverage_factor},
+    entry_point='gym.envs.dart:ArmAccEnvBall2',
+    kwargs={'ball_type':args.ball_type,
+            'start_state':args.start_state,
+            'flip_enabled':args.flip_enabled,
+            'coverage_factor':args.coverage_factor,
+            'num_bodies':args.chain_length},
     reward_threshold=2,
     timestep_limit=10,
     max_episode_steps=20,
@@ -655,14 +668,14 @@ if args.only_test:
         model = PPO2.load(policy_ckpt_path+'.pkl' , env, verbose=1, learning_rate=constfn(1e-5))
         env.sess = model.sess
         env.graph = model.graph
-        env.model.setup_feedable_training(model.sess,is_init_all=False)
+        env.model.setup_feedable_training(model.sess, loss=args.predictor_loss,is_init_all=False)
         policy = model
     except:
         print("error loading model. Using uniform policy")
         model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=args.PPO_learning_rate)
         env.sess = model.sess
         env.graph = model.graph
-        env.model.setup_feedable_training(model.sess,is_init_all=True)
+        env.model.setup_feedable_training(model.sess, loss=args.predictor_loss, is_init_all=True)
         policy = None
     predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(args.checkpoint_num),'model.ckpt')
     env.restore_model(predictor_ckpt_path)
@@ -687,7 +700,7 @@ else:
 
     env.sess = model.sess
     env.graph = model.graph
-    env.model.setup_feedable_training(model.sess,is_init_all=True)
+    env.model.setup_feedable_training(model.sess,  loss=args.predictor_loss, is_init_all=True)
     if args.train_predictor or args.is_fresh:
         error1, policy_save_number = env.train(args.predictor_dataset,
                                                is_fresh=args.is_fresh,
