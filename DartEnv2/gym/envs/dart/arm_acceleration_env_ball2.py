@@ -232,6 +232,7 @@ class ArmAccEnvBall2(gym.Env):
                 break
             # self.render(mode='human')
             self.do_simulation(action, offset, block_id)
+
             if self.dart_world.t > 10:
                 print(action)
                 print("Gone mad")
