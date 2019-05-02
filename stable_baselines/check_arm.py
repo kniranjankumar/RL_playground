@@ -325,38 +325,35 @@ class NetworkVecEnv(SubprocVecEnv):
 
         obs_list, act_list, mass_list = [], [], []
         for i in tqdm(range(num_eps)):
-            try:
-                state = None
-                obs = super(NetworkVecEnv, self).reset()
+            state = None
+            obs = super(NetworkVecEnv, self).reset()
+            obs_list.append(obs['observation'].copy())
+            while np.all(done == False):
+                if policy is None:
+                    act = [env.action_space.sample() for j in range(num)]
+                else:
+                    act, state = policy.predict(obs['observation'], state, mask, deterministic=True)
+                obs, rew, done, _ = super(NetworkVecEnv, self).step(act)
+                # print(rew)
+                # mask = don    e
+                # imgs = self.get_images()
+                # cv2.imshow('win',cv2.resize(np.vstack(imgs), (0,0,), fx=0.2, fy=0.2))
+                # cv2.waitKey(1)
                 obs_list.append(obs['observation'].copy())
-                while np.all(done == False):
-                    if policy is None:
-                        act = [env.action_space.sample() for j in range(num)]
-                    else:
-                        act, state = policy.predict(obs['observation'], state, mask, deterministic=True)
-                    obs, rew, done, _ = super(NetworkVecEnv, self).step(act)
-                    # print(rew)
-                    # mask = don    e
-                    # imgs = self.get_images()
-                    # cv2.imshow('win',cv2.resize(np.vstack(imgs), (0,0,), fx=0.2, fy=0.2))
-                    # cv2.waitKey(1)
-                    obs_list.append(obs['observation'].copy())
-                    act_list.append(np.array(act).copy())
-                    mass_list.append(obs['mass'].copy())
-                    mask = done.copy()
-                    if np.all(done == True):
-                        if policy is not None:
-                            state *= 0
-                        # mask = np.zeros_like(mask, dtype= bool)
-                        break
-                    done = np.bitwise_not(done)
-                rollout_obs.append(np.reshape(np.stack(obs_list, axis=1), [self.num_envs, -1]).copy())
-                rollout_act.append(np.reshape(np.stack(act_list, axis=1), [self.num_envs, -1]).copy())
-                rollout_mass.append(np.array(mass_list[0]).copy())
-                obs_list, act_list, mass_list = [], [], []
-            except:
-                print('simulation failed')
-                pass
+                act_list.append(np.array(act).copy())
+                mass_list.append(obs['mass'].copy())
+                mask = done.copy()
+                if np.all(done == True):
+                    if policy is not None:
+                        state *= 0
+                    # mask = np.zeros_like(mask, dtype= bool)
+                    break
+                done = np.bitwise_not(done)
+            rollout_obs.append(np.reshape(np.stack(obs_list, axis=1), [self.num_envs, -1]).copy())
+            rollout_act.append(np.reshape(np.stack(act_list, axis=1), [self.num_envs, -1]).copy())
+            rollout_mass.append(np.array(mass_list[0]).copy())
+            obs_list, act_list, mass_list = [], [], []
+
 
         return np.array(rollout_obs), np.array(rollout_act), np.array(rollout_mass)
 
