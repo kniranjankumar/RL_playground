@@ -227,12 +227,12 @@ class ArmAccEnvBall2(gym.Env):
         # action[0] = 600
         self.count_act += 1
         # print(self.count_act)
-        while self.dart_world.t < 5:
+        while self.dart_world.t < 10:
             if self.dart_world.complete:
                 break
             # self.render(mode='human')
             self.do_simulation(action, offset, block_id)
-            if self.dart_world.t > 5:
+            if self.dart_world.t > 10:
                 print(action)
                 print("Gone mad")
                 # self.render(mode='human')
