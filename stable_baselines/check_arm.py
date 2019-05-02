@@ -15,6 +15,7 @@ import argparse
 from glob import glob
 from tqdm import tqdm
 import cv2
+import requests
 
 num = 16  # Number of processes to use
 path, folder = os.path.split(os.getcwd())
@@ -726,4 +727,11 @@ else:
                            save_dir=predictor_ckpt_path,
                            data_path=predictor_data_path,
                            steps=args.predictor_steps)
-    print(env.evaluate(10,model))
+    error = env.evaluate(10,model)
+    headers = {'X-API-TOKEN': 'o-SJLHofKsB7dZwjDmNCJVyvEBEiEzObP2zyRQiRvNy'}
+    payload = {'value1': 'Error is '+str(error), 'value2': 'Done'}
+
+    r = requests.post(
+        " https://maker.ifttt.com/trigger/training_complete/with/key/o-SJLHofKsB7dZwjDmNCJVyvEBEiEzObP2zyRQiRvNy",
+        data=payload)
+
