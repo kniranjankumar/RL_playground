@@ -348,7 +348,7 @@ class NetworkVecEnv(SubprocVecEnv):
                         state *= 0
                     # mask = np.zeros_like(mask, dtype= bool)
                     break
-                done = np.bitwise_not(done)
+            done = np.bitwise_not(done)
             rollout_obs.append(np.reshape(np.stack(obs_list, axis=1), [self.num_envs, -1]).copy())
             rollout_act.append(np.reshape(np.stack(act_list, axis=1), [self.num_envs, -1]).copy())
             rollout_mass.append(np.array(mass_list[0]).copy())
