@@ -261,7 +261,7 @@ class ArmAccEnvBall2(gym.Env):
         joints = [6 + i for i in range(self.num_bodies - 1)]
         idx = [1, 3, 5]
         idx.extend(joints)
-        obs = np.append(self.box_skeleton.q[idx],[self.size[0,0], self.size[1,0]])
+        obs = np.append(self.box_skeleton.q[idx],[self.size[i,0] for i in range(self.num_bodies)])
         # obs = self.box_skeleton.q[idx]
         # obs = np.append(self.box_skeleton.q[idx],
         #                 [(self.dart_world.t - self.dart_world.t_0), self.size[0, 0], self.size[1, 0]])
