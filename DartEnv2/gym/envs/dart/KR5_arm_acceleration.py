@@ -626,19 +626,24 @@ class ControllerOCPose:
             # self.target_x = self.end_effector.to_world(self.end_effector_offset)
             self.skel.set_velocities(0*self.skel.dq)
             # self.skel.set_accelerations(0*self.skel.dq)
-            if np.any(np.isnan(self.box.dq)):
-                self.skel.set_positions(self.start)
-                self.skel.world.complete = True
-                self.flipped = False
-                self.moved_arm_base = False
-                self.timestep_count = self.FTIME
+            try:
+                # if np.any(np.isnan(self.box.dq)):
+                #     self.skel.set_positions(self.start)
+                #     self.skel.world.complete = True
+                #     self.flipped = False
+                #     self.moved_arm_base = False
+                #     self.timestep_count = self.FTIME
+                #
+                # el
+                if np.all(self.box.dq < 0.05):
+                    self.skel.set_positions(self.start)
+                    self.skel.world.complete = True
+                    self.flipped = False
+                    self.moved_arm_base = False
+                    self.timestep_count = self.FTIME
+            except:
+                print([bodynode.mass() for bodynode in self.box.bodynodes])
 
-            elif np.all(self.box.dq < 0.05):
-                self.skel.set_positions(self.start)
-                self.skel.world.complete = True
-                self.flipped = False
-                self.moved_arm_base = False
-                self.timestep_count = self.FTIME
 
             force = self.skel.coriolis_and_gravity_forces()
         return force
