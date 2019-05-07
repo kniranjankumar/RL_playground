@@ -777,9 +777,10 @@ class MyWorld(pydart.World):
         self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets','KR5')
         # self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
         # self.asset_path = "/home/niranjan/Projects/vis_inst/skynet/RL_playground/DartEnv2/gym/envs/dart/assets/KR5/"
-
         self.world = pydart.World.__init__(self, 0.001,
-                                           self.asset_path+"/"+str(num_bodies)+"body_chain.skel")
+                                           self.asset_path+"/"+"arena2big.skel")
+        # self.world = pydart.World.__init__(self, 0.001,
+        #                                    self.asset_path+"/"+str(num_bodies)+"body_chain.skel")
 
         # self.robot.set_positions([0.0, 1.4054258, 0.4363229, -0.0, 1.5695383, -0.0])
         # self.robot.set_positions([0.0, 0, 0.0, -0.0, 0, 0])
