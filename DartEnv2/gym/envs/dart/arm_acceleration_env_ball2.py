@@ -22,7 +22,7 @@ class ArmAccEnvBall2(gym.Env):
     """Superclass for all Dart environments.
     """
 
-    def __init__(self, ball_type=1, flip_enabled=False, start_state=None, coverage_factor=0.9, num_bodies=2):
+    def __init__(self, ball_type=1, flip_enabled=False, start_state=None, coverage_factor=0.9, num_bodies=3):
         self.num_bodies = num_bodies
         self.num_actions = 2
         self.variable_size = False
@@ -165,7 +165,7 @@ class ArmAccEnvBall2(gym.Env):
             for i in range(1,self.num_bodies):
                 q[-i] = self.np_random.uniform(-0.75, 0.75)
         else:
-            q[-1] = self.start_state
+            q[-self.num_bodies+1:] = self.start_state
         for jt in range(0, len(self.box_skeleton.joints)):
             if self.box_skeleton.joints[jt].has_position_limit(0):
                 self.box_skeleton.joints[jt].set_position_limit_enforced(True)
@@ -230,7 +230,7 @@ class ArmAccEnvBall2(gym.Env):
         while self.dart_world.t < 10:
             if self.dart_world.complete:
                 break
-            # self.render(mode='human')
+            self.render(mode='human')
             self.do_simulation(action, offset, block_id)
 
             if self.dart_world.t > 10:
