@@ -208,6 +208,8 @@ class ArmAccEnvBall2(gym.Env):
             print('q', self.box_skeleton.q, q)
             print('mass', self.mass)
             print('action', tau, offset)
+            self.dart_world.step()
+
 
     def get_offset(self, action, num_bodies):
         block_idx = int(num_bodies * (action + 1) / 2)
