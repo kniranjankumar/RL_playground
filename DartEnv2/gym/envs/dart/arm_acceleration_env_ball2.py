@@ -202,13 +202,13 @@ class ArmAccEnvBall2(gym.Env):
         self.dart_world.controller.select_block = int(block_id)
         # self.dart_world.controller.offset = offset
         q = self.box_skeleton.q
-        try:
-            self.dart_world.step()
-        except:
-            print('q', self.box_skeleton.q, q)
-            print('mass', self.mass)
-            print('action', tau, offset)
-            self.dart_world.step()
+        # try:
+        self.dart_world.step()
+        # except:
+        #     print('q', self.box_skeleton.q, q)
+        #     print('mass', self.mass)
+        #     print('action', tau, offset)
+        #     self.dart_world.step()
 
 
     def get_offset(self, action, num_bodies):
