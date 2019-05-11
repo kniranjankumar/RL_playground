@@ -608,7 +608,7 @@ class ControllerOCPose:
             try:
                 box_quat = Quaternion(matrix=self.box.bodynodes[self.select_block].T[:3, :3]).normalised
             except:
-                print(self.self.box.bodynodes[self.select_block].m)
+                print(self.box.bodynodes[self.select_block].m)
                 box_quat = Quaternion(matrix=self.box.bodynodes[self.select_block].T[:3, :3]).normalised
 
             rotation = 180 if self.tau[0] < 0 else 0
