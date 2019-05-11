@@ -523,6 +523,7 @@ class ControllerOCPose:
         self.offset = 0
         # self.tau[1] = -0.1
         self.flipped = False
+        self.went_nan = False
         self.moved_arm_base = False
         self.move_arm_base()
 
@@ -608,8 +609,11 @@ class ControllerOCPose:
             try:
                 box_quat = Quaternion(matrix=self.box.bodynodes[self.select_block].T[:3, :3]).normalised
             except:
-                print(self.box.bodynodes[self.select_block].m)
-                box_quat = Quaternion(matrix=self.box.bodynodes[self.select_block].T[:3, :3]).normalised
+                # self.went_nan = True
+                self.skel.world.is_failure = True
+                self.timestep_count = 0
+                return self.skel.coriolis_and_gravity_forces()
+                # box_quat = Quaternion(matrix=self.box.bodynodes[self.select_block].T[:3, :3]).normalised
 
             rotation = 180 if self.tau[0] < 0 else 0
             self.target_quat = Quaternion(axis=[0, 1, 0], degrees=rotation+box_quat.degrees*box_quat.axis[1] % 360)
