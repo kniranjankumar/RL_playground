@@ -336,7 +336,9 @@ class NetworkVecEnv(SubprocVecEnv):
                 try:
                     obs, rew, done, _ = super(NetworkVecEnv, self).step(act)
                 except:
-                    print(obs_list,act_list)
+                    print('obs',obs_list)
+                    print('act',act_list)
+                    print('mass',mass_list)
                     obs, rew, done, _ = super(NetworkVecEnv, self).step(act)
 
                 # print(rew)
@@ -616,6 +618,7 @@ def evaluate(policy, env):
         rew_list.append(np.mean(rew))
     print(np.sum(np.array(rew_list)) / eps_count)
 
+
 def save_argparse(save_path, args):
     fout = os.path.join(save_path, 'hyperparameters.txt')
     fo = open(fout, "w")
@@ -623,6 +626,15 @@ def save_argparse(save_path, args):
         print(str(k), str(v))
         fo.write(str(k) + ' >>> ' + str(v) + '\n\n')
     fo.close()
+
+
+def send_notification(message, value):
+    payload = {'value1': message, 'value2': value}
+
+    r = requests.post(
+        " https://maker.ifttt.com/trigger/training_complete/with/key/o-SJLHofKsB7dZwjDmNCJVyvEBEiEzObP2zyRQiRvNy",
+        data=payload)
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--is_fresh", help='Train on fresh dataset', default=False, action='store_true')
@@ -735,10 +747,5 @@ else:
                            data_path=predictor_data_path,
                            steps=args.predictor_steps)
     error = env.evaluate(10,model)
-    headers = {'X-API-TOKEN': 'o-SJLHofKsB7dZwjDmNCJVyvEBEiEzObP2zyRQiRvNy'}
-    payload = {'value1': 'Error is '+str(error), 'value2': 'Done'}
 
-    r = requests.post(
-        " https://maker.ifttt.com/trigger/training_complete/with/key/o-SJLHofKsB7dZwjDmNCJVyvEBEiEzObP2zyRQiRvNy",
-        data=payload)
 

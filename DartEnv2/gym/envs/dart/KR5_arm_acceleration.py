@@ -605,7 +605,12 @@ class ControllerOCPose:
             self.moved_arm_base = True
         if self.timestep_count > 0:
             self.target_x = self.box.bodynodes[self.select_block].to_world([np.sign(self.tau[0])*-self.skel.world.box_shape[0][0] * 0.5, 0, self.offset])
-            box_quat = Quaternion(matrix=self.box.bodynodes[self.select_block].T[:3, :3]).normalised
+            try:
+                box_quat = Quaternion(matrix=self.box.bodynodes[self.select_block].T[:3, :3]).normalised
+            except:
+                print(self.self.box.bodynodes[self.select_block].m)
+                box_quat = Quaternion(matrix=self.box.bodynodes[self.select_block].T[:3, :3]).normalised
+
             rotation = 180 if self.tau[0] < 0 else 0
             self.target_quat = Quaternion(axis=[0, 1, 0], degrees=rotation+box_quat.degrees*box_quat.axis[1] % 360)
 
