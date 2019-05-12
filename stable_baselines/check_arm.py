@@ -628,7 +628,7 @@ def save_argparse(save_path, args):
     fo.close()
 
 
-def send_notification(message, value):
+def send_notification(message, value=' '):
     payload = {'value1': message, 'value2': value}
 
     r = requests.post(
@@ -659,6 +659,8 @@ parser.add_argument("--reward_scale", help='Factor by which the reward will be s
 parser.add_argument("--predictor_lr_steps", help='Number of times learning rate will be halved', default=0, type=int,nargs='?', const=0)
 parser.add_argument("--chain_length", help='Number of bodies in the chain', default=2, type=int,nargs='?', const=2)
 parser.add_argument("--predictor_loss", help='Huber, L1 or L2', default='huber', type=str, nargs='?', const='huber')
+parser.add_argument("--enable_notification", help='Send notification to phone', default=False, action='store_true')
+
 
 args = parser.parse_args()
 the_path = os.path.join(path, 'experiments', 'KR5_arm', args.folder_name)
@@ -728,6 +730,8 @@ else:
                                                data_path=predictor_data_path,
                                                lr=args.predictor_lr_steps,
                                                steps=args.predictor_steps)
+        if args.enable_notication:
+            send_notification('Supervised training completed')
     else:
         predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(args.checkpoint_num), 'model.ckpt')
         env.restore_model(predictor_ckpt_path)
