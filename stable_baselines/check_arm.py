@@ -24,7 +24,7 @@ the_path = os.path.join(path, 'experiments', 'KR5_arm', 'envs', '2b_2a_16K_oc_0.
 
 
 class NetworkVecEnv(SubprocVecEnv):
-    def __init__(self, env_fns1,predictor_type, reward_type, path, reward_scale=1):
+    def __init__(self, env_fns1,predictor_type, reward_type, path, reward_scale=1, num_steps=3):
         pydart2.init()
         SubprocVecEnv.__init__(self, env_fns1)
         self.num_envs = num
@@ -37,7 +37,7 @@ class NetworkVecEnv(SubprocVecEnv):
         self.act_buffer = np.array([])
         self.reward_type = reward_type
         self.reward_scale = reward_scale
-        self.model = self.FCModel(self.path, self.sess, num_steps=3, act_dim=self.action_space.shape[0],
+        self.model = self.FCModel(self.path, self.sess, num_steps=num_steps, act_dim=self.action_space.shape[0],
                                   mass_dim=self.observation_space.spaces['mass'].shape[0],
                                   obs_dim=self.observation_space.spaces['observation'].shape[0], mass_range = [self.observation_space.spaces['mass'].low, self.observation_space.spaces['mass'].high],
                                   model_type=predictor_type)
@@ -660,7 +660,7 @@ parser.add_argument("--predictor_lr_steps", help='Number of times learning rate 
 parser.add_argument("--chain_length", help='Number of bodies in the chain', default=2, type=int,nargs='?', const=2)
 parser.add_argument("--predictor_loss", help='Huber, L1 or L2', default='huber', type=str, nargs='?', const='huber')
 parser.add_argument("--enable_notification", help='Send notification to phone', default=False, action='store_true')
-
+parser.add_argument("--use_mass_distribution", help='Predict mass distribution instead of actual mass', default=False, action='store_true')
 
 args = parser.parse_args()
 the_path = os.path.join(path, 'experiments', 'KR5_arm', args.folder_name)
@@ -671,17 +671,18 @@ assert args.ball_type == 1 or args.ball_type == 2
 register(
     id=args.env_id,
     entry_point='gym.envs.dart:ArmAccEnvBall2',
-    kwargs={'ball_type':args.ball_type,
-            'start_state':args.start_state,
-            'flip_enabled':args.flip_enabled,
-            'coverage_factor':args.coverage_factor,
-            'num_bodies':args.chain_length},
+    kwargs={'ball_type': args.ball_type,
+            'start_state': args.start_state,
+            'flip_enabled': args.flip_enabled,
+            'coverage_factor': args.coverage_factor,
+            'num_bodies': args.chain_length,
+            'use_mass_distribution': args.use_mass_distribution},
     reward_threshold=2,
     timestep_limit=10,
     max_episode_steps=20,
 )
 env_list = [make_env(env_id, i) for i in range(num)]
-env = NetworkVecEnv(env_list, args.predictor_type, args.reward_type, the_path, reward_scale=args.reward_scale)
+env = NetworkVecEnv(env_list, args.predictor_type, args.reward_type, the_path, reward_scale=args.reward_scale,num_steps=args.chain_length)
 env.reset()
 if args.only_test:
     policy_ckpt_path = os.path.join(the_path, 'policy_ckpt', str(args.policy_checkpoint_num))
@@ -730,7 +731,7 @@ else:
                                                data_path=predictor_data_path,
                                                lr=args.predictor_lr_steps,
                                                steps=args.predictor_steps)
-        if args.enable_notification:
+        if args.enable_notication:
             send_notification('Supervised training completed')
     else:
         predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(args.checkpoint_num), 'model.ckpt')

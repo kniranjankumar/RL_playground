@@ -22,11 +22,12 @@ class ArmAccEnvBall2(gym.Env):
     """Superclass for all Dart environments.
     """
 
-    def __init__(self, ball_type=1, flip_enabled=False, start_state=None, coverage_factor=0.9, num_bodies=3):
+    def __init__(self, ball_type=1, flip_enabled=False, start_state=None, coverage_factor=0.9, num_bodies=3, use_mass_distribution=False):
         self.num_bodies = num_bodies
         self.num_actions = 2
         self.variable_size = False
         self.flip_enabled = flip_enabled
+        self.use_mass_distribution = use_mass_distribution
         action_bounds = np.array([[-1 for i in range(self.num_actions)], [1 for i in range(self.num_actions)]])
         # self.mass_range = np.array([0.1, 0.7])
         # self.mass_range = np.array([0.1, 7])
@@ -36,7 +37,7 @@ class ArmAccEnvBall2(gym.Env):
         # self.size_range = np.array([0.1, 0.1])
         self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1], self.num_bodies)
         self.size = np.random.uniform(self.size_range[0], self.size_range[1], [self.num_bodies, 2])
-        self.mu = np.random.uniform(0.9, 0.9)
+        self.mu = np.random.uniform(0.5, 0.9) if self.use_mass_distribution else  np.random.uniform(0.9, 0.9)
         print(coverage_factor)
         self.coverage_factor = coverage_factor
         # self.size = np.sort(self.size)
@@ -123,7 +124,9 @@ class ArmAccEnvBall2(gym.Env):
         # self.dart_world.reset_box()
         self.mass = self.np_random.uniform(self.mass_range[0], self.mass_range[1], self.num_bodies)
         self.size = self.np_random.uniform(self.size_range[0], self.size_range[1], [self.num_bodies, 2])
-        self.mu = self.np_random.uniform(0.9, 0.9)
+        # self.mu = self.np_random.uniform(0.9, 0.9)
+        self.mu = self.np_random.uniform(0.5, 0.9) if self.use_mass_distribution else self.np_random.uniform(0.9, 0.9)
+
         # for i in range(6):
         #     self.dart_world.box.joints[0].set_damping_coefficient(i, self.mu)
         # self.dart_world.box.joints[0].set_coulomb_friction(i, np.random.uniform(0,1))
@@ -274,11 +277,12 @@ class ArmAccEnvBall2(gym.Env):
         obs = np.append(self.box_skeleton.q[idx],[self.size[i,0] for i in range(self.num_bodies)])
         nan_idx = np.isnan(obs)
         obs[nan_idx] = 0
+        mass = self.mass/np.sum(self.mass) if self.use_mass_distribution else self.mass
         # obs = self.box_skeleton.q[idx]
         # obs = np.append(self.box_skeleton.q[idx],
         #                 [(self.dart_world.t - self.dart_world.t_0), self.size[0, 0], self.size[1, 0]])
         # obs = np.append(np.hstack((self.box_skeleton.q[idx],self.dart_world.init_vel[idx])),[self.size[0,0], self.size[1,0]])
-        return {'observation': obs, 'mass': self.mass, 'mu': self.mu}
+        return {'observation': obs, 'mass': mass, 'mu': self.mu}
 
     def _render(self, mode='human', close=False):
         # self._get_viewer().scene.tb.trans[0] = -self.dart_world.skeletons[self.track_skeleton_id].com()[0]*1
