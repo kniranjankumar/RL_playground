@@ -731,7 +731,7 @@ else:
                                                data_path=predictor_data_path,
                                                lr=args.predictor_lr_steps,
                                                steps=args.predictor_steps)
-        if args.enable_notication:
+        if args.enable_notification:
             send_notification('Supervised training completed')
     else:
         predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(args.checkpoint_num), 'model.ckpt')
