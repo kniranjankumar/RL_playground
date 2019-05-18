@@ -257,7 +257,7 @@ class ArmAccEnvBall2(gym.Env):
         self.dart_world.complete = False
         # self.render(mode='human')
         obs = self.get_obs()
-        if self.count_act >= self.num_bodies-1:
+        if self.count_act >= self.num_bodies:
             done = True
             self.count_act = 0
         else:
