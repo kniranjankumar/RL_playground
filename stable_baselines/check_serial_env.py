@@ -5,6 +5,7 @@ import gym
 import numpy as np
 from gym.envs.registration import register
 import pydart2
+import matplotlib.pyplot as plt
 
 num = 4  # Number of processes to use
 # #
@@ -55,7 +56,9 @@ register(
             'start_state':[1.5,1.5],
             'flip_enabled':True,
             'coverage_factor':0.9,
-            'num_bodies':3},
+            'num_bodies':2,
+            'start_state':np.array([0])[:],
+            'use_mass_distribution':True},
     reward_threshold=2,
     timestep_limit=10,
     max_episode_steps=20,
@@ -72,13 +75,17 @@ env1.render(mode="human")
 done = False
 count = 0
 reward = []
-for i in range(1000):
+mu = []
+disp = []
+for i in range(100):
     # print(count)
     count = 0
     while not done:
         count += 1
-        # obs, rew, done, _ = env1.step(action=[-1.0,offset[i]])
-        obs, rew, done, _ = env1.step(action=env1.action_space.sample())
+        obs, rew, done, _ = env1.step(action=[-0.1,offset[0]])
+        mu.append(obs['mu'])
+        disp.append(obs['observation'][:4])
+        # obs, rew, done, _ = env1.step(action=env1.action_space.sample())
 
         print(obs)
 
@@ -92,6 +99,8 @@ for i in range(1000):
 
     # env1.render(mode="human")
 
+plt.plot(np.array(mu),np.array(disp), '*')
+plt.show()
 # print(sum(reward)/len(reward))
 # env2.reset()
 # print(env1.env.dart_world.t,env2.env.dart_world.t)

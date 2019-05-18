@@ -30,14 +30,15 @@ class ArmAccEnvBall2(gym.Env):
         self.use_mass_distribution = use_mass_distribution
         action_bounds = np.array([[-1 for i in range(self.num_actions)], [1 for i in range(self.num_actions)]])
         # self.mass_range = np.array([0.1, 0.7])
-        # self.mass_range = np.array([0.1, 7])
-        self.mass_range = np.array([0.5, 7])
+        self.mass_range = np.array([0.1, 7])
+        # self.mass_range = np.array([7, 7])
         self.start_state = start_state
         self.size_range = np.array([0.1,0.15])
-        # self.size_range = np.array([0.1, 0.1])
+        # self.size_range = np.array([0.15, 0.15])
+        self.mu_range = np.array([0.0,1.0])
         self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1], self.num_bodies)
         self.size = np.random.uniform(self.size_range[0], self.size_range[1], [self.num_bodies, 2])
-        self.mu = np.random.uniform(0.5, 0.9) if self.use_mass_distribution else  np.random.uniform(0.9, 0.9)
+        self.mu = np.random.uniform(self.mu_range[0], self.mu_range[1]) if self.use_mass_distribution else  np.random.uniform(0.9, 0.9)
         print(coverage_factor)
         self.coverage_factor = coverage_factor
         # self.size = np.sort(self.size)
@@ -125,8 +126,8 @@ class ArmAccEnvBall2(gym.Env):
         self.mass = self.np_random.uniform(self.mass_range[0], self.mass_range[1], self.num_bodies)
         self.size = self.np_random.uniform(self.size_range[0], self.size_range[1], [self.num_bodies, 2])
         # self.mu = self.np_random.uniform(0.9, 0.9)
-        self.mu = self.np_random.uniform(0.5, 0.9) if self.use_mass_distribution else self.np_random.uniform(0.9, 0.9)
-
+        self.mu = self.np_random.uniform(self.mu_range[0], self.mu_range[1]) if self.use_mass_distribution else self.np_random.uniform(0.9, 0.9)
+        print(self.mu)
         # for i in range(6):
         #     self.dart_world.box.joints[0].set_damping_coefficient(i, self.mu)
         # self.dart_world.box.joints[0].set_coulomb_friction(i, np.random.uniform(0,1))
@@ -256,7 +257,7 @@ class ArmAccEnvBall2(gym.Env):
         self.dart_world.complete = False
         # self.render(mode='human')
         obs = self.get_obs()
-        if self.count_act >= self.num_bodies:
+        if self.count_act >= self.num_bodies-1:
             done = True
             self.count_act = 0
         else:
