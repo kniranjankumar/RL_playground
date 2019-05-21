@@ -24,11 +24,12 @@ the_path = os.path.join(path, 'experiments', 'KR5_arm', 'envs', '2b_2a_16K_oc_0.
 
 
 class NetworkVecEnv(SubprocVecEnv):
-    def __init__(self, env_fns1,predictor_type, reward_type, path, reward_scale=1, num_steps=3):
+    def __init__(self, env_fns1,predictor_type, reward_type, path, reward_scale=1, num_steps=3, use_mass_distribution=False):
         pydart2.init()
         SubprocVecEnv.__init__(self, env_fns1)
         self.num_envs = num
         self.path = path
+        self.mass_distribution = use_mass_distribution
         # self.sess = tf.Session()
         # self.graph = tf.Graph()
         self.graph = None
@@ -40,16 +41,18 @@ class NetworkVecEnv(SubprocVecEnv):
         self.model = self.FCModel(self.path, self.sess, num_steps=num_steps, act_dim=self.action_space.shape[0],
                                   mass_dim=self.observation_space.spaces['mass'].shape[0],
                                   obs_dim=self.observation_space.spaces['observation'].shape[0], mass_range = [self.observation_space.spaces['mass'].low, self.observation_space.spaces['mass'].high],
-                                  model_type=predictor_type)
+                                  model_type=predictor_type,
+                                  use_mass_distribution=self.mass_distribution)
         self.observation_space_dict = self.observation_space
         self.observation_space = self.observation_space.spaces['observation']
         self.ticker = False
         self.dummy_step = False
 
     class FCModel:
-        def __init__(self, path, sess, num_steps, act_dim, mass_dim, obs_dim, mass_range, model_type='LSTM'):
+        def __init__(self, path, sess, num_steps, act_dim, mass_dim, obs_dim, mass_range, model_type='LSTM', use_mass_distribution=False):
             self.path = path
             self.mass_dim = mass_dim
+            self.mass_distribution = use_mass_distribution
             self.num_steps = num_steps
             self.act_dim = act_dim
             self.obs_dim = obs_dim
@@ -95,7 +98,10 @@ class NetworkVecEnv(SubprocVecEnv):
                         # lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=64, state_is_tuple=True)
                         # lstm_residual_cell = tf.nn.rnn_cell.ResidualWrapper(lstm_cell)
                         lstm_output, state = tf.nn.static_rnn(lstm_cell, initial_state=(c0, m0), inputs=rnn_input1)
-                        output = slim.fully_connected(lstm_output, self.mass_dim, activation_fn=None, scope='out')
+                        if self.mass_distribution:
+                            output = slim.fully_connected(lstm_output, self.mass_dim-1, activation_fn=None, scope='out')
+                        else:
+                            output = slim.fully_connected(lstm_output, self.mass_dim, activation_fn=None, scope='out')
                         ##CUDNN RNN
                         # rnn_input = tf.stack([tf.concat([obs[i+1], act[i]],axis=1) for i in range(len(act))], axis=0)
                         # c0 = tf.expand_dims(slim.fully_connected(obs[0], 64, scope='c0'),axis=0)
@@ -128,7 +134,12 @@ class NetworkVecEnv(SubprocVecEnv):
                         # lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=64, state_is_tuple=True)
                         # lstm_residual_cell = tf.nn.rnn_cell.ResidualWrapper(lstm_cell)
                         lstm_output, state = tf.nn.static_rnn(lstm_cell, initial_state=(c0, m0), inputs=rnn_input)
-                        output = slim.fully_connected(lstm_output, self.mass_dim, activation_fn=None, scope='out')
+                        if self.mass_distribution:
+                            output1 = slim.fully_connected(lstm_output, self.mass_dim-1, activation_fn=None, scope='out')
+                            output2 = tf.constant(1)-output1
+                            output = tf.concat([output1,output2], axis=1)
+                        else:
+                            output = slim.fully_connected(lstm_output, self.mass_dim, activation_fn=None, scope='out')
                         ##CUDNN RNN
                         # rnn_input = tf.stack([tf.concat([obs[i+1], act[i]],axis=1) for i in range(len(act))], axis=0)
                         # c0 = tf.expand_dims(slim.fully_connected(obs[0], 64, scope='c0'),axis=0)
@@ -682,7 +693,7 @@ register(
     max_episode_steps=20,
 )
 env_list = [make_env(env_id, i) for i in range(num)]
-env = NetworkVecEnv(env_list, args.predictor_type, args.reward_type, the_path, reward_scale=args.reward_scale,num_steps=args.chain_length)
+env = NetworkVecEnv(env_list, args.predictor_type, args.reward_type, the_path, reward_scale=args.reward_scale,num_steps=args.chain_length, use_mass_distribution=args.use_mass_distribution)
 env.reset()
 if args.only_test:
     policy_ckpt_path = os.path.join(the_path, 'policy_ckpt', str(args.policy_checkpoint_num))
