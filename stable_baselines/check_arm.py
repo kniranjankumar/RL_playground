@@ -137,7 +137,7 @@ class NetworkVecEnv(SubprocVecEnv):
                         if self.mass_distribution:
                             output1 = slim.fully_connected(lstm_output, self.mass_dim-1, activation_fn=None, scope='out')
                             output2 = tf.constant(1, dtype=tf.float64)-tf.reduce_sum(output1,axis=2)
-                            output = tf.concat([output1,output2], axis=2)
+                            output = tf.concat([output1,tf.expand_dims(output2, -1)], axis=2)
                         else:
                             output = slim.fully_connected(lstm_output, self.mass_dim, activation_fn=None, scope='out')
                         ##CUDNN RNN
