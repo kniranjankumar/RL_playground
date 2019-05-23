@@ -35,7 +35,7 @@ class ArmAccEnvBall2(gym.Env):
         self.start_state = start_state
         self.size_range = np.array([0.1,0.15])
         # self.size_range = np.array([0.15, 0.15])
-        self.mu_range = np.array([0.5,1.0])
+        self.mu_range = np.array([1.0,1.0])
         self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1], self.num_bodies)
         self.size = np.random.uniform(self.size_range[0], self.size_range[1], [self.num_bodies, 2])
         self.mu = np.random.uniform(self.mu_range[0], self.mu_range[1]) if self.use_mass_distribution else  np.random.uniform(0.9, 0.9)
