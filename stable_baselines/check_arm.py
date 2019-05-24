@@ -135,9 +135,11 @@ class NetworkVecEnv(SubprocVecEnv):
                         # lstm_residual_cell = tf.nn.rnn_cell.ResidualWrapper(lstm_cell)
                         lstm_output, state = tf.nn.static_rnn(lstm_cell, initial_state=(c0, m0), inputs=rnn_input)
                         if self.mass_distribution:
-                            output1 = slim.fully_connected(lstm_output, self.mass_dim-1, activation_fn=None, scope='out')
-                            output2 = tf.constant(1, dtype=tf.float64)-tf.reduce_sum(output1,axis=2)
-                            output = tf.concat([output1,tf.expand_dims(output2, -1)], axis=2)
+                            output1 = slim.fully_connected(lstm_output, self.mass_dim, activation_fn=None, scope='out')
+                            output = tf.nn.softmax(output1,axis=2)
+                            # output1 = slim.fully_connected(lstm_output, self.mass_dim-1, activation_fn=None, scope='out')
+                            # output2 = tf.constant(1, dtype=tf.float64)-tf.reduce_sum(output1,axis=2)
+                            # output = tf.concat([output1,tf.expand_dims(output2, -1)], axis=2)
                         else:
                             output = slim.fully_connected(lstm_output, self.mass_dim, activation_fn=None, scope='out')
                         ##CUDNN RNN
@@ -467,8 +469,11 @@ class NetworkVecEnv(SubprocVecEnv):
             true_mass = obs['mass']
             error = np.mean(np.abs(true_mass - predict_mass), axis=1)
             if self.reward_type == 'dense' or np.all(done == True):
-                rew1 = 1 - 2 * error / (self.observation_space_dict.spaces['mass'].high[0] -
-                                        self.observation_space_dict.spaces['mass'].low[0])
+                if self.mass_distribution:
+                    rew1 = 1 - 2 * error
+                else:
+                    rew1 = 1 - 2 * error / (self.observation_space_dict.spaces['mass'].high[0] -
+                                            self.observation_space_dict.spaces['mass'].low[0])
                 idx = rew == -1
                 rew = rew1
                 # rew[idx] = -1
@@ -669,6 +674,7 @@ parser.add_argument("--coverage_factor", help='fraction of the block covered by 
 parser.add_argument("--reward_scale", help='Factor by which the reward will be scaled from [-1,1]', default=1.0, type=float, nargs='?', const=1.0)
 parser.add_argument("--predictor_lr_steps", help='Number of times learning rate will be halved', default=0, type=int,nargs='?', const=0)
 parser.add_argument("--chain_length", help='Number of bodies in the chain', default=2, type=int,nargs='?', const=2)
+parser.add_argument("--num_tries", help='Number of pushes the arm is allowed to do', default=2, type=int,nargs='?', const=2)
 parser.add_argument("--predictor_loss", help='Huber, L1 or L2', default='huber', type=str, nargs='?', const='huber')
 parser.add_argument("--enable_notification", help='Send notification to phone', default=False, action='store_true')
 parser.add_argument("--use_mass_distribution", help='Predict mass distribution instead of actual mass', default=False, action='store_true')
@@ -687,13 +693,14 @@ register(
             'flip_enabled': args.flip_enabled,
             'coverage_factor': args.coverage_factor,
             'num_bodies': args.chain_length,
-            'use_mass_distribution': args.use_mass_distribution},
+            'use_mass_distribution': args.use_mass_distribution,
+            'num_tries': args.num_tries},
     reward_threshold=2,
     timestep_limit=10,
     max_episode_steps=20,
 )
 env_list = [make_env(env_id, i) for i in range(num)]
-env = NetworkVecEnv(env_list, args.predictor_type, args.reward_type, the_path, reward_scale=args.reward_scale,num_steps=args.chain_length, use_mass_distribution=args.use_mass_distribution)
+env = NetworkVecEnv(env_list, args.predictor_type, args.reward_type, the_path, reward_scale=args.reward_scale,num_steps=args.num_tries, use_mass_distribution=args.use_mass_distribution)
 env.reset()
 if args.only_test:
     policy_ckpt_path = os.path.join(the_path, 'policy_ckpt', str(args.policy_checkpoint_num))
@@ -762,6 +769,8 @@ else:
                            save_dir=predictor_ckpt_path,
                            data_path=predictor_data_path,
                            steps=args.predictor_steps)
+        if args.enable_notification:
+            send_notification('Supervised training completed', str(i))
     error = env.evaluate(10,model)
 
 

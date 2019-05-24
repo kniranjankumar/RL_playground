@@ -22,9 +22,10 @@ class ArmAccEnvBall2(gym.Env):
     """Superclass for all Dart environments.
     """
 
-    def __init__(self, ball_type=1, flip_enabled=False, start_state=None, coverage_factor=0.9, num_bodies=3, use_mass_distribution=False):
+    def __init__(self, ball_type=1, flip_enabled=False, start_state=None, coverage_factor=0.9, num_bodies=3, use_mass_distribution=False, num_tries=3):
         self.num_bodies = num_bodies
         self.num_actions = 2
+        self.num_tries = num_tries
         self.variable_size = False
         self.flip_enabled = flip_enabled
         self.use_mass_distribution = use_mass_distribution
@@ -35,7 +36,7 @@ class ArmAccEnvBall2(gym.Env):
         self.start_state = start_state
         self.size_range = np.array([0.1,0.15])
         # self.size_range = np.array([0.15, 0.15])
-        self.mu_range = np.array([1.0,1.0])
+        self.mu_range = np.array([0.5,1.0])
         self.mass = np.random.uniform(self.mass_range[0], self.mass_range[1], self.num_bodies)
         self.size = np.random.uniform(self.size_range[0], self.size_range[1], [self.num_bodies, 2])
         self.mu = np.random.uniform(self.mu_range[0], self.mu_range[1]) if self.use_mass_distribution else  np.random.uniform(0.9, 0.9)
@@ -257,7 +258,7 @@ class ArmAccEnvBall2(gym.Env):
         self.dart_world.complete = False
         # self.render(mode='human')
         obs = self.get_obs()
-        if self.count_act >= self.num_bodies:
+        if self.count_act >= self.num_tries:
             done = True
             self.count_act = 0
         else:
