@@ -345,7 +345,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 if policy is None:
                     act = [env.action_space.sample() for j in range(num)]
                 else:
-                    act, state = policy.predict(obs['observation'], state, mask, deterministic=True)
+                    act, state = policy.predict(obs['observation'], state, mask, deterministic=False)
                 try:
                     obs, rew, done, _ = super(NetworkVecEnv, self).step(act)
                 except:
@@ -393,7 +393,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 if policy is None:
                     act = [env.action_space.sample() for j in range(num)]
                 else:
-                    act, state = policy.predict(obs['observation'], state, mask, deterministic=True)
+                    act, state = policy.predict(obs['observation'], state, mask, deterministic=False)
                 obs, rew, done, _ = super(NetworkVecEnv, self).step(act)
                 # mask = done
                 # imgs = self.get_images()
