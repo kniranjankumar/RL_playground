@@ -757,8 +757,8 @@ else:
         policy_save_number = args.checkpoint_num
 
     for i in range(args.num_meta_iter):
-        init = tf.initialize_variables(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='model'))
-        model.sess.run(init)
+        # init = tf.initialize_variables(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='model'))
+        # model.sess.run(init)
         model.learn(total_timesteps=args.PPO_steps)
         os.makedirs(policy_ckpt_path, exist_ok=True)
         model.save(policy_ckpt_path)
