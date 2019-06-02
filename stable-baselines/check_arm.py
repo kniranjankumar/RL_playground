@@ -752,7 +752,7 @@ else:
 
     # env.sess = model.sess
     # env.graph = model.graph
-    env.model.setup_feedable_training(model.sess,  loss=args.predictor_loss, is_init_all=True)
+    env.model.setup_feedable_training(loss=args.predictor_loss, is_init_all=True)
     if args.train_predictor or args.is_fresh:
         error1, policy_save_number = env.train(args.predictor_dataset,
                                                is_fresh=args.is_fresh,
