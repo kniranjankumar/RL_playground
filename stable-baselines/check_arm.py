@@ -320,19 +320,19 @@ class NetworkVecEnv(SubprocVecEnv):
             return error
 
         def predict(self, sess, obs_in, act_in):
-
-            # return self.run_with_location_trace(sess,self.predict_mass,feed_dict={self.obs_in:np.expand_dims(obs_in, axis=0), self.act_in:np.expand_dims(act_in, axis=0)})
-            # obs_in, act_in = normalize_data(obs_in,np.expand_dims(act_in, axis=-1))
-            obs = np.array(obs_in)
-            act = np.array(act_in)
-            time_step = int(obs_in.shape[1] /self.obs_dim- 1)
-            if time_step < self.num_steps:
-                obs_zeros = np.zeros([obs_in.shape[0], (self.num_steps-time_step)*self.obs_dim])
-                obs = np.hstack((obs,obs_zeros))
-                act_zeros = np.zeros([act_in.shape[0], (self.num_steps-time_step)*self.act_dim])
-                act = np.hstack((act,act_zeros))
-            mass = sess.run(self.predict_mass[time_step-1] if self.model_type == 'LSTM' else self.predict_mass, feed_dict={self.obs: obs, self.act: act})
-            return mass
+            with self.graph.as_default():
+                # return self.run_with_location_trace(sess,self.predict_mass,feed_dict={self.obs_in:np.expand_dims(obs_in, axis=0), self.act_in:np.expand_dims(act_in, axis=0)})
+                # obs_in, act_in = normalize_data(obs_in,np.expand_dims(act_in, axis=-1))
+                obs = np.array(obs_in)
+                act = np.array(act_in)
+                time_step = int(obs_in.shape[1] /self.obs_dim- 1)
+                if time_step < self.num_steps:
+                    obs_zeros = np.zeros([obs_in.shape[0], (self.num_steps-time_step)*self.obs_dim])
+                    obs = np.hstack((obs,obs_zeros))
+                    act_zeros = np.zeros([act_in.shape[0], (self.num_steps-time_step)*self.act_dim])
+                    act = np.hstack((act,act_zeros))
+                mass = sess.run(self.predict_mass[time_step-1] if self.model_type == 'LSTM' else self.predict_mass, feed_dict={self.obs: obs, self.act: act})
+                return mass
 
     def run_rollouts(self, num_eps, policy=None):
         rollout_obs = []
