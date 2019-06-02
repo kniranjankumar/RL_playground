@@ -1,6 +1,6 @@
 import numpy as np
 from abc import ABC, abstractmethod
-
+import gym
 
 class AbstractEnvRunner(ABC):
     def __init__(self, *, env, model, n_steps):
@@ -14,6 +14,10 @@ class AbstractEnvRunner(ABC):
         self.env = env
         self.model = model
         n_env = env.num_envs
+        if isinstance(env.observation_space, gym.spaces.Dict):
+            self.batch_ob_shape = (n_env * n_steps,) + env.observation_space['observation'].shape
+            self.obs = np.zeros((n_env,) + env.observation_space.spaces['observation'].shape,
+                                dtype=env.observation_space.spaces['observation'].dtype.name)
         self.batch_ob_shape = (n_env*n_steps,) + env.observation_space.shape
         self.obs = np.zeros((n_env,) + env.observation_space.shape, dtype=env.observation_space.dtype.name)
         self.obs[:] = env.reset()
