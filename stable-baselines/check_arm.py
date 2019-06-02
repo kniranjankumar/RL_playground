@@ -319,7 +319,7 @@ class NetworkVecEnv(SubprocVecEnv):
 
             return error
 
-        def predict(self, sess, obs_in, act_in):
+        def predict(self, obs_in, act_in):
             with self.graph.as_default():
                 # return self.run_with_location_trace(sess,self.predict_mass,feed_dict={self.obs_in:np.expand_dims(obs_in, axis=0), self.act_in:np.expand_dims(act_in, axis=0)})
                 # obs_in, act_in = normalize_data(obs_in,np.expand_dims(act_in, axis=-1))
@@ -331,7 +331,7 @@ class NetworkVecEnv(SubprocVecEnv):
                     obs = np.hstack((obs,obs_zeros))
                     act_zeros = np.zeros([act_in.shape[0], (self.num_steps-time_step)*self.act_dim])
                     act = np.hstack((act,act_zeros))
-                mass = sess.run(self.predict_mass[time_step-1] if self.model_type == 'LSTM' else self.predict_mass, feed_dict={self.obs: obs, self.act: act})
+                mass = self.sess.run(self.predict_mass[time_step-1] if self.model_type == 'LSTM' else self.predict_mass, feed_dict={self.obs: obs, self.act: act})
                 return mass
 
     def run_rollouts(self, num_eps, policy=None):
@@ -472,7 +472,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 self.act_buffer = actions
             else:
                 self.act_buffer = np.hstack((self.act_buffer, actions))
-            predict_mass = self.model.predict(self.sess, self.obs_buffer, self.act_buffer)
+            predict_mass = self.model.predict(self.obs_buffer, self.act_buffer)
             true_mass = obs['mass']
             error = np.mean(np.abs(true_mass - predict_mass), axis=1)
             if self.reward_type == 'dense' or np.all(done == True):
