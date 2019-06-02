@@ -18,8 +18,9 @@ class AbstractEnvRunner(ABC):
             self.batch_ob_shape = (n_env * n_steps,) + env.observation_space.spaces['observation'].shape
             self.obs = np.zeros((n_env,) + env.observation_space.spaces['observation'].shape,
                                 dtype=env.observation_space.spaces['observation'].dtype.name)
-        self.batch_ob_shape = (n_env*n_steps,) + env.observation_space.shape
-        self.obs = np.zeros((n_env,) + env.observation_space.shape, dtype=env.observation_space.dtype.name)
+        else:
+            self.batch_ob_shape = (n_env*n_steps,) + env.observation_space.shape
+            self.obs = np.zeros((n_env,) + env.observation_space.shape, dtype=env.observation_space.dtype.name)
         self.obs[:] = env.reset()
         self.n_steps = n_steps
         self.states = model.initial_state
