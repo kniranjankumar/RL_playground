@@ -424,11 +424,16 @@ class BaseRLModel(ABC):
                                  "environment, please use ({},) or ".format(observation_space.n) +
                                  "(n_env, {}) for the observation shape.".format(observation_space.n))
         elif isinstance(observation_space, gym.spaces.Dict):
-            for key in observation_space.spaces.keys():
-                if observation[key].shape == observation_space.spaces[key].shape:
+            if isinstance(observation_space.spaces['observation'], gym.spaces.Box):
+                if observation.shape == observation_space.shape:
                     return False
-                elif observation[key].shape[1:] == observation_space.spaces[key].shape:
+                elif observation.shape[1:] == observation_space.shape:
                     return True
+                else:
+                    raise ValueError("Error: Unexpected observation shape {} for ".format(observation.shape) +
+                                     "Box environment, please use {} ".format(observation_space.shape) +
+                                     "or (n_env, {}) for the observation shape."
+                                     .format(", ".join(map(str, observation_space.shape))))
         else:
             raise ValueError("Error: Cannot determine if the observation is vectorized with the space type {}."
                              .format(observation_space))
