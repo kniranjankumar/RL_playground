@@ -739,9 +739,10 @@ else:
     # model = PPO2.load(the_path + "/checkpoint/policy", env, verbose=1, learning_rate=constfn(2.5e-4),
     #                   tensorboard_log=policy_tensorboard + "/policy_tensorboard/" + _)
 
-    env.sess = model.sess
-    env.graph = model.graph
-    env.model.setup_feedable_training(model.sess,  loss=args.predictor_loss, is_init_all=True)
+    env.graph = tf.Graph()
+    env.sess = tf.Session(graph=env.graph)
+
+    env.model.setup_feedable_training(env.sess,  loss=args.predictor_loss, is_init_all=True)
     if args.train_predictor or args.is_fresh:
         error1, policy_save_number = env.train(args.predictor_dataset,
                                                is_fresh=args.is_fresh,
