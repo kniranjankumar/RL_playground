@@ -744,13 +744,14 @@ else:
 
     os.makedirs(arg_save_path, exist_ok=True)
     save_argparse(arg_save_path, args)
+    print(policy_tensorboard_path)
     model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=args.PPO_learning_rate, full_tensorboard_log=True,
                  tensorboard_log=policy_tensorboard_path)
     # model = PPO2.load(the_path + "/checkpoint/policy", env, verbose=1, learning_rate=constfn(2.5e-4),
     #                   tensorboard_log=policy_tensorboard + "/policy_tensorboard/" + _)
 
-    env.sess = model.sess
-    env.graph = model.graph
+    # env.sess = model.sess
+    # env.graph = model.graph
     env.model.setup_feedable_training(model.sess,  loss=args.predictor_loss, is_init_all=True)
     if args.train_predictor or args.is_fresh:
         error1, policy_save_number = env.train(args.predictor_dataset,
