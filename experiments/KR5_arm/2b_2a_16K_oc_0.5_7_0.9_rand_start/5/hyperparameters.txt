@@ -1,0 +1,50 @@
+num_meta_iter >>> 1
+
+predictor_lr_steps >>> 0
+
+policy_checkpoint_num >>> 0
+
+predictor_steps >>> 500000
+
+flip_enabled >>> False
+
+is_fresh >>> False
+
+ball_type >>> 1
+
+PPO_learning_rate >>> 1e-05
+
+enable_notification >>> False
+
+predictor_loss >>> huber
+
+only_test >>> False
+
+folder_name >>> 2b_2a_16K_oc_0.5_7_0.9_rand_start
+
+reward_type >>> dense
+
+PPO_steps >>> 61000
+
+chain_length >>> 2
+
+reward_scale >>> 1.0
+
+use_mass_distribution >>> False
+
+predictor_type >>> LSTM
+
+num_tries >>> 2
+
+checkpoint_num >>> 0
+
+predictor_dataset >>> 1000
+
+env_id >>> ArmAccEnvCustom-v0
+
+coverage_factor >>> 0.9
+
+train_predictor >>> False
+
+start_state >>> None
+
