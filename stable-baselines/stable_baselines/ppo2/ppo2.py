@@ -194,7 +194,7 @@ class PPO2(ActorCriticRLModel):
                         tf.summary.histogram('clip_range', self.clip_range_ph)
                         tf.summary.histogram('old_neglog_action_probabilty', self.old_neglog_pac_ph)
                         tf.summary.histogram('old_value_pred', self.old_vpred_ph)
-                        if tf_util.is_image(self.observation_space):
+                        if tf_util.is_image(self.observation_space.spaces['observation']):
                             tf.summary.image('observation', train_model.obs_ph)
                         else:
                             tf.summary.histogram('observation', train_model.obs_ph)
