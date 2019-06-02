@@ -212,7 +212,7 @@ class PPO2(ActorCriticRLModel):
                 # print('bar', bar2)
                 # bar2 = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)[6:]
                 # self.reset_op = tf.initialize_variables(bar2)
-                # tf.global_variables_initializer().run(session=self.sess)  # pylint: disable=E1101
+                tf.global_variables_initializer().run(session=self.sess)  # pylint: disable=E1101
                 # path = '/home/niranjan/Projects/vis_inst/DartEnv2/examples/agents/mass_prediction/model_ckpt/with_q_action_1000/_try9/8/8.ckpt'
                 # supervised_model.restore_model(self.sess, path)
                 # print('ppo',self.sess.run(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES)[0]))
