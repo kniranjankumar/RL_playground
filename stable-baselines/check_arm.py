@@ -461,6 +461,8 @@ class NetworkVecEnv(SubprocVecEnv):
             error = self.model.feedable_train(rollout_obs, rollout_act, rollout_mass, num_iter=steps, graph=self.graph,
                                               batch_size=16, learning_rate=lr_list)
 
+
+
         model_save_num = self.save_model(save_dir)
         return error, model_save_num
 
