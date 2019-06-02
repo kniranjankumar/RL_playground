@@ -463,7 +463,7 @@ class NetworkVecEnv(SubprocVecEnv):
 
 
 
-        model_save_num = self.save_model(save_dir)
+            model_save_num = self.save_model(save_dir)
         return error, model_save_num
 
     def step(self, actions):
@@ -556,7 +556,7 @@ class NetworkVecEnv(SubprocVecEnv):
         return obs['observation']
 
     def save_model(self, path):
-        with self.graph.as_default():
+        # with self.graph.as_default():
             if self.model.model_type == 'LSTM':
                 self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='LSTM_model'))
             else:
