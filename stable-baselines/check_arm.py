@@ -264,7 +264,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 error.append(percent)
             return percent
 
-        def feedable_train(self, obs, act, mass, num_iter, graph, batch_size=64, learning_rate=[1e-1,1e-2]):
+        def feedable_train(self, obs, act, mass, num_iter, batch_size=64, learning_rate=[1e-1,1e-2]):
             # print(sess.run(tf.get_collection(tf.GraphKeys.VARIABLES)))
             # self.run_with_location_trace(sess, self.train_op_feedable,
             #                              feed_dict={self.obs: obs, self.act: act, self.mass: mass})
@@ -284,7 +284,7 @@ class NetworkVecEnv(SubprocVecEnv):
             obs = obs[:-split, :]
             act = act[:-split, :]
             mass = mass[:-split, :]
-            with graph.as_default():
+            with self.graph.as_default():
                 # self.restore_model(sess, path)
                 # bias = tf.get_variable('model/fc1/biases/')
                 # if self.subset_save == None:
@@ -458,7 +458,7 @@ class NetworkVecEnv(SubprocVecEnv):
             # self.restore_model(os.path.join(self.path, 'checkpoint_predict', str(0), '0.ckpt'))
             error = 0
             lr_list = [1e-1*0.5**i for i in range(lr+1)]
-            error = self.model.feedable_train(rollout_obs, rollout_act, rollout_mass, num_iter=steps, graph=self.graph,
+            error = self.model.feedable_train(rollout_obs, rollout_act, rollout_mass, num_iter=steps,
                                               batch_size=16, learning_rate=lr_list)
             # model_save_num = self.save_model(save_dir)
             model_save_num = 0
