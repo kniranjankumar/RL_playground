@@ -423,6 +423,12 @@ class BaseRLModel(ABC):
                 raise ValueError("Error: Unexpected observation shape {} for MultiBinary ".format(observation.shape) +
                                  "environment, please use ({},) or ".format(observation_space.n) +
                                  "(n_env, {}) for the observation shape.".format(observation_space.n))
+        elif isinstance(observation_space, gym.spaces.Dict):
+            for key in observation_space.spaces.keys():
+                if observation[key].shape == observation_space.spaces[key].shape:
+                    return False
+                elif observation[key].shape[1:] == observation_space.spaces[key].shape:
+                    return True
         else:
             raise ValueError("Error: Cannot determine if the observation is vectorized with the space type {}."
                              .format(observation_space))
