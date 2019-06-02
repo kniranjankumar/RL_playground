@@ -701,7 +701,9 @@ register(
     max_episode_steps=20,
 )
 env_list = [make_env(env_id, i) for i in range(num)]
-env = NetworkVecEnv(env_list, args.predictor_type, args.reward_type, the_path, reward_scale=args.reward_scale,num_steps=args.num_tries, use_mass_distribution=args.use_mass_distribution)
+predictor_graph = tf.Graph()
+with predictor_graph.as_default():
+    env = NetworkVecEnv(env_list, args.predictor_type, args.reward_type, the_path, reward_scale=args.reward_scale,num_steps=args.num_tries, use_mass_distribution=args.use_mass_distribution)
 env.reset()
 if args.only_test:
     policy_ckpt_path = os.path.join(the_path, 'policy_ckpt', str(args.policy_checkpoint_num))
@@ -740,7 +742,7 @@ else:
     # model = PPO2.load(the_path + "/checkpoint/policy", env, verbose=1, learning_rate=constfn(2.5e-4),
     #                   tensorboard_log=policy_tensorboard + "/policy_tensorboard/" + _)
 
-    env.graph = tf.Graph()
+    env.graph = predictor_graph
     env.sess = tf.Session(graph=env.graph)
     with env.graph.as_default():
         env.model.setup_feedable_training(env.sess,  loss=args.predictor_loss, is_init_all=True)
