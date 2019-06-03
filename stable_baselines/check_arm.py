@@ -42,14 +42,15 @@ class NetworkVecEnv(SubprocVecEnv):
                                   mass_dim=self.observation_space.spaces['mass'].shape[0],
                                   obs_dim=self.observation_space.spaces['observation'].shape[0], mass_range = [self.observation_space.spaces['mass'].low, self.observation_space.spaces['mass'].high],
                                   model_type=predictor_type,
-                                  use_mass_distribution=self.mass_distribution)
+                                  use_mass_distribution=self.mass_distribution,
+                                  reward_type=self.reward_type)
         self.observation_space_dict = self.observation_space
         self.observation_space = self.observation_space.spaces['observation']
         self.ticker = False
         self.dummy_step = False
 
     class FCModel:
-        def __init__(self, path, sess, num_steps, act_dim, mass_dim, obs_dim, mass_range, model_type='LSTM', use_mass_distribution=False):
+        def __init__(self, path, sess, num_steps, act_dim, mass_dim, obs_dim, mass_range, model_type='LSTM', use_mass_distribution=False, reward_type='sparse'):
             self.path = path
             self.mass_dim = mass_dim
             self.mass_distribution = use_mass_distribution
@@ -57,6 +58,7 @@ class NetworkVecEnv(SubprocVecEnv):
             self.act_dim = act_dim
             self.obs_dim = obs_dim
             self.sess = None
+            self.reward_type = reward_type
             self.graph = tf.get_default_graph()
             self.mass_range = mass_range
             self.model_type = model_type
@@ -193,8 +195,11 @@ class NetworkVecEnv(SubprocVecEnv):
                 loss_fn = tf.losses.mean_squared_error
 
             if self.model_type == 'LSTM':
-                mass = tf.tile(tf.expand_dims(self.mass,0),multiples=[self.num_steps,1,1])
-                abs_error_rnn = loss_fn(mass, self.predict_mass)
+                if self.reward_type == 'dense':
+                    mass = tf.tile(tf.expand_dims(self.mass,0),multiples=[self.num_steps,1,1])
+                    abs_error_rnn = loss_fn(mass, self.predict_mass)
+                else:
+                    abs_error_rnn = loss_fn(self.mass, self.predict_mass[-1])
                 # abs_error_rnn = tf.losses.absolute_difference(mass, self.predict_mass)
                 self.mean_error_feedable = tf.reduce_mean(abs_error_rnn)
                 abs_error1 = tf.losses.absolute_difference(self.mass, self.predict_mass[-1])
