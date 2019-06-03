@@ -366,10 +366,10 @@ class NetworkVecEnv(SubprocVecEnv):
                 obs_list.append(obs['observation'].copy())
                 act_list.append(np.array(act).copy())
                 mass_list.append(obs['mass'].copy())
-                predict_mass = self.model.predict(self.sess,np.array(obs_list),np.array(act_list))
-                error = np.mean(np.abs(np.array(obs['mass']) - predict_mass), axis=1)
-                if self.mass_distribution:
-                    rew1 = 1 - 2 * error
+                # predict_mass = self.model.predict(self.sess,np.array(obs_list),np.array(act_list))
+                # error = np.mean(np.abs(np.array(obs['mass']) - predict_mass), axis=1)
+                # if self.mass_distribution:
+                #     rew1 = 1 - 2 * error
                 mask = done.copy()
                 if np.all(done == True):
                     if policy is not None:
