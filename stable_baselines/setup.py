@@ -90,7 +90,7 @@ setup(name='stable_baselines',
           'opencv-python',
           'numpy',
           'pandas',
-          'matplotlib=3.03',
+          'matplotlib=2.1.0',
           'seaborn',
           'glob2'
       ],
