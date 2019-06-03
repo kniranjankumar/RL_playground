@@ -197,9 +197,12 @@ class NetworkVecEnv(SubprocVecEnv):
                 abs_error_rnn = loss_fn(mass, self.predict_mass)
                 # abs_error_rnn = tf.losses.absolute_difference(mass, self.predict_mass)
                 self.mean_error_feedable = tf.reduce_mean(abs_error_rnn)
-                abs_error = tf.losses.absolute_difference(self.mass, self.predict_mass[-1])
+                abs_error1 = tf.losses.absolute_difference(self.mass, self.predict_mass[-1])
+                abs_error2 = tf.losses.absolute_difference(self.mass, self.predict_mass[-2])
+                abs_error1_summary_test = tf.summary.scalar('abs_error1_test', abs_error1)
+                abs_error2_summary_test = tf.summary.scalar('abs_error2_test', abs_error2)
                 self.percent = tf.reduce_mean(
-                    tf.reduce_mean(tf.divide(abs_error, tf.cast(0.0001 + tf.abs(self.mass), tf.float32)), axis=1))
+                    tf.reduce_mean(tf.divide(abs_error1, tf.cast(0.0001 + tf.abs(self.mass), tf.float32)), axis=1))
                 # mass = tf.tile(tf.expand_dims(self.mass,0),multiples=[2,1,1])
                 # self.mean_error_feedable = tf.reduce_mean(-self.predict_mass_dist.log_prob(mass))
                 # # mass = tf.tile(tf.expand_dims(self.mass,0),multiples=[2,1,1])
@@ -223,7 +226,13 @@ class NetworkVecEnv(SubprocVecEnv):
             error_summary_test = tf.summary.scalar('error-abs_test', self.mean_error_feedable)
             percentage_error_test = tf.summary.scalar('error-percentage_test', self.percent)
             # self.log_dir = './model_ckpt/'
-            self.merged_summary_test = tf.summary.merge([error_summary_test, percentage_error_test])
+            if self.model_type == 'LSTM':
+                self.merged_summary_test = tf.summary.merge([error_summary_test,
+                                                             percentage_error_test,
+                                                             abs_error1_summary_test,
+                                                             abs_error2_summary_test])
+            else:
+                self.merged_summary_test = tf.summary.merge([error_summary_test, percentage_error_test])
             if is_init_all:
                 init = tf.global_variables_initializer()
             else:
@@ -347,14 +356,8 @@ class NetworkVecEnv(SubprocVecEnv):
                     act = [env.action_space.sample() for j in range(num)]
                 else:
                     act, state = policy.predict(obs['observation'], state, mask, deterministic=False)
-                try:
-                    obs, rew, done, _ = super(NetworkVecEnv, self).step(act)
-                except:
-                    print('obs',obs_list)
-                    print('act',act_list)
-                    print('mass',mass_list)
-                    obs, rew, done, _ = super(NetworkVecEnv, self).step(act)
 
+                obs, rew, done, _ = super(NetworkVecEnv, self).step(act)
                 # print(rew)
                 # mask = don    e
                 # imgs = self.get_images()
@@ -363,6 +366,10 @@ class NetworkVecEnv(SubprocVecEnv):
                 obs_list.append(obs['observation'].copy())
                 act_list.append(np.array(act).copy())
                 mass_list.append(obs['mass'].copy())
+                predict_mass = self.model.predict(self.sess,np.array(obs_list),np.array(act_list))
+                error = np.mean(np.abs(np.array(obs['mass']) - predict_mass), axis=1)
+                if self.mass_distribution:
+                    rew1 = 1 - 2 * error
                 mask = done.copy()
                 if np.all(done == True):
                     if policy is not None:
@@ -742,8 +749,8 @@ else:
     # model = PPO2.load(the_path + "/checkpoint/policy", env, verbose=1, learning_rate=constfn(2.5e-4),
     #                   tensorboard_log=policy_tensorboard + "/policy_tensorboard/" + _)
 
-    env.graph = predictor_graph
-    env.sess = tf.Session(graph=env.graph)
+    env.graph = model.graph
+    env.sess = model.sess
     with env.graph.as_default():
         env.model.setup_feedable_training(env.sess,  loss=args.predictor_loss, is_init_all=True)
         if args.train_predictor or args.is_fresh:
