@@ -677,14 +677,15 @@ if args.only_test:
         model = PPO2.load(policy_ckpt_path+'.pkl' , env, verbose=1, learning_rate=constfn(1e-5))
         env.sess = model.sess
         env.graph = model.graph
-        env.model.setup_feedable_training(model.sess, loss=args.predictor_loss,is_init_all=False)
+        env.model.setup_feedable_training(env.sess, loss=args.predictor_loss,is_init_all=False)
         policy = model
     except:
         print("error loading model. Using uniform policy")
         model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=args.PPO_learning_rate)
         env.sess = model.sess
         env.graph = model.graph
-        env.model.setup_feedable_training(model.sess, loss=args.predictor_loss, is_init_all=True)
+        with env.graph.as_default():
+            env.model.setup_feedable_training(env.sess, loss=args.predictor_loss, is_init_all=True)
         policy = None
     predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(args.checkpoint_num),'model.ckpt')
     env.restore_model(predictor_ckpt_path)
