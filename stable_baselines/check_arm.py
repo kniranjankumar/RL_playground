@@ -598,7 +598,7 @@ def evaluate(policy, env):
         # print(act.shape)
         obs, rew, done, _ = env.step(np.array(act))
         if (np.sum(done) != 0):
-            state *= 0
+            # state *= 0
             eps_count += 1
             print('reset state')
         rew_list.append(np.mean(rew))
