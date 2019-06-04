@@ -593,7 +593,8 @@ def evaluate(policy, env):
     eps_count = 0
     rew_list = []
     for i in range(40):
-        act, state = policy.predict(obs, state, done, True)
+        # act, state = policy.predict(obs, state, done, True)
+        act = env.action_space.sample()
         obs, rew, done, _ = env.step(act)
         if (np.sum(done) != 0):
             state *= 0
@@ -685,12 +686,13 @@ if args.only_test:
         env.sess = model.sess
         env.graph = model.graph
         with env.graph.as_default():
-            env.model.setup_feedable_training(env.sess, loss=args.predictor_loss, is_init_all=True)
+                env.model.setup_feedable_training(env.sess, loss=args.predictor_loss, is_init_all=True)
         policy = None
     predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(args.checkpoint_num),'model.ckpt')
     env.restore_model(predictor_ckpt_path)
-    error = env.evaluate(10,policy)
-    print(np.mean(np.array(error)))
+    # error = env.evaluate(10,policy)
+    evaluate(policy,env)
+    # print(np.mean(np.array(error)))
 else:
     predictor_tensorboard_path = os.path.join(path, 'experiments', 'KR5_arm', 'predictor_tensorboard', args.folder_name)
     predictor_data_path = os.path.join(the_path, 'data')
