@@ -595,7 +595,7 @@ def evaluate(policy, env):
     for i in range(40):
         # act, state = policy.predict(obs, state, done, True)
         act = act = [env.action_space.sample() for j in range(16)]
-        print(act.shape)
+        # print(act.shape)
         obs, rew, done, _ = env.step(act)
         if (np.sum(done) != 0):
             state *= 0
