@@ -594,7 +594,7 @@ def evaluate(policy, env):
     rew_list = []
     for i in range(40):
         # act, state = policy.predict(obs, state, done, True)
-        act = env.action_space.sample()
+        act = act = [env.action_space.sample() for j in range(16)]
         print(act.shape)
         obs, rew, done, _ = env.step(act)
         if (np.sum(done) != 0):
