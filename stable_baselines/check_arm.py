@@ -504,51 +504,7 @@ class NetworkVecEnv(SubprocVecEnv):
 
         return out
 
-    def step2(self, actions):
-        # actions[-1] += np.random.normal(0, 0.2)
-        actions = np.clip(actions,-1,1)
-        if not self.ticker:
-            obs, rew, done, _ = super(NetworkVecEnv, self).step(actions)
-            if self.act_buffer is None:
-                self.obs_buffer = obs['observation']
-                self.act_buffer = actions
-            else:
-                self.obs_buffer = np.hstack((self.obs_buffer, obs['observation']))
-                self.act_buffer = np.hstack((self.act_buffer, actions))
 
-
-            if np.all(done == True):
-                predict_mass = self.model.predict(self.sess, self.obs_buffer, self.act_buffer)
-                true_mass = obs['mass']
-                # print(predict_mass, true_mass)
-                error = np.mean(np.abs(true_mass - predict_mass), axis=1)
-                rew = 1 - 2 * error / (self.observation_space_dict.spaces['mass'].high[0] -
-                                       self.observation_space_dict.spaces['mass'].low[0])
-                self.obs_buffer = None
-                self.act_buffer = None
-            elif self.reward_type == 'dense':
-                predict_mass = self.model.predict(self.sess, self.obs_buffer, self.act_buffer)
-                true_mass = obs['mass']
-                # print(predict_mass, true_mass)
-                error = np.mean(np.abs(true_mass - predict_mass), axis=1)
-                rew = 1 - 2 * error / (self.observation_space_dict.spaces['mass'].high[0] -
-                                        self.observation_space_dict.spaces['mass'].low[0])
-            print(rew)
-
-                # error/(self.observation_space.spaces['mass'].high- self.observation_space.spaces['mass'].low)
-        else:
-
-            obs = super(NetworkVecEnv, self).reset()
-            self.obs_buffer = obs['observation']
-            self.ticker = False
-            return obs['observation'], np.zeros([self.num_envs, ]), np.array([True for i in range(self.num_envs)]), [{} for i in range(self.num_envs)]  # {'episode': {'r': 0, 'l': 3, 't': 163.622605}
-        if np.all(done == True):
-            self.ticker = True  # set done flag in next iteration to work with ppo
-            return obs['observation'], rew, np.bitwise_not(done), _
-
-            # return obs['observation'], rew, np.bitwise_not(done), {'episode': {'r': 0, 'l': 3, 't': 163.622605}}
-
-        return obs['observation'], rew, done, _
 
     def reset(self):
         self.obs_buffer = np.array([])
@@ -576,6 +532,7 @@ class NetworkVecEnv(SubprocVecEnv):
         return i
 
     def restore_model(self, data_path):
+        print('loading from', data_path)
         self.saver = tf.train.Saver()
         if self.model.model_type == 'LSTM':
             self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='LSTM_model'))
