@@ -353,6 +353,10 @@ class NetworkVecEnv(SubprocVecEnv):
         rollout_obs = []
         rollout_act = []
         rollout_mass = []
+        if not use_distribution_policy:
+            print('Using deterministic actions')
+        else:
+            print('Using actions sampled from policy distribution')
         done = np.array([False for i in range(self.num_envs)])
         mask = done.copy()
 
