@@ -659,6 +659,7 @@ parser.add_argument("--num_tries", help='Number of pushes the arm is allowed to 
 parser.add_argument("--predictor_loss", help='Huber, L1 or L2', default='huber', type=str, nargs='?', const='huber')
 parser.add_argument("--enable_notification", help='Send notification to phone', default=False, action='store_true')
 parser.add_argument("--use_mass_distribution", help='Predict mass distribution instead of actual mass', default=False, action='store_true')
+parser.add_argument('--mass_range', nargs='+', help='Mass range', required=True, type='float')
 
 args = parser.parse_args()
 the_path = os.path.join(path, 'experiments', 'KR5_arm', args.folder_name)
@@ -675,7 +676,8 @@ register(
             'coverage_factor': args.coverage_factor,
             'num_bodies': args.chain_length,
             'use_mass_distribution': args.use_mass_distribution,
-            'num_tries': args.num_tries},
+            'num_tries': args.num_tries,
+            'mass_range: args.mass_range},
     reward_threshold=2,
     timestep_limit=10,
     max_episode_steps=20,
