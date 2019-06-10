@@ -677,7 +677,7 @@ register(
             'num_bodies': args.chain_length,
             'use_mass_distribution': args.use_mass_distribution,
             'num_tries': args.num_tries,
-            'mass_range: args.mass_range},
+            'mass_range': args.mass_range},
     reward_threshold=2,
     timestep_limit=10,
     max_episode_steps=20,
