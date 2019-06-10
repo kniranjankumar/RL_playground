@@ -659,8 +659,8 @@ parser.add_argument("--num_tries", help='Number of pushes the arm is allowed to 
 parser.add_argument("--predictor_loss", help='Huber, L1 or L2', default='huber', type=str, nargs='?', const='huber')
 parser.add_argument("--enable_notification", help='Send notification to phone', default=False, action='store_true')
 parser.add_argument("--use_mass_distribution", help='Predict mass distribution instead of actual mass', default=False, action='store_true')
-parser.add_argument('--mass_range_upper', nargs='+', help='Mass range',  default=7, type=float,nargs='?', const=7)
-parser.add_argument('--mass_range_lower', nargs='+', help='Mass range',  default=0.1, type=float,nargs='?', const=0.1)
+parser.add_argument('--mass_range_upper', help='Mass range upper',  default=7, type=float,nargs='?', const=7)
+parser.add_argument('--mass_range_lower', help='Mass range lower',  default=0.1, type=float,nargs='?', const=0.1)
 
 
 
