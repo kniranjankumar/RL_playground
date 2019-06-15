@@ -22,7 +22,7 @@ class ArmAccEnvBall2(gym.Env):
     """Superclass for all Dart environments.
     """
 
-    def __init__(self, ball_type=1, flip_enabled=False, start_state=None, coverage_factor=0.9, num_bodies=3, use_mass_distribution=False, num_tries=3):
+    def __init__(self, ball_type=1, flip_enabled=False, start_state=None, coverage_factor=0.9, num_bodies=3, use_mass_distribution=False, num_tries=3, mass_range=[0.1,10]):
         self.num_bodies = num_bodies
         self.num_actions = 2
         self.num_tries = num_tries
@@ -31,7 +31,7 @@ class ArmAccEnvBall2(gym.Env):
         self.use_mass_distribution = use_mass_distribution
         action_bounds = np.array([[-1 for i in range(self.num_actions)], [1 for i in range(self.num_actions)]])
         # self.mass_range = np.array([0.1, 0.7])
-        self.mass_range = np.array([0.1, 7])
+        self.mass_range = np.array(mass_range)
         # self.mass_range = np.array([7, 7])
         self.start_state = start_state
         self.size_range = np.array([0.1,0.15])

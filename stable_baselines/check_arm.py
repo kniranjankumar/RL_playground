@@ -349,10 +349,14 @@ class NetworkVecEnv(SubprocVecEnv):
                 mass = sess.run(self.predict_mass[time_step-1] if self.model_type == 'LSTM' else self.predict_mass, feed_dict={self.obs: obs, self.act: act})
                 return mass
 
-    def run_rollouts(self, num_eps, policy=None):
+    def run_rollouts(self, num_eps, policy=None, use_distribution_policy=True):
         rollout_obs = []
         rollout_act = []
         rollout_mass = []
+        if not use_distribution_policy:
+            print('Using deterministic actions')
+        else:
+            print('Using actions sampled from policy distribution')
         done = np.array([False for i in range(self.num_envs)])
         mask = done.copy()
 
@@ -365,7 +369,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 if policy is None:
                     act = [env.action_space.sample() for j in range(num)]
                 else:
-                    act, state = policy.predict(obs['observation'], state, mask, deterministic=False)
+                    act, state = policy.predict(obs['observation'], state, mask, deterministic=not use_distribution_policy)
 
                 obs, rew, done, _ = super(NetworkVecEnv, self).step(act)
                 # print(rew)
@@ -411,7 +415,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 if policy is None:
                     act = [env.action_space.sample() for j in range(num)]
                 else:
-                    act, state = policy.predict(obs['observation'], state, mask, deterministic=False)
+                    act, state = policy.predict(obs['observation'], state, mask, deterministic=True)
                 obs, rew, done, _ = super(NetworkVecEnv, self).step(act)
                 # mask = done
                 # imgs = self.get_images()
@@ -442,13 +446,13 @@ class NetworkVecEnv(SubprocVecEnv):
         print('mean', np.mean(data, axis=0), 'var', np.var(data, axis=0))
         return (data - np.mean(data, axis=0)) / (np.var(data, axis=0) + 1e-8)
 
-    def train(self, num_eps, data_path, save_dir, policy=None, is_fresh=True,lr=1, steps=500000):
+    def train(self, num_eps, data_path, save_dir, policy=None, is_fresh=True,lr=1, steps=500000, use_distribution_policy=True):
 
         # data_path = os.path.join(self.path, 'data')
         # data_path = self.path + 'data'
         if policy is not None or is_fresh:
             os.makedirs(data_path, exist_ok=True)
-            rollout_obs, rollout_act, rollout_mass = self.run_rollouts(num_eps, policy)
+            rollout_obs, rollout_act, rollout_mass = self.run_rollouts(num_eps, policy,use_distribution_policy=use_distribution_policy)
             if policy is None:
                 np.save(data_path + '/obs.npy', rollout_obs)
                 np.save(data_path + '/act.npy', rollout_act)
@@ -655,6 +659,10 @@ parser.add_argument("--num_tries", help='Number of pushes the arm is allowed to 
 parser.add_argument("--predictor_loss", help='Huber, L1 or L2', default='huber', type=str, nargs='?', const='huber')
 parser.add_argument("--enable_notification", help='Send notification to phone', default=False, action='store_true')
 parser.add_argument("--use_mass_distribution", help='Predict mass distribution instead of actual mass', default=False, action='store_true')
+parser.add_argument('--mass_range_upper', help='Mass range upper',  default=7, type=float,nargs='?', const=7)
+parser.add_argument('--mass_range_lower', help='Mass range lower',  default=0.1, type=float,nargs='?', const=0.1)
+
+
 
 args = parser.parse_args()
 the_path = os.path.join(path, 'experiments', 'KR5_arm', args.folder_name)
@@ -671,7 +679,8 @@ register(
             'coverage_factor': args.coverage_factor,
             'num_bodies': args.chain_length,
             'use_mass_distribution': args.use_mass_distribution,
-            'num_tries': args.num_tries},
+            'num_tries': args.num_tries,
+            'mass_range': [args.mass_range_lower, args.mass_range_upper]},
     reward_threshold=2,
     timestep_limit=10,
     max_episode_steps=20,
@@ -729,7 +738,8 @@ else:
                                                    save_dir=predictor_ckpt_path,
                                                    data_path=predictor_data_path,
                                                    lr=args.predictor_lr_steps,
-                                                   steps=args.predictor_steps)
+                                                   steps=args.predictor_steps,
+                                                   use_distribution_policy=True)
             if args.enable_notification:
                 send_notification('Supervised training completed')
         else:
@@ -751,7 +761,8 @@ else:
                            is_fresh=True,
                            save_dir=predictor_ckpt_path,
                            data_path=predictor_data_path,
-                           steps=args.predictor_steps)
+                           steps=args.predictor_steps,
+                           use_distribution_policy=False if i == args.num_meta_iter-1 else True)
         if args.enable_notification:
             send_notification('Supervised training completed', str(i))
     error = env.evaluate(10,model)
