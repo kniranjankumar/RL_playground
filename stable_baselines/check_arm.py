@@ -669,7 +669,7 @@ the_path = os.path.join(path, 'experiments', 'KR5_arm', args.folder_name)
 folders = glob(os.path.join(the_path, '*'))
 latest = int(len(folders))
 env_id = args.env_id
-assert args.ball_type == 1 or args.ball_type == 2
+assert args.ball_type == 1 or args.ball_type == 2 or args.ball_type == 3
 register(
     id=args.env_id,
     entry_point='gym.envs.dart:ArmAccEnvBall2',
