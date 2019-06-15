@@ -825,22 +825,22 @@ class MyWorld(pydart.World):
             WTR[:3, 3] = 0  # move robot to world origin
             if self.ball==0:
                 WTR[0, 3] -= 0.52  # move robot base from the articulated body
-                pose = [0.0, 1.40, 0.4363229, -0.0, -1.50, -0.0]
+                self.init_pose = [0.0, 1.40, 0.4363229, -0.0, -1.50, -0.0]
             elif self.ball==1 or self.ball==2:
                 WTR[0, 3] -= 0.55
-                pose = [0.0, 1.40, 0.4363229, -0.0, -1.50, -0.0]
+                self.init_pose = [0.0, 1.40, 0.4363229, -0.0, -1.50, -0.0]
             elif self.ball==3:
                 WTR[0, 3] -= 0.57
                 quat_R = Quaternion(axis=[1, 0, 0], degrees=-90)
                 WTR[:3, :3] = quat_R.rotation_matrix
                 self.robot.joints[0].set_transform_from_parent_body_node(WTR)
-                pose = [-0.0161494, 1.29559903 ,-0.03560395, -2.06603375, -0.07662891, -1.62547303, 0.49875048]
+                self.init_pose = [-0.0161494, 1.29559903 ,-0.03560395, -2.06603375, -0.07662891, -1.62547303, 0.49875048]
             # WTR[2, 3] -= (self.box_shape[0][0] * 0.5 + self.box_shape[0][2] * 0.5)
             self.WTR = WTR
             self.set_gravity([0.0, -9.81, 0])
         self.robot.joints[0].set_transform_from_parent_body_node(self.WTR)
         print(self.ball)
-        self.robot.set_positions(pose)
+        self.robot.set_positions(self.init_pose)
         # self.robot.joints[1].set_actuator_type(pydart.joint.Joint.LOCKED)
         # self.robot.joints[4].set_actuator_type(pydart.joint.Joint.LOCKED)
         # self.robot.joints[6].set_actuator_type(pydart.joint.Joint.LOCKED)
