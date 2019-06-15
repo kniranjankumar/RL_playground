@@ -127,7 +127,7 @@ class ArmAccEnvBall2(gym.Env):
         self.mass = self.np_random.uniform(self.mass_range[0], self.mass_range[1], self.num_bodies)
         self.size = self.np_random.uniform(self.size_range[0], self.size_range[1], [self.num_bodies, 2])
         # self.mu = self.np_random.uniform(0.9, 0.9)
-            self.mu = self.np_random.uniform(self.mu_range[0], self.mu_range[1]) if self.use_mass_distribution else self.np_random.uniform(0.9, 0.9)
+        self.mu = self.np_random.uniform(self.mu_range[0], self.mu_range[1]) if self.use_mass_distribution else self.np_random.uniform(0.9, 0.9)
         # print(self.mu)
         # for i in range(6):
         #     self.dart_world.box.joints[0].set_damping_coefficient(i, self.mu)
