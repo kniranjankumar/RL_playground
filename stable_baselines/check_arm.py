@@ -710,7 +710,7 @@ if args.only_test:
     print('evaluating')
     error = env.evaluate(10,policy)
     # evaluate(policy,env)
-    # print(np.mean(np.array(error)))
+    print(np.mean(np.array(error)))
 else:
     predictor_tensorboard_path = os.path.join(path, 'experiments', 'KR5_arm', 'predictor_tensorboard', args.folder_name)
     predictor_data_path = os.path.join(the_path, 'data')
