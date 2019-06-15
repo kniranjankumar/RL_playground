@@ -839,7 +839,7 @@ class MyWorld(pydart.World):
             self.WTR = WTR
             self.set_gravity([0.0, -9.81, 0])
         self.robot.joints[0].set_transform_from_parent_body_node(self.WTR)
-        print(self.ball)
+        # print(self.ball)
         self.robot.set_positions(self.init_pose)
         # self.robot.joints[1].set_actuator_type(pydart.joint.Joint.LOCKED)
         # self.robot.joints[4].set_actuator_type(pydart.joint.Joint.LOCKED)
