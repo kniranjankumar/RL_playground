@@ -707,8 +707,8 @@ if args.only_test:
         policy = None
     predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(args.checkpoint_num),'model.ckpt')
     env.restore_model(predictor_ckpt_path)
-    # error = env.evaluate(10,policy)
-    evaluate(policy,env)
+    error = env.evaluate(10,policy)
+    # evaluate(policy,env)
     # print(np.mean(np.array(error)))
 else:
     predictor_tensorboard_path = os.path.join(path, 'experiments', 'KR5_arm', 'predictor_tensorboard', args.folder_name)
