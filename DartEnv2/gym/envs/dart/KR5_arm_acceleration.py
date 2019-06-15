@@ -500,11 +500,15 @@ class ControllerOC:
 class ControllerOCPose:
     def __init__(self, skel,action_space=1):
         self.mask = np.array([True for i in range(6)])
+        # self.mask[3:] = False
         self.start = skel.q
         self.select_block = 0
         self.action_space = action_space
-        self.end_effector_offset = np.array([0.05, 0, 0])
         self.skel = skel
+        self.arm_type = self.skel.world.ball
+        end_effector_offset = 0.024 if self.arm_type == 3 else 0.05
+        self.end_effector_offset = np.array([end_effector_offset, 0, 0])
+
         self.box = skel.world.skeletons[1]
         self.end_effector = self.skel.bodynodes[-1]
         self.WTR = self.skel.joints[0].transform_from_parent_body_node()
@@ -519,7 +523,7 @@ class ControllerOCPose:
         self.timestep_count = self.FTIME
         self.tau = [0 for i in range(self.action_space)]
         self.end_effector = self.skel.bodynodes[-1]
-        self.tau[0] = 10
+        self.tau[0] = 5
         self.offset = 0
         # self.tau[1] = -0.1
         self.flipped = False
@@ -551,7 +555,7 @@ class ControllerOCPose:
         werror = quatR[1:] * np.sign(quatR[0])
         xerror = target_x - self.skel.bodynodes[-1].to_world(self.end_effector_offset)
         error = np.concatenate([self.Ko * werror, self.Kp*xerror])[self.mask == True]
-        derror = target_dx - J.dot(self.skel.velocities())
+        derror = target_dx[self.mask] - J.dot(self.skel.velocities())
         derror *= self.Kd
         dderror = J.dot(self.skel.accelerations()) + dJ.dot(self.skel.velocities())
         dderror *= -self.Ki
@@ -616,11 +620,12 @@ class ControllerOCPose:
                 # box_quat = Quaternion(matrix=self.box.bodynodes[self.select_block].T[:3, :3]).normalised
 
             rotation = 180 if self.tau[0] < 0 else 0
-            self.target_quat = Quaternion(axis=[0, 1, 0], degrees=rotation+box_quat.degrees*box_quat.axis[1] % 360)
-
-            if "palm" in names:
+            rotation_offset = 90 if self.arm_type == 3 else 0
+            self.target_quat = Quaternion(axis=[0, 1, 0], degrees=rotation_offset+rotation+box_quat.degrees*box_quat.axis[1] % 360)
+            end_effector_name = "link_7" if self.arm_type == 3 else "palm"
+            if end_effector_name in names:
                 angle = -np.sign(self.target_quat.axis[1]) * self.target_quat.angle
-                self.target_dx = np.array([0, 0, 0, np.cos(angle), 0, np.sin(angle)])*abs(self.tau[0])
+                self.target_dx = np.array([0, 0, 0, np.cos(rotation_offset+angle), 0, np.sin(rotation_offset+angle)])*abs(self.tau[0])
                 self.timestep_count -= 1
             else:
                 self.target_dx = np.array([0, 0, 0, 0, 0, 0])
@@ -783,13 +788,13 @@ class MyWorld(pydart.World):
         self.is_failure = False
         self.ball = ball
         path, folder = os.path.split(os.getcwd())
-        self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets','KR5')
+        self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets')
         # self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
-        # self.asset_path = "/home/niranjan/Projects/vis_inst/skynet/RL_playground/DartEnv2/gym/envs/dart/assets/KR5/"
+        # self.asset_path = "/home/niranjan/Projects/vis_inst/skynet/RL_playground/DartEnv2/gym/envs/dart/assets/"
         # self.world = pydart.World.__init__(self, 0.001,
         #                                    self.asset_path+"/"+"arena2big.skel")
         self.world = pydart.World.__init__(self, 0.001,
-                                           self.asset_path+"/"+str(num_bodies)+"body_chain.skel")
+                                           self.asset_path+"/KR5/"+str(num_bodies)+"body_chain.skel")
 
         # self.robot.set_positions([0.0, 1.4054258, 0.4363229, -0.0, 1.5695383, -0.0])
         # self.robot.set_positions([0.0, 0, 0.0, -0.0, 0, 0])
@@ -800,29 +805,41 @@ class MyWorld(pydart.World):
         if len(self.skeletons) == 2:
             if self.ball == 0:
                 self.robot = self.add_skeleton(
-                    self.asset_path+"/KR5 sixx R650.urdf")
+                    self.asset_path+"/KR5/KR5 sixx R650.urdf")
             elif self.ball == 1:
                 self.robot = self.add_skeleton(
-                    self.asset_path+"/KR5 sixx R650 ball.urdf")
+                    self.asset_path+"/KR5/KR5 sixx R650 ball.urdf")
                 print('Loading spherical end-effector')
 
             elif self.ball == 2:
                 self.robot = self.add_skeleton(
-                    self.asset_path + "/KR5 sixx R650 ellipsoid.urdf")
+                    self.asset_path + "/KR5/KR5 sixx R650 ellipsoid.urdf")
                 print('Loading ellipsoid end-effector')
+            elif self.ball == 3:
+                self.robot = self.add_skeleton(
+                    self.asset_path + "/kuka_lbr_iiwa_support/lbr_iiwa_14_r820.urdf")
+                print('Loading kuka_lbr arm')
             self.box_shape = [self.skeletons[1].bodynodes[i].shapenodes[0].shape.size() for i in
                               range(0, 2, len(self.skeletons[1].bodynodes))]
             WTR = self.robot.joints[0].transform_from_parent_body_node()
             WTR[:3, 3] = 0  # move robot to world origin
             if self.ball==0:
                 WTR[0, 3] -= 0.52  # move robot base from the articulated body
-            else:
+                pose = [0.0, 1.40, 0.4363229, -0.0, -1.50, -0.0]
+            elif self.ball==1 or self.ball==2:
                 WTR[0, 3] -= 0.55
+                pose = [0.0, 1.40, 0.4363229, -0.0, -1.50, -0.0]
+            elif self.ball==3:
+                WTR[0, 3] -= 0.57
+                quat_R = Quaternion(axis=[1, 0, 0], degrees=-90)
+                WTR[:3, :3] = quat_R.rotation_matrix
+                self.robot.joints[0].set_transform_from_parent_body_node(WTR)
+                pose = [-0.0161494, 1.29559903 ,-0.03560395, -2.06603375, -0.07662891, -1.62547303, 0.49875048]
             # WTR[2, 3] -= (self.box_shape[0][0] * 0.5 + self.box_shape[0][2] * 0.5)
             self.WTR = WTR
             self.set_gravity([0.0, -9.81, 0])
         self.robot.joints[0].set_transform_from_parent_body_node(self.WTR)
-        self.robot.set_positions([0.0, 1.40, 0.4363229, -0.0, -1.50, -0.0])
+        self.robot.set_positions(pose)
         # self.robot.joints[1].set_actuator_type(pydart.joint.Joint.LOCKED)
         # self.robot.joints[4].set_actuator_type(pydart.joint.Joint.LOCKED)
         # self.robot.joints[6].set_actuator_type(pydart.joint.Joint.LOCKED)
@@ -843,13 +860,13 @@ if __name__ == '__main__':
     pydart.init()
     print('pydart initialization OK')
 
-    world = MyWorld(num_bodies=3)
+    world = MyWorld(num_bodies=3,ball=1)
 
     # win = pydart.gui.viewer.PydartWindow(world)
     win = GLUTWindow(world, None)
     win.scene.add_camera(
         Trackball(
-            theta=-5.0, phi=-5.0, zoom=-0.5,
+            theta=-35.0, phi=-5.0, zoom=-0.5,
             trans=[0, -0.5, -2]),
         "Camera Y up")
     win.scene.set_camera(2)
