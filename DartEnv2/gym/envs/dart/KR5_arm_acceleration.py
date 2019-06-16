@@ -609,7 +609,7 @@ class ControllerOCPose:
                 self.flipped = True
             self.moved_arm_base = True
         if self.timestep_count > 0:
-            self.target_x = self.box.bodynodes[self.select_block].to_world([np.sign(self.tau[0])*-self.skel.world.box_shape[0][0] * 0.5, -0.015, self.offset])
+            self.target_x = self.box.bodynodes[self.select_block].to_world([np.sign(self.tau[0])*-self.skel.world.box_shape[0][0] * 0.5, 0, self.offset])
             try:
                 box_quat = Quaternion(matrix=self.box.bodynodes[self.select_block].T[:3, :3]).normalised
             except:
