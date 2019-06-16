@@ -18,12 +18,12 @@
         <mesh filename="meshes/lbr_iiwa_14_r820/visual/base_link.stl"/>
       </geometry>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="meshes/lbr_iiwa_14_r820/collision/base_link.stl"/>
-      </geometry>
-    </collision>
+<!--    <collision>-->
+<!--      <origin rpy="0 0 0" xyz="0 0 0"/>-->
+<!--      <geometry>-->
+<!--        <mesh filename="meshes/lbr_iiwa_14_r820/collision/base_link.stl"/>-->
+<!--      </geometry>-->
+<!--    </collision>-->
   </link>
   <link name="link_1">
     <visual>
@@ -32,12 +32,12 @@
         <mesh filename="meshes/lbr_iiwa_14_r820/visual/link_1.stl"/>
       </geometry>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="meshes/lbr_iiwa_14_r820/collision/link_1.stl"/>
-      </geometry>
-    </collision>
+<!--    <collision>-->
+<!--      <origin rpy="0 0 0" xyz="0 0 0"/>-->
+<!--      <geometry>-->
+<!--        <mesh filename="meshes/lbr_iiwa_14_r820/collision/link_1.stl"/>-->
+<!--      </geometry>-->
+<!--    </collision>-->
   </link>
   <link name="link_2">
     <visual>
@@ -46,12 +46,12 @@
         <mesh filename="meshes/lbr_iiwa_14_r820/visual/link_2.stl"/>
       </geometry>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="meshes/lbr_iiwa_14_r820/collision/link_2.stl"/>
-      </geometry>
-    </collision>
+<!--    <collision>-->
+<!--      <origin rpy="0 0 0" xyz="0 0 0"/>-->
+<!--      <geometry>-->
+<!--        <mesh filename="meshes/lbr_iiwa_14_r820/collision/link_2.stl"/>-->
+<!--      </geometry>-->
+<!--    </collision>-->
   </link>
   <link name="link_3">
     <visual>
@@ -60,12 +60,12 @@
         <mesh filename="meshes/lbr_iiwa_14_r820/visual/link_3.stl"/>
       </geometry>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="meshes/lbr_iiwa_14_r820/collision/link_3.stl"/>
-      </geometry>
-    </collision>
+<!--    <collision>-->
+<!--      <origin rpy="0 0 0" xyz="0 0 0"/>-->
+<!--      <geometry>-->
+<!--        <mesh filename="meshes/lbr_iiwa_14_r820/collision/link_3.stl"/>-->
+<!--      </geometry>-->
+<!--    </collision>-->
   </link>
   <link name="link_4">
     <visual>
@@ -74,12 +74,12 @@
         <mesh filename="meshes/lbr_iiwa_14_r820/visual/link_4.stl"/>
       </geometry>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="meshes/lbr_iiwa_14_r820/collision/link_4.stl"/>
-      </geometry>
-    </collision>
+<!--    <collision>-->
+<!--      <origin rpy="0 0 0" xyz="0 0 0"/>-->
+<!--      <geometry>-->
+<!--        <mesh filename="meshes/lbr_iiwa_14_r820/collision/link_4.stl"/>-->
+<!--      </geometry>-->
+<!--    </collision>-->
   </link>
   <link name="link_5">
     <visual>
@@ -88,12 +88,12 @@
         <mesh filename="meshes/lbr_iiwa_14_r820/visual/link_5.stl"/>
       </geometry>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="meshes/lbr_iiwa_14_r820/collision/link_5.stl"/>
-      </geometry>
-    </collision>
+<!--    <collision>-->
+<!--      <origin rpy="0 0 0" xyz="0 0 0"/>-->
+<!--      <geometry>-->
+<!--        <mesh filename="meshes/lbr_iiwa_14_r820/collision/link_5.stl"/>-->
+<!--      </geometry>-->
+<!--    </collision>-->
   </link>
   <link name="link_6">
     <visual>
@@ -102,12 +102,12 @@
         <mesh filename="meshes/lbr_iiwa_14_r820/visual/link_6.stl"/>
       </geometry>
     </visual>
-    <collision>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
-      <geometry>
-        <mesh filename="meshes/lbr_iiwa_14_r820/collision/link_6.stl"/>
-      </geometry>
-    </collision>
+<!--    <collision>-->
+<!--      <origin rpy="0 0 0" xyz="0 0 0"/>-->
+<!--      <geometry>-->
+<!--        <mesh filename="meshes/lbr_iiwa_14_r820/collision/link_6.stl"/>-->
+<!--      </geometry>-->
+<!--    </collision>-->
   </link>
   <link name="link_7">
     <visual>

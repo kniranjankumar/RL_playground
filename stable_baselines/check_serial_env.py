@@ -52,7 +52,7 @@ env_id = 'ArmAccEnvBall3-v0'
 register(
     id=env_id,
     entry_point='gym.envs.dart:ArmAccEnvBall2',
-    kwargs={'ball_type':1,
+    kwargs={'ball_type':3,
             'start_state':[1.5,1.5],
             'flip_enabled':True,
             'coverage_factor':0.9,
@@ -82,7 +82,8 @@ for i in range(100):
     count = 0
     while not done:
         count += 1
-        obs, rew, done, _ = env1.step(action=[-0.1,offset[0]])
+        obs, rew, done, _ = env1.step(action=env1.action_space.sample())
+        # obs, rew, done, _ = env1.step(action=[-0.1,offset[0]])
         mu.append(obs['mu'])
         disp.append(obs['observation'][:4])
         # obs, rew, done, _ = env1.step(action=env1.action_space.sample())

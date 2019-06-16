@@ -245,7 +245,7 @@ class ArmAccEnvBall2(gym.Env):
         while self.dart_world.t < 10:
             if self.dart_world.complete:
                 break
-            # self.render(mode='human')
+            self.render(mode='human')
             self.do_simulation(action, offset, block_id)
 
             if self.dart_world.t > 10:
