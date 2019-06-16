@@ -229,7 +229,7 @@ class ArmAccEnvBall2(gym.Env):
     def _step(self, action):
         action = np.clip(action, -1, 1)
         if self.flip_enabled:
-            action[0] = action[0] * 20
+            action[0] = action[0] * 10
         else:
             action[0] = action[0] * 10 + 10
         # action[0] = 10
