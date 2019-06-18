@@ -506,8 +506,8 @@ class ControllerOCPose:
         self.action_space = action_space
         self.skel = skel
         self.arm_type = self.skel.world.ball
-        end_effector_offset = 0.024 if self.arm_type == 3 else 0.05
-        self.end_effector_offset = np.array([end_effector_offset, 0, 0])
+        end_effector_offset = 0.022 if self.arm_type == 3 else 0.05
+        self.end_effector_offset = np.array([0, 0, end_effector_offset]) if self.arm_type == 3 else np.array([end_effector_offset, 0, 0])
 
         self.box = skel.world.skeletons[1]
         self.end_effector = self.skel.bodynodes[-1]
@@ -533,7 +533,7 @@ class ControllerOCPose:
 
     def reset(self, WTR, WTO):
         self.tau = [0 for i in range(self.action_space)]
-        self.tau[0] = 5
+        self.tau[0] = 1
         self.tau[1] = 0.1
         self.WTR = WTR
         self.WTO = WTO
@@ -556,6 +556,8 @@ class ControllerOCPose:
         xerror = target_x - self.skel.bodynodes[-1].to_world(self.end_effector_offset)
         error = np.concatenate([self.Ko * werror, self.Kp*xerror])[self.mask == True]
         derror = target_dx[self.mask] - J.dot(self.skel.velocities())
+        if np.linalg.norm(target_dx)>0.1:
+            print(np.linalg.norm(np.array([derror[-1], derror[-3]])))
         derror *= self.Kd
         dderror = J.dot(self.skel.accelerations()) + dJ.dot(self.skel.velocities())
         dderror *= -self.Ki
@@ -625,7 +627,7 @@ class ControllerOCPose:
             end_effector_name = "link_7" if self.arm_type == 3 else "palm"
             if end_effector_name in names:
                 angle = -np.sign(self.target_quat.axis[1]) * self.target_quat.angle
-                self.target_dx = np.array([0, 0, 0, np.cos(rotation_offset+angle), 0, np.sin(rotation_offset+angle)])*abs(self.tau[0])
+                self.target_dx = np.array([0, 0, 0, np.cos(rotation_offset+angle), 0, np.sin(rotation_offset+angle)])*abs(self.tau[0])#*(self.FTIME-self.timestep_count))
                 self.timestep_count -= 1
             else:
                 self.target_dx = np.array([0, 0, 0, 0, 0, 0])
@@ -861,7 +863,7 @@ if __name__ == '__main__':
     pydart.init()
     print('pydart initialization OK')
 
-    world = MyWorld(num_bodies=3,ball=1)
+    world = MyWorld(num_bodies=3,ball=3)
 
     # win = pydart.gui.viewer.PydartWindow(world)
     win = GLUTWindow(world, None)
