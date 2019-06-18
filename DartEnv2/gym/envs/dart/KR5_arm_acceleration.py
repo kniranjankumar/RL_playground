@@ -525,7 +525,7 @@ class ControllerOCPose:
         self.end_effector = self.skel.bodynodes[-1]
         self.tau[0] = 5
         self.offset = 0
-        # self.tau[1] = -0.1
+        # self.tau[1] = -1
         self.flipped = False
         self.went_nan = False
         self.moved_arm_base = False
@@ -863,7 +863,7 @@ if __name__ == '__main__':
     pydart.init()
     print('pydart initialization OK')
 
-    world = MyWorld(num_bodies=3,ball=3)
+    world = MyWorld(num_bodies=3,ball=1)
 
     # win = pydart.gui.viewer.PydartWindow(world)
     win = GLUTWindow(world, None)
