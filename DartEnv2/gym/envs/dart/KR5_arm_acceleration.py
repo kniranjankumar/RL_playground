@@ -556,8 +556,8 @@ class ControllerOCPose:
         xerror = target_x - self.skel.bodynodes[-1].to_world(self.end_effector_offset)
         error = np.concatenate([self.Ko * werror, self.Kp*xerror])[self.mask == True]
         derror = target_dx[self.mask] - J.dot(self.skel.velocities())
-        if np.linalg.norm(target_dx)>0.1:
-            print(np.linalg.norm(np.array([derror[-1], derror[-3]])))
+        # if np.linalg.norm(target_dx)>0.1:
+        #     print(np.linalg.norm(np.array([derror[-1], derror[-3]])))
         derror *= self.Kd
         dderror = J.dot(self.skel.accelerations()) + dJ.dot(self.skel.velocities())
         dderror *= -self.Ki
