@@ -523,8 +523,8 @@ class ControllerOCPose:
         self.timestep_count = self.FTIME
         self.tau = [0 for i in range(self.action_space)]
         self.end_effector = self.skel.bodynodes[-1]
-        self.tau[0] = 5
-        self.offset = 0
+        self.tau[0] = 10
+        self.offset = 0.05
         # self.tau[1] = -1
         self.flipped = False
         self.went_nan = False
@@ -556,8 +556,8 @@ class ControllerOCPose:
         xerror = target_x - self.skel.bodynodes[-1].to_world(self.end_effector_offset)
         error = np.concatenate([self.Ko * werror, self.Kp*xerror])[self.mask == True]
         derror = target_dx[self.mask] - J.dot(self.skel.velocities())
-        # if np.linalg.norm(target_dx)>0.1:
-            # print(np.linalg.norm(np.array([derror[-1], derror[-3]])))
+        if np.linalg.norm(target_dx)>0.1:
+            print(np.linalg.norm(np.array([derror[-1], derror[-3]])))
         derror *= self.Kd
         dderror = J.dot(self.skel.accelerations()) + dJ.dot(self.skel.velocities())
         dderror *= -self.Ki
@@ -792,7 +792,7 @@ class MyWorld(pydart.World):
         path, folder = os.path.split(os.getcwd())
         self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets')
         # self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
-        self.asset_path = "/home/niranjan/Projects/vis_inst/skynet/RL_playground/DartEnv2/gym/envs/dart/assets/"
+        # self.asset_path = "/home/niranjan/Projects/vis_inst/skynet/RL_playground/DartEnv2/gym/envs/dart/assets/"
         # self.world = pydart.World.__init__(self, 0.001,
         #                                    self.asset_path+"/"+"arena2big.skel")
         self.world = pydart.World.__init__(self, 0.001,
@@ -863,7 +863,7 @@ if __name__ == '__main__':
     pydart.init()
     print('pydart initialization OK')
 
-    world = MyWorld(num_bodies=3,ball=3)
+    world = MyWorld(num_bodies=3,ball=1)
 
     # win = pydart.gui.viewer.PydartWindow(world)
     win = GLUTWindow(world, None)

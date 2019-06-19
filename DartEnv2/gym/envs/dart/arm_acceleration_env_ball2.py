@@ -227,6 +227,8 @@ class ArmAccEnvBall2(gym.Env):
         return offset, block_idx
 
     def _step(self, action):
+        noise = self.np_random.uniform(-action[0]/10, action[0]/10)
+        action[0] += noise
         action = np.clip(action, -1, 1)
         if self.flip_enabled:
             action[0] = action[0] * 20
