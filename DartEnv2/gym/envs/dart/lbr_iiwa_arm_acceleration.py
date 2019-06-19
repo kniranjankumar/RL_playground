@@ -506,7 +506,7 @@ class ControllerOCPose:
         self.action_space = action_space
         self.skel = skel
         self.arm_type = self.skel.world.ball
-        end_effector_offset = 0.022 if self.arm_type == 3 else 0.05
+        end_effector_offset = 0.020 if self.arm_type == 3 else 0.05
         self.end_effector_offset = np.array([0, 0, end_effector_offset]) if self.arm_type == 3 else np.array([end_effector_offset, 0, 0])
 
         self.box = skel.world.skeletons[1]
@@ -524,7 +524,7 @@ class ControllerOCPose:
         self.tau = [0 for i in range(self.action_space)]
         self.end_effector = self.skel.bodynodes[-1]
         self.tau[0] = 5
-        self.offset = 0.1
+        self.offset = 0
         # self.tau[1] = -1
         self.flipped = False
         self.went_nan = False
@@ -836,7 +836,7 @@ class MyWorld(pydart.World):
                 quat_R = Quaternion(axis=[1, 0, 0], degrees=-90)
                 WTR[:3, :3] = quat_R.rotation_matrix
                 self.robot.joints[0].set_transform_from_parent_body_node(WTR)
-                self.init_pose = [-0.0161494, 1.29559903 ,-0.03560395, -2.06603375, -0.07662891, -1.62547303, 0.49875048]
+                self.init_pose = [-0.0161494, 1.29559903 ,-0.03560395, -2.06603375, -0.07662891, -1.52547303, 0.49875048]
             # WTR[2, 3] -= (self.box_shape[0][0] * 0.5 + self.box_shape[0][2] * 0.5)
             self.WTR = WTR
             self.set_gravity([0.0, -9.81, 0])
