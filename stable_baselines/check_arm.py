@@ -356,7 +356,10 @@ class NetworkVecEnv(SubprocVecEnv):
         if not use_distribution_policy:
             print('Using deterministic actions')
         else:
-            print('Using actions sampled from policy distribution')
+            if policy is None:
+                print('Using uniform policy')
+            else:
+                print('Using actions sampled from policy distribution')
         done = np.array([False for i in range(self.num_envs)])
         mask = done.copy()
 
