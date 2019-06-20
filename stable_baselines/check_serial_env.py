@@ -5,7 +5,7 @@ import gym
 import numpy as np
 from gym.envs.registration import register
 import pydart2
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 num = 4  # Number of processes to use
 # #
@@ -100,8 +100,8 @@ for i in range(100):
 
     # env1.render(mode="human")
 
-plt.plot(np.array(mu),np.array(disp), '*')
-plt.show()
+# plt.plot(np.array(mu),np.array(disp), '*')
+# plt.show()
 # print(sum(reward)/len(reward))
 # env2.reset()
 # print(env1.env.dart_world.t,env2.env.dart_world.t)
