@@ -71,7 +71,7 @@ obs = env1.reset()
 print(obs)
 offset = np.arange(-1.0,1.0,0.2)
 # print(env1.action_space)
-env1.render(mode="human")
+# env1.render(mode="human")
 done = False
 count = 0
 reward = []
@@ -90,7 +90,7 @@ for i in range(100):
 
         print(obs)
 
-        env1.render(mode="human")
+        # env1.render(mode="human")
     print('done')
     print(i)
     reward.append(rew)
