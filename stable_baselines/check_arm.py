@@ -277,7 +277,8 @@ class NetworkVecEnv(SubprocVecEnv):
                                    self.mass: mass_batch1})
                 error.append(percent)
             print(predicted_mass.shape,mass_batch1.shape)
-            print(predicted_mass,mass_batch1)
+            print(np.concatenate([predicted_mass[-1,:,:],mass_batch1], axis=1))
+            # print(predicted_mass,mass_batch1)
             return percent
 
         def feedable_train(self, obs, act, mass, num_iter, graph, batch_size=64, learning_rate=[1e-1,1e-2]):
