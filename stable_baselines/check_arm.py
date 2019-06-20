@@ -259,7 +259,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 mass_batch1 = mass[current:current+batch_size, :]
                 with graph.as_default():
                     error2, predicted_mass, summary_test = self.sess.run(
-                        [self.mean_error_feedable, self.predict_mass, self.merged_summary_test],
+                        [self.percent, self.predict_mass, self.merged_summary_test],
                         feed_dict={self.obs: obs_batch1, self.act: act_batch1,
                                    self.mass: mass_batch1})
 
@@ -276,6 +276,8 @@ class NetworkVecEnv(SubprocVecEnv):
                         feed_dict={self.obs: obs_batch1, self.act: act_batch1,
                                    self.mass: mass_batch1})
                 error.append(percent)
+            print(predicted_mass.shape,mass_batch1.shape)
+            print(predicted_mass,mass_batch1)
             return percent
 
         def feedable_train(self, obs, act, mass, num_iter, graph, batch_size=64, learning_rate=[1e-1,1e-2]):
