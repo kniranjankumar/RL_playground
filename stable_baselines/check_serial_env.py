@@ -53,7 +53,7 @@ register(
     id=env_id,
     entry_point='gym.envs.dart:ArmAccEnvBall2',
     kwargs={'ball_type':3,
-            'start_state':[1.5,1.5],
+            'start_state':None,
             'flip_enabled':True,
             'coverage_factor':0.9,
             'num_bodies':2,
