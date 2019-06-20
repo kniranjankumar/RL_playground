@@ -506,7 +506,7 @@ class ControllerOCPose:
         self.action_space = action_space
         self.skel = skel
         self.arm_type = self.skel.world.ball
-        end_effector_offset = 0.020 if self.arm_type == 3 else 0.05
+        end_effector_offset = 0.022 if self.arm_type == 3 else 0.055
         self.end_effector_offset = np.array([0, 0, end_effector_offset]) if self.arm_type == 3 else np.array([end_effector_offset, 0, 0])
 
         self.box = skel.world.skeletons[1]
@@ -518,7 +518,7 @@ class ControllerOCPose:
         self.Kp = 300
         self.Ko = 300
         self.Ki = 300
-        self.Kd = np.sqrt(self.Kp+self.Ko)*1.5
+        self.Kd = np.sqrt(self.Kp+self.Ko)*(1.5 if self.skel.world.ball == 3 else 1.96 )
         self.FTIME = 10
         self.timestep_count = self.FTIME
         self.tau = [0 for i in range(self.action_space)]
@@ -556,8 +556,8 @@ class ControllerOCPose:
         xerror = target_x - self.skel.bodynodes[-1].to_world(self.end_effector_offset)
         error = np.concatenate([self.Ko * werror, self.Kp*xerror])[self.mask == True]
         derror = target_dx[self.mask] - J.dot(self.skel.velocities())
-        if np.linalg.norm(target_dx)>0.1:
-            print(np.linalg.norm(np.array([derror[-1], derror[-3]])))
+        # if np.linalg.norm(target_dx)>0.1:
+        #     print(np.linalg.norm(np.array([derror[-1], derror[-3]])))
         derror *= self.Kd
         dderror = J.dot(self.skel.accelerations()) + dJ.dot(self.skel.velocities())
         dderror *= -self.Ki
@@ -792,7 +792,7 @@ class MyWorld(pydart.World):
         path, folder = os.path.split(os.getcwd())
         self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets')
         # self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
-        # self.asset_path = "/home/niranjan/Projects/vis_inst/skynet/RL_playground/DartEnv2/gym/envs/dart/assets/"
+        self.asset_path = "/home/niranjan/Projects/vis_inst/skynet/RL_playground/DartEnv2/gym/envs/dart/assets/"
         # self.world = pydart.World.__init__(self, 0.001,
         #                                    self.asset_path+"/"+"arena2big.skel")
         self.world = pydart.World.__init__(self, 0.001,
@@ -836,7 +836,7 @@ class MyWorld(pydart.World):
                 quat_R = Quaternion(axis=[1, 0, 0], degrees=-90)
                 WTR[:3, :3] = quat_R.rotation_matrix
                 self.robot.joints[0].set_transform_from_parent_body_node(WTR)
-                self.init_pose = [-0.0161494, 1.29559903 ,-0.03560395, -2.06603375, -0.07662891, -1.52547303, 0.49875048]
+                self.init_pose = [-0.0161494, 1.29559903 ,-0.03560395, -2.06603375, -0.07662891, -1.62547303, 0.49875048]
             # WTR[2, 3] -= (self.box_shape[0][0] * 0.5 + self.box_shape[0][2] * 0.5)
             self.WTR = WTR
             self.set_gravity([0.0, -9.81, 0])
@@ -863,7 +863,7 @@ if __name__ == '__main__':
     pydart.init()
     print('pydart initialization OK')
 
-    world = MyWorld(num_bodies=3,ball=1)
+    world = MyWorld(num_bodies=2,ball=3)
 
     # win = pydart.gui.viewer.PydartWindow(world)
     win = GLUTWindow(world, None)
