@@ -277,7 +277,8 @@ class NetworkVecEnv(SubprocVecEnv):
                                    self.mass: mass_batch1})
                 error.append(percent)
             print(predicted_mass.shape,mass_batch1.shape)
-            print(np.concatenate([predicted_mass[-1,:,:],mass_batch1], axis=1))
+            # print(np.concatenate([predicted_mass[-1,:,:],mass_batch1], axis=1))
+            print(np.sum(np.abs(predicted_mass[-1,:,:]-mass_batch1), axis=1))
             # print(predicted_mass,mass_batch1)
             return percent
 
