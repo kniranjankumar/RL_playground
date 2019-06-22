@@ -650,6 +650,7 @@ class ControllerOCPose:
                 self.flipped = False
                 self.moved_arm_base = False
                 self.timestep_count = self.FTIME
+                raise Exception('NaN encountered')
 
             elif np.all(self.box.dq < 0.05):
                 self.skel.set_positions(self.start)
