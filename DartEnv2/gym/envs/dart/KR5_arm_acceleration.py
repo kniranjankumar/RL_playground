@@ -518,7 +518,7 @@ class ControllerOCPose:
         self.Kp = 300
         self.Ko = 300
         self.Ki = 300
-        self.Kd = np.sqrt(self.Kp+self.Ko)*(1.40 if self.skel.world.ball == 3 else 1.96 )
+        self.Kd = np.sqrt(self.Kp+self.Ko)*(1.41 if self.skel.world.ball == 3 else 1.96 )
         self.FTIME = 10
         self.timestep_count = self.FTIME
         self.tau = [0 for i in range(self.action_space)]
