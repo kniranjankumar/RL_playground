@@ -446,6 +446,7 @@ class NetworkVecEnv(SubprocVecEnv):
                     obs_list, act_list, mass_list = [], [], []
                     break
                 except:
+                    print('simulating again')
                     obs_list, act_list, mass_list = [], [], []
                     done = np.array([False for i in range(self.num_envs)])
                     mask = done.copy()
