@@ -281,6 +281,8 @@ class ArmAccEnvBall2(gym.Env):
         obs = np.append(self.box_skeleton.q[idx],[self.size[i,0] for i in range(self.num_bodies)])
         nan_idx = np.isnan(obs)
         obs[nan_idx] = 0
+        if len(nan_idx)>0 :
+            print(nan_idx)
         mass = self.mass/np.sum(self.mass) if self.use_mass_distribution else self.mass
         # obs = self.box_skeleton.q[idx]
         # obs = np.append(self.box_skeleton.q[idx],
