@@ -455,6 +455,7 @@ class NetworkVecEnv(SubprocVecEnv):
             else:
                 good.append(True)
         print(good)
+        print(np.count_nonzero(good))
         rollout_obs, rollout_act, rollout_mass = np.array(rollout_obs), np.array(rollout_act), np.array(rollout_mass)
         rollout_obs = rollout_obs.reshape(-1, rollout_obs.shape[-1])
         rollout_act = (rollout_act.reshape(-1, rollout_act.shape[-1]))
