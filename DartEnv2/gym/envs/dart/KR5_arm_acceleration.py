@@ -649,7 +649,7 @@ class ControllerOCPose:
                 self.skel.world.complete = True
                 self.flipped = False
                 self.moved_arm_base = False
-                self.went_nan = True
+                self.skel.world.is_failure = True
                 self.timestep_count = self.FTIME
                 # raise Exception('NaN encountered')
                 # assert True==False
