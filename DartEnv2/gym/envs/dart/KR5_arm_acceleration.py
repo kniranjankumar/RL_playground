@@ -506,7 +506,7 @@ class ControllerOCPose:
         self.action_space = action_space
         self.skel = skel
         self.arm_type = self.skel.world.ball
-        end_effector_offset = 0.022 if self.arm_type == 3 else 0.055
+        end_effector_offset = 0.03 if self.arm_type == 3 else 0.055
         self.end_effector_offset = np.array([0, 0, end_effector_offset]) if self.arm_type == 3 else np.array([end_effector_offset, 0, 0])
 
         self.box = skel.world.skeletons[1]
