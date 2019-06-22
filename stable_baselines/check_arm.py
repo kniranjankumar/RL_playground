@@ -445,7 +445,7 @@ class NetworkVecEnv(SubprocVecEnv):
             rollout_act.append(np.reshape(np.stack(act_list, axis=1), [self.num_envs, -1]).copy())
             rollout_mass.append(np.array(mass_list[0]).copy())
             obs_list, act_list, mass_list, rew_list = [], [], [], []
-        print(rew_list)
+        print(rollout_rew)
         rollout_rew = np.array(rollout_rew)
         rollout_rew = rollout_rew.reshape(-1, rollout_rew.shape[-1])
         good = []
