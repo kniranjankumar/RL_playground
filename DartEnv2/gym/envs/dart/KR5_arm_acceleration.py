@@ -650,7 +650,7 @@ class ControllerOCPose:
                 self.flipped = False
                 self.moved_arm_base = False
                 self.timestep_count = self.FTIME
-                raise Exception('NaN encountered')
+                # raise Exception('NaN encountered')
                 assert True==False
 
             elif np.all(self.box.dq < 0.05):
