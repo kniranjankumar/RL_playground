@@ -515,10 +515,10 @@ class ControllerOCPose:
         self.WTO = [self.box.bodynodes[0].T, self.box.bodynodes[2].T]
         self.OTR = np.linalg.inv(self.WTO[0]).dot(self.WTR)
         self.target_dx = np.array([0, 0, 0, 0, 0, 0])
-        self.Kp = 300
-        self.Ko = 300
+        self.Kp = 3000
+        self.Ko = 3000
         self.Ki = 300
-        self.Kd = np.sqrt(self.Kp+self.Ko)*(1.40 if self.skel.world.ball == 3 else 1.96 )
+        self.Kd = np.sqrt(self.Kp+self.Ko)*(1.40 if self.skel.world.ball == 3 else 1.96)
         self.FTIME = 10
         self.timestep_count = self.FTIME
         self.tau = [0 for i in range(self.action_space)]
@@ -556,8 +556,8 @@ class ControllerOCPose:
         xerror = target_x - self.skel.bodynodes[-1].to_world(self.end_effector_offset)
         error = np.concatenate([self.Ko * werror, self.Kp*xerror])[self.mask == True]
         derror = target_dx[self.mask] - J.dot(self.skel.velocities())
-        if np.linalg.norm(target_dx)>0.1:
-            self.get_contact_forces()
+
+            # print(self.box.dq[1])
             # print(np.linalg.norm(np.array([derror[-1], derror[-3]])))
         derror *= self.Kd
         dderror = J.dot(self.skel.accelerations()) + dJ.dot(self.skel.velocities())
@@ -585,8 +585,11 @@ class ControllerOCPose:
         contact = self.skel.world.collision_result
         for c in contact.contacts:
             if c.bodynode1.name == "palm" or c.bodynode2.name == "palm" or c.bodynode1.name == "link_7" or c.bodynode2.name == "link_7":
-                f_contact += np.abs(c.force)
-        print('hit', f_contact)
+                if c.bodynode1.name == "palm" or c.bodynode1.name == "link_7":
+                    f_contact += np.abs(c.force)
+                else:
+                    f_contact -= np.abs(c.force)
+        print( f_contact)
 
     def flip_arm(self):
         WTO_ = self.box.bodynodes[self.select_block].T
@@ -656,13 +659,13 @@ class ControllerOCPose:
                 # raise Exception('NaN encountered')
                 # assert True==False
 
-            elif np.all(self.box.dq < 0.05):
+            elif np.all(np.abs(self.box.dq) < 0.05):
                 self.skel.set_positions(self.start)
                 self.skel.world.complete = True
                 self.flipped = False
                 self.moved_arm_base = False
                 self.timestep_count = self.FTIME
-
+                # print('stopped',self.box.dq)
 
             force = self.skel.coriolis_and_gravity_forces()
         return force
@@ -797,7 +800,7 @@ class MyWorld(pydart.World):
         path, folder = os.path.split(os.getcwd())
         self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets')
         # self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
-        # self.asset_path = "/home/niranjan/Projects/vis_inst/skynet/RL_playground/DartEnv2/gym/envs/dart/assets/"
+        self.asset_path = "/home/niranjan/Projects/vis_inst/skynet/RL_playground/DartEnv2/gym/envs/dart/assets/"
         # self.world = pydart.World.__init__(self, 0.001,
         #                                    self.asset_path+"/"+"arena2big.skel")
         self.world = pydart.World.__init__(self, 0.001,

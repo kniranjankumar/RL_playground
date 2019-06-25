@@ -52,18 +52,20 @@ env_id = 'ArmAccEnvBall3-v0'
 register(
     id=env_id,
     entry_point='gym.envs.dart:ArmAccEnvBall2',
-    kwargs={'ball_type':3,
+    kwargs={'ball_type':2,
             'start_state':None,
             'flip_enabled':True,
             'coverage_factor':0.9,
             'num_bodies':2,
-            'start_state':np.array([0])[:],
+            'start_state':None,
+            'num_tries':1,
             'use_mass_distribution':True},
     reward_threshold=2,
     timestep_limit=10,
     max_episode_steps=20,
 )
 env1 = gym.make(env_id)
+env1.seed(101)
 # env2 = gym.make(env_id)
 #
 # print(env1.reset())
@@ -76,29 +78,41 @@ done = False
 count = 0
 reward = []
 mu = []
+mass = []
 disp = []
+action = []
 for i in range(100):
     # print(count)
     count = 0
-    while not done:
-        count += 1
-        obs, rew, done, _ = env1.step(action=env1.action_space.sample())
-        # obs, rew, done, _ = env1.step(action=[-0.1,offset[0]])
-        mu.append(obs['mu'])
-        disp.append(obs['observation'][:4])
-        # obs, rew, done, _ = env1.step(action=env1.action_space.sample())
+    if i > 0:
+        while not done:
+            count += 1
+            act = env1.action_space.sample()
+            print(i)
+            obs, rew, done, _ = env1.step(action=act)
+            # obs, rew, done, _ = env1.step(action=[-0.1,offset[0]])
+            mu.append(['mu'])
+            disp.append(obs['observation'][:4])
+            mass.append(obs['mass'])
+            action.append(act)
+            # obs, rew, done, _ = env1.step(action=env1.action_space.sample())
 
-        print(obs)
+            # print(obs)
 
-        # env1.render(mode="human")
-    print('done')
-    print(i)
-    reward.append(rew)
-    done = False
+            # env1.render(mode="human")
+        print('done')
+        # print(i)
+        reward.append(rew)
+        done = False
     obs = env1.reset()
-    print(obs)
+    # disp.append(obs['observation'][:4])
+
+    # print(obs)
 
     # env1.render(mode="human")
+np.save('obs2',np.array(disp))
+np.save('mass2',np.array(mass))
+np.save('act2',np.array(action))
 
 # plt.plot(np.array(mu),np.array(disp), '*')
 # plt.show()
