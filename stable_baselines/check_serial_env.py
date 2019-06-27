@@ -56,6 +56,7 @@ register(
             'start_state':None,
             'flip_enabled':True,
             'coverage_factor':1.2,
+            'mass_range':[0.1,0.1],
             'num_bodies':2,
             'start_state':None,
             'num_tries':3,
