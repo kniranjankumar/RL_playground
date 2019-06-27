@@ -283,7 +283,7 @@ class ArmAccEnvBall2(gym.Env):
         if True in nan_idx:
             self.dart_world.is_failure = True
         obs[nan_idx] = 0
-        obs += self.np_random.normal(0,0.05,self.observation_space.spaces['observation'].shape)
+        obs += self.np_random.normal(0,0.1,self.observation_space.spaces['observation'].shape)
         mass = self.mass/np.sum(self.mass) if self.use_mass_distribution else self.mass
         # obs = self.box_skeleton.q[idx]
         # obs = np.append(self.box_skeleton.q[idx],
