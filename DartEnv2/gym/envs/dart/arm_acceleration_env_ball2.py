@@ -251,8 +251,9 @@ class ArmAccEnvBall2(gym.Env):
             self.do_simulation(action, offset, block_id)
 
             if self.dart_world.t > 100:
-                print(action)
-                print("Gone mad")
+                break
+                # print(action)
+                # print("Gone mad")
                 # self.render(mode='human')
 
             # break

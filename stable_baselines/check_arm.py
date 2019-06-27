@@ -688,10 +688,18 @@ def send_notification(message, value=' '):
 # parser.add_argument('--mass_range_lower', help='Mass range lower',  default=0.1, type=float,nargs='?', const=0.1)
 # args = parser.parse_args()
 parser = argparse.ArgumentParser()
+parser.add_argument("--type", help='Experiment type: 2link, 3link',
+                    default='DEFAULT', type=str, nargs='?', const='DEFAULT')
+parser.add_argument("--mass_range", help='1->[0.1,1] 2->[1,10] 3->[0.1,10]',
+                    default=3, type=int,nargs='?', const=3)
+
 parser.add_argument("--folder_name", help='name of the log folder', default='Exp1', type=str, nargs='?', const='Exp1')
 args = parser.parse_args()
 arguments = get_arguments()
 arguments['folder_name'] = args.folder_name
+arguments['mass_range_upper'] = 10 if args.mass_range == 2 or args.mass_range == 3 else 1
+arguments['mass_range_lower'] = 0.1 if args.mass_range == 1 or args.mass_range == 3 else 1
+
 the_path = os.path.join(path, 'experiments', 'KR5_arm', arguments['folder_name'])
 folders = glob(os.path.join(the_path, '*'))
 latest = int(len(folders))
