@@ -14,7 +14,7 @@ from stable_baselines.common.policies import MlpPolicy, MlpLstmPolicy
 import argparse
 from glob import glob
 from tqdm import tqdm
-import cv2
+from read_config import get_arguments
 import requests
 
 num = 16  # Number of processes to use
@@ -658,79 +658,81 @@ def send_notification(message, value=' '):
         data=payload)
 
 
+# parser = argparse.ArgumentParser()
+# parser.add_argument("--is_fresh", help='Train on fresh dataset', default=False, action='store_true')
+# parser.add_argument("--train_predictor", help='Train predictor from scratch', default=False, action='store_true')
+# parser.add_argument("--predictor_steps", help='Number of steps the predictor will be trained', default=500000, type=int,nargs='?', const=500000)
+# parser.add_argument("--checkpoint_num", help='Checkpoint number to restore', default=0, type=int,nargs='?', const=0)
+# parser.add_argument("--policy_checkpoint_num", help='Policy Checkpoint number to restore', default=0, type=int,nargs='?', const=0)
+# parser.add_argument("--PPO_steps", help='Number of PPO steps', default=61000, type=int,nargs='?', const=61000)
+# parser.add_argument("--predictor_dataset", help='Size of the predictor dataset', default=1000, type=int,nargs='?', const=1000)
+# parser.add_argument("--PPO_learning_rate", help='Learning rate of PPO', default=1e-5, type=float,nargs='?', const=1e-5)
+# parser.add_argument("--predictor_type", help='FCN or LSTM predictor', default='LSTM', type=str, nargs='?', const='LSTM')
+# parser.add_argument("--reward_type", help='sparse or dense', default='dense', type=str, nargs='?', const='dense')
+# parser.add_argument("--folder_name", help='name of the log folder', default='2b_2a_16K_oc_0.5_7_0.9_rand_start', type=str, nargs='?', const='2b_2a_16K_oc_0.5_7_0.9_rand_start')
+# parser.add_argument("--env_id", help='EnvID', default='ArmAccEnvCustom-v0', type=str, nargs='?', const='ArmAccEnvCustom-v0')
+# parser.add_argument("--num_meta_iter", help='Number of meta training iterations', default=1, type=int,nargs='?', const=1)
+# parser.add_argument("--only_test", help='Test Env with given predictor and policy', default=False, action='store_true')
+# parser.add_argument("--ball_type", help='1->Low curvature 2->High Curvature', default=1, type=int,nargs='?', const=1)
+# parser.add_argument("--start_state", help='Starting configuration angle for articulated object', default=None, type=float, nargs='?', const=None)
+# parser.add_argument("--flip_enabled", help='Allow negative forces', default=False, action='store_true')
+# parser.add_argument("--coverage_factor", help='fraction of the block covered by the controller',  default=0.9, type=float,nargs='?', const=0.9)
+# parser.add_argument("--reward_scale", help='Factor by which the reward will be scaled from [-1,1]', default=1.0, type=float, nargs='?', const=1.0)
+# parser.add_argument("--predictor_lr_steps", help='Number of times learning rate will be halved', default=0, type=int,nargs='?', const=0)
+# parser.add_argument("--chain_length", help='Number of bodies in the chain', default=2, type=int,nargs='?', const=2)
+# parser.add_argument("--num_tries", help='Number of pushes the arm is allowed to do', default=2, type=int,nargs='?', const=2)
+# parser.add_argument("--predictor_loss", help='Huber, L1 or L2', default='huber', type=str, nargs='?', const='huber')
+# parser.add_argument("--enable_notification", help='Send notification to phone', default=False, action='store_true')
+# parser.add_argument("--use_mass_distribution", help='Predict mass distribution instead of actual mass', default=False, action='store_true')
+# parser.add_argument('--mass_range_upper', help='Mass range upper',  default=7, type=float,nargs='?', const=7)
+# parser.add_argument('--mass_range_lower', help='Mass range lower',  default=0.1, type=float,nargs='?', const=0.1)
+# args = parser.parse_args()
 parser = argparse.ArgumentParser()
-parser.add_argument("--is_fresh", help='Train on fresh dataset', default=False, action='store_true')
-parser.add_argument("--train_predictor", help='Train predictor from scratch', default=False, action='store_true')
-parser.add_argument("--predictor_steps", help='Number of steps the predictor will be trained', default=500000, type=int,nargs='?', const=500000)
-parser.add_argument("--checkpoint_num", help='Checkpoint number to restore', default=0, type=int,nargs='?', const=0)
-parser.add_argument("--policy_checkpoint_num", help='Policy Checkpoint number to restore', default=0, type=int,nargs='?', const=0)
-parser.add_argument("--PPO_steps", help='Number of PPO steps', default=61000, type=int,nargs='?', const=61000)
-parser.add_argument("--predictor_dataset", help='Size of the predictor dataset', default=1000, type=int,nargs='?', const=1000)
-parser.add_argument("--PPO_learning_rate", help='Learning rate of PPO', default=1e-5, type=float,nargs='?', const=1e-5)
-parser.add_argument("--predictor_type", help='FCN or LSTM predictor', default='LSTM', type=str, nargs='?', const='LSTM')
-parser.add_argument("--reward_type", help='sparse or dense', default='dense', type=str, nargs='?', const='dense')
-parser.add_argument("--folder_name", help='name of the log folder', default='2b_2a_16K_oc_0.5_7_0.9_rand_start', type=str, nargs='?', const='2b_2a_16K_oc_0.5_7_0.9_rand_start')
-parser.add_argument("--env_id", help='EnvID', default='ArmAccEnvCustom-v0', type=str, nargs='?', const='ArmAccEnvCustom-v0')
-parser.add_argument("--num_meta_iter", help='Number of meta training iterations', default=1, type=int,nargs='?', const=1)
-parser.add_argument("--only_test", help='Test Env with given predictor and policy', default=False, action='store_true')
-parser.add_argument("--ball_type", help='1->Low curvature 2->High Curvature', default=1, type=int,nargs='?', const=1)
-parser.add_argument("--start_state", help='Starting configuration angle for articulated object', default=None, type=float, nargs='?', const=None)
-parser.add_argument("--flip_enabled", help='Allow negative forces', default=False, action='store_true')
-parser.add_argument("--coverage_factor", help='fraction of the block covered by the controller',  default=0.9, type=float,nargs='?', const=0.9)
-parser.add_argument("--reward_scale", help='Factor by which the reward will be scaled from [-1,1]', default=1.0, type=float, nargs='?', const=1.0)
-parser.add_argument("--predictor_lr_steps", help='Number of times learning rate will be halved', default=0, type=int,nargs='?', const=0)
-parser.add_argument("--chain_length", help='Number of bodies in the chain', default=2, type=int,nargs='?', const=2)
-parser.add_argument("--num_tries", help='Number of pushes the arm is allowed to do', default=2, type=int,nargs='?', const=2)
-parser.add_argument("--predictor_loss", help='Huber, L1 or L2', default='huber', type=str, nargs='?', const='huber')
-parser.add_argument("--enable_notification", help='Send notification to phone', default=False, action='store_true')
-parser.add_argument("--use_mass_distribution", help='Predict mass distribution instead of actual mass', default=False, action='store_true')
-parser.add_argument('--mass_range_upper', help='Mass range upper',  default=7, type=float,nargs='?', const=7)
-parser.add_argument('--mass_range_lower', help='Mass range lower',  default=0.1, type=float,nargs='?', const=0.1)
-
-
-
+parser.add_argument("--folder_name", help='name of the log folder', default='Exp1', type=str, nargs='?', const='Exp1')
 args = parser.parse_args()
-the_path = os.path.join(path, 'experiments', 'KR5_arm', args.folder_name)
+arguments = get_arguments()
+arguments['folder_name'] = args.folder_name
+the_path = os.path.join(path, 'experiments', 'KR5_arm', arguments['folder_name'])
 folders = glob(os.path.join(the_path, '*'))
 latest = int(len(folders))
-env_id = args.env_id
-assert args.ball_type == 1 or args.ball_type == 2 or args.ball_type == 3
+env_id = arguments['env_id']
+assert arguments['ball_type'] == 1 or arguments['ball_type'] == 2 or arguments['ball_type'] == 3
 register(
-    id=args.env_id,
+    id=arguments['env_id'],
     entry_point='gym.envs.dart:ArmAccEnvBall2',
-    kwargs={'ball_type': args.ball_type,
-            'start_state': args.start_state,
-            'flip_enabled': args.flip_enabled,
-            'coverage_factor': args.coverage_factor,
-            'num_bodies': args.chain_length,
-            'use_mass_distribution': args.use_mass_distribution,
-            'num_tries': args.num_tries,
-            'mass_range': [args.mass_range_lower, args.mass_range_upper]},
+    kwargs={'ball_type': arguments['ball_type'],
+            'start_state': arguments['start_state'],
+            'flip_enabled': arguments['flip_enabled'],
+            'coverage_factor': arguments['coverage_factor'],
+            'num_bodies': arguments['chain_length'],
+            'use_mass_distribution': arguments['use_mass_distribution'],
+            'num_tries': arguments['num_tries'],
+            'mass_range': [arguments['mass_range_lower'], arguments['mass_range_upper']]},
     reward_threshold=2,
     timestep_limit=10,
     max_episode_steps=20,
 )
 env_list = [make_env(env_id, i) for i in range(num)]
-env = NetworkVecEnv(env_list, args.predictor_type, args.reward_type, the_path, reward_scale=args.reward_scale,num_steps=args.num_tries, use_mass_distribution=args.use_mass_distribution)
+env = NetworkVecEnv(env_list, arguments['predictor_type'], arguments['reward_type'], the_path, reward_scale=arguments['reward_scale'],num_steps=arguments['num_tries'], use_mass_distribution=arguments['use_mass_distribution'])
 env.reset()
-if args.only_test:
-    policy_ckpt_path = os.path.join(the_path, 'policy_ckpt', str(args.policy_checkpoint_num))
+if arguments['only_test']:
+    policy_ckpt_path = os.path.join(the_path, 'policy_ckpt', str(arguments['policy_checkpoint_num']))
     try:
         print(policy_ckpt_path+'.pkl')
         model = PPO2.load(policy_ckpt_path+'.pkl' , env, verbose=1, learning_rate=constfn(1e-5))
         env.sess = model.sess
         env.graph = model.graph
-        env.model.setup_feedable_training(env.sess, loss=args.predictor_loss,is_init_all=False)
+        env.model.setup_feedable_training(env.sess, loss=arguments['predictor_loss,is_init_all=False'])
         policy = model
     except:
         print("error loading model. Using uniform policy")
-        model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=args.PPO_learning_rate)
+        model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=arguments['PPO_learning_rate'])
         env.sess = model.sess
         env.graph = model.graph
         with env.graph.as_default():
-                env.model.setup_feedable_training(env.sess, loss=args.predictor_loss, is_init_all=True)
+                env.model.setup_feedable_training(env.sess, loss=arguments['predictor_loss'], is_init_all=True)
         policy = None
-    predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(args.checkpoint_num),'model.ckpt')
+    predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(arguments['checkpoint_num']),'model.ckpt')
     env.restore_model(predictor_ckpt_path)
     print('evaluating')
     error = env.evaluate(10,policy)
@@ -738,9 +740,9 @@ if args.only_test:
     print(error)
     print(np.mean(np.array(error)))
 else:
-    predictor_tensorboard_path = os.path.join(path, 'experiments', 'KR5_arm', 'predictor_tensorboard', args.folder_name)
+    predictor_tensorboard_path = os.path.join(path, 'experiments', 'KR5_arm', 'predictor_tensorboard', arguments['folder_name'])
     predictor_data_path = os.path.join(the_path, 'data')
-    policy_tensorboard_path = os.path.join(path, 'experiments', 'KR5_arm', 'policy_tensorboard', args.folder_name)
+    policy_tensorboard_path = os.path.join(path, 'experiments', 'KR5_arm', 'policy_tensorboard', arguments['folder_name'])
     log_folders = glob(predictor_tensorboard_path + '/*')
     predictor_tensorboard_path = os.path.join(predictor_tensorboard_path, str(int(len(log_folders))))
     predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(int(len(log_folders))))
@@ -749,48 +751,48 @@ else:
     arg_save_path = os.path.join(the_path, str(latest))  # current run path
 
     os.makedirs(arg_save_path, exist_ok=True)
-    save_argparse(arg_save_path, args)
-    model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=args.PPO_learning_rate, tensorboard_log=policy_tensorboard_path)
+    # save_argparse(arg_save_path, args)
+    model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=arguments['PPO_learning_rate'], tensorboard_log=policy_tensorboard_path)
     # model = PPO2.load(the_path + "/checkpoint/policy", env, verbose=1, learning_rate=constfn(2.5e-4),
     #                   tensorboard_log=policy_tensorboard + "/policy_tensorboard/" + _)
 
     env.graph = model.graph
     env.sess = model.sess
     with env.graph.as_default():
-        env.model.setup_feedable_training(env.sess,  loss=args.predictor_loss, is_init_all=True)
-        if args.train_predictor or args.is_fresh:
+        env.model.setup_feedable_training(env.sess,  loss=arguments['predictor_loss'], is_init_all=True)
+        if arguments['train_predictor'] or arguments['is_fresh']:
 
-            error1, policy_save_number = env.train(args.predictor_dataset,
-                                                   is_fresh=args.is_fresh,
+            error1, policy_save_number = env.train(arguments['predictor_dataset'],
+                                                   is_fresh=arguments['is_fresh'],
                                                    save_dir=predictor_ckpt_path,
                                                    data_path=predictor_data_path,
-                                                   lr=args.predictor_lr_steps,
-                                                   steps=args.predictor_steps,
+                                                   lr=arguments['predictor_lr_steps'],
+                                                   steps=arguments['predictor_steps'],
                                                    use_distribution_policy=True)
-            if args.enable_notification:
+            if arguments['enable_notification']:
                 send_notification('Supervised training completed')
         else:
-            predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(args.checkpoint_num), 'model.ckpt')
+            predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(arguments['checkpoint_num']), 'model.ckpt')
             env.restore_model(predictor_ckpt_path)
-            policy_save_number = args.checkpoint_num
+            policy_save_number = arguments['checkpoint_num']
 
-    for i in range(args.num_meta_iter):
+    for i in range(arguments['num_meta_iter']):
         # init = tf.initialize_variables(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='model'))
         # model.sess.run(init)
-        model.learn(total_timesteps=args.PPO_steps)
+        model.learn(total_timesteps=arguments['PPO_steps'])
         os.makedirs(policy_ckpt_path, exist_ok=True)
         model.save(policy_ckpt_path)
         log_folders = glob(predictor_tensorboard_path + '/*')
         predictor_tensorboard_path = os.path.join(predictor_tensorboard_path, str(int(len(log_folders))))
         predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(int(len(log_folders))))
-        error2 = env.train(args.predictor_dataset,
+        error2 = env.train(arguments['predictor_dataset'],
                            policy=model,
                            is_fresh=True,
                            save_dir=predictor_ckpt_path,
                            data_path=predictor_data_path,
-                           steps=args.predictor_steps,
-                           use_distribution_policy=False if i == args.num_meta_iter-1 else True)
-        if args.enable_notification:
+                           steps=arguments['predictor_steps'],
+                           use_distribution_policy=False if i == arguments['num_meta_iter']-1 else True)
+        if arguments['enable_notification']:
             send_notification('Supervised training completed', str(i))
     error = env.evaluate(10,model)
 
