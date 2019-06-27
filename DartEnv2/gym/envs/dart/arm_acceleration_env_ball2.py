@@ -22,11 +22,12 @@ class ArmAccEnvBall2(gym.Env):
     """Superclass for all Dart environments.
     """
 
-    def __init__(self, ball_type=1, flip_enabled=False, start_state=None, coverage_factor=0.9, num_bodies=3, use_mass_distribution=False, num_tries=3, mass_range=[0.1,10]):
+    def __init__(self, ball_type=1, flip_enabled=False, start_state=None, coverage_factor=0.9, num_bodies=3, use_mass_distribution=False, num_tries=3, mass_range=[0.1,10], add_noise=False):
         self.num_bodies = num_bodies
         self.num_actions = 2
         self.num_tries = num_tries
         self.variable_size = False
+        self.add_noise = add_noise
         self.flip_enabled = flip_enabled
         self.use_mass_distribution = use_mass_distribution
         action_bounds = np.array([[-1 for i in range(self.num_actions)], [1 for i in range(self.num_actions)]])
@@ -227,8 +228,9 @@ class ArmAccEnvBall2(gym.Env):
         return offset, block_idx
 
     def _step(self, action):
-        noise = self.np_random.normal(0, 0.1,2)
-        action += noise
+        if self.add_noise:
+            noise = self.np_random.normal(0, 0.1,2)
+            action += noise
         action = np.clip(action, -1, 1)
         if self.flip_enabled:
             action[0] = action[0] * 10
@@ -284,7 +286,8 @@ class ArmAccEnvBall2(gym.Env):
         if True in nan_idx:
             self.dart_world.is_failure = True
         obs[nan_idx] = 0
-        obs += self.np_random.normal(0,0.1,self.observation_space.spaces['observation'].shape)
+        if self.add_noise:
+            obs += self.np_random.normal(0,0.1,self.observation_space.spaces['observation'].shape)
         mass = self.mass/np.sum(self.mass) if self.use_mass_distribution else self.mass
         # obs = self.box_skeleton.q[idx]
         # obs = np.append(self.box_skeleton.q[idx],
