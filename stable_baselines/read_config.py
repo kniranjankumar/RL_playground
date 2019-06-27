@@ -20,8 +20,8 @@ def get_arguments(filename='config'):
     arguments['num_meta_iter'] = config['DEFAULT'].getint('num_meta_iter')
     arguments['only_test'] = config['DEFAULT'].getboolean('only_test')
     arguments['ball_type'] = config['DEFAULT'].getint('ball_type')
-    arguments['start_state'] = config['DEFAULT']['start_state']
-    arguments['start_state'] = None if arguments['start_state'] == 'None' else pass
+    # arguments['start_state'] = config['DEFAULT']['start_state']
+    arguments['start_state'] = None if config['DEFAULT']['start_state'] == 'None' else config['DEFAULT'].getfloat('start_state')
     arguments['flip_enabled'] = config['DEFAULT'].getboolean('flip_enabled')
     arguments['coverage_factor'] = config['DEFAULT'].getfloat('coverage_factor')
     arguments['reward_scale'] = config['DEFAULT'].getfloat('reward_scale')
