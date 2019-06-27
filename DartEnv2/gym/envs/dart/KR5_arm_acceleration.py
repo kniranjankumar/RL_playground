@@ -649,7 +649,7 @@ class ControllerOCPose:
             # self.skel.set_accelerations(0*self.skel.dq)
 
             if np.any(np.isnan(self.box.dq)):
-                # print('went NaN',[bodynode.mass() for bodynode in self.box.bodynodes])
+                print('went NaN',[bodynode.mass() for bodynode in self.box.bodynodes])
                 self.skel.set_positions(self.start)
                 self.skel.world.complete = True
                 self.flipped = False
