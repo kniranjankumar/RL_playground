@@ -21,6 +21,7 @@ def get_arguments(filename='config'):
     arguments['only_test'] = config['DEFAULT'].getboolean('only_test')
     arguments['ball_type'] = config['DEFAULT'].getint('ball_type')
     arguments['start_state'] = config['DEFAULT']['start_state']
+    arguments['start_state'] = None if arguments['start_state'] == 'None'
     arguments['flip_enabled'] = config['DEFAULT'].getboolean('flip_enabled')
     arguments['coverage_factor'] = config['DEFAULT'].getfloat('coverage_factor')
     arguments['reward_scale'] = config['DEFAULT'].getfloat('reward_scale')
