@@ -705,6 +705,7 @@ folders = glob(os.path.join(the_path, '*'))
 latest = int(len(folders))
 env_id = arguments['env_id']
 assert arguments['ball_type'] == 1 or arguments['ball_type'] == 2 or arguments['ball_type'] == 3
+print('ball type',arguments['ball_type'])
 register(
     id=arguments['env_id'],
     entry_point='gym.envs.dart:ArmAccEnvBall2',
