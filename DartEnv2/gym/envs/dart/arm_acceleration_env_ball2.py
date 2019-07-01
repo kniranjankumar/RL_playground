@@ -72,6 +72,7 @@ class ArmAccEnvBall2(gym.Env):
                 self.box_skeleton.bodynodes[i].set_mass(self.mass[block_count])
                 self.box_skeleton.bodynodes[i].shapenodes[0].shape.set_size([0.15, 0.1, self.size[block_count, 0]])
                 self.box_skeleton.bodynodes[i].shapenodes[1].shape.set_size([0.15, 0.5, self.size[block_count, 0]])
+                self.dart_world.set_collision_detector(1)
                 self.box_skeleton.bodynodes[i].set_friction_coeff(self.mu)
 
                 print(block_count)
@@ -142,6 +143,7 @@ class ArmAccEnvBall2(gym.Env):
                 self.box_skeleton.bodynodes[i].set_mass(self.mass[block_count])
                 self.box_skeleton.bodynodes[i].shapenodes[0].shape.set_size([0.15, 0.1, self.size[block_count, 0]])
                 self.box_skeleton.bodynodes[i].shapenodes[1].shape.set_size([0.15, 0.1, self.size[block_count, 0]])
+                self.dart_world.set_collision_detector(1)
                 self.box_skeleton.bodynodes[i].set_friction_coeff(self.mu)
 
                     # CTJ[2,3] = -(self.size[0,0]+self.size[1,0]-0.1)*0.5
