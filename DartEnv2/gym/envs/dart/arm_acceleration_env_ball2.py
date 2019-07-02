@@ -22,9 +22,19 @@ class ArmAccEnvBall2(gym.Env):
     """Superclass for all Dart environments.
     """
 
-    def __init__(self, ball_type=1, flip_enabled=False, start_state=None, coverage_factor=0.9, num_bodies=3, use_mass_distribution=False, num_tries=3, mass_range=[0.1,10], add_noise=True):
+    def __init__(self, ball_type=1, 
+                 flip_enabled=False, 
+                 start_state=None, 
+                 coverage_factor=0.9, 
+                 num_bodies=3, 
+                 use_mass_distribution=False, 
+                 num_tries=3, 
+                 mass_range=[0.1,10], 
+                 add_noise=True,
+                 action_scale=5):
         self.num_bodies = num_bodies
         self.num_actions = 2
+        self.action_scale = action_scale
         self.num_tries = num_tries
         self.variable_size = False
         self.add_noise = add_noise
@@ -235,9 +245,9 @@ class ArmAccEnvBall2(gym.Env):
             action += noise
         action = np.clip(action, -1, 1)
         if self.flip_enabled:
-            action[0] = action[0] * 5
+            action[0] = action[0] * self.action_scale
         else:
-            action[0] = action[0] * 10 + 10
+            action[0] = action[0] * self.action_scale + self.action_scale
         # action[0] = 10
         # action[0] = -300
         offset, block_id = self.get_offset(action[1], self.num_bodies)
