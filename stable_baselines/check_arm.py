@@ -692,13 +692,15 @@ parser.add_argument("--type", help='Experiment type: 2link, 3link',
                     default='DEFAULT', type=str, nargs='?', const='DEFAULT')
 parser.add_argument("--mass_range", help='1->[0.1,1] 2->[1,10] 3->[0.1,10]',
                     default=3, type=int,nargs='?', const=3)
-
+parser.add_argument("--action_scale", help='int between 1 to 5',
+                    default=5, type=int,nargs='?', const=5)
 parser.add_argument("--folder_name", help='name of the log folder', default='Exp1', type=str, nargs='?', const='Exp1')
 args = parser.parse_args()
 arguments = get_arguments(mode=args.type)
 arguments['folder_name'] = args.folder_name
 arguments['mass_range_upper'] = 10 if args.mass_range == 2 or args.mass_range == 3 else 1
 arguments['mass_range_lower'] = 0.1 if args.mass_range == 1 or args.mass_range == 3 else 1
+arguments['action_scale'] = args.action_scale
 # arguments['chain_length'] = 2
 the_path = os.path.join(path, 'experiments', 'KR5_arm', arguments['folder_name'])
 folders = glob(os.path.join(the_path, '*'))
@@ -717,7 +719,8 @@ register(
             'num_bodies': arguments['chain_length'],
             'use_mass_distribution': arguments['use_mass_distribution'],
             'num_tries': arguments['num_tries'],
-            'mass_range': [arguments['mass_range_lower'], arguments['mass_range_upper']]},
+            'mass_range': [arguments['mass_range_lower'], arguments['mass_range_upper']],
+            'action_scale': arguments['action_scale']},
     reward_threshold=2,
     timestep_limit=10,
     max_episode_steps=20,
