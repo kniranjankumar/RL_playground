@@ -241,7 +241,7 @@ class ArmAccEnvBall2(gym.Env):
 
     def _step(self, action):
         if self.add_noise:
-            noise = self.np_random.normal(0, 0.1,2)
+            noise = self.np_random.normal(0, 0.01,2)
             action += noise
         action = np.clip(action, -1, 1)
         if self.flip_enabled:
@@ -299,7 +299,7 @@ class ArmAccEnvBall2(gym.Env):
             self.dart_world.is_failure = True
         obs[nan_idx] = 0
         if self.add_noise:
-            obs += self.np_random.normal(0,0.1,self.observation_space.spaces['observation'].shape)
+            obs += self.np_random.normal(0,0.01,self.observation_space.spaces['observation'].shape)
         mass = self.mass/np.sum(self.mass) if self.use_mass_distribution else self.mass
         # obs = self.box_skeleton.q[idx]
         # obs = np.append(self.box_skeleton.q[idx],
