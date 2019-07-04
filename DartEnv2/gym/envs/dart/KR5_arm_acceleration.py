@@ -800,7 +800,7 @@ class MyWorld(pydart.World):
         path, folder = os.path.split(os.getcwd())
         self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets')
         # self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
-        self.asset_path = "/home/niranjan/Projects/vis_inst/skynet/RL_playground/DartEnv2/gym/envs/dart/assets/"
+        # self.asset_path = "/home/niranjan/Projects/vis_inst/skynet/RL_playground/DartEnv2/gym/envs/dart/assets/"
         # self.world = pydart.World.__init__(self, 0.001,
         #                                    self.asset_path+"/"+"arena2big.skel")
         self.world = pydart.World.__init__(self, 0.001,
