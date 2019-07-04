@@ -688,7 +688,7 @@ def send_notification(message, value=' '):
 # parser.add_argument('--mass_range_lower', help='Mass range lower',  default=0.1, type=float,nargs='?', const=0.1)
 # args = parser.parse_args()
 parser = argparse.ArgumentParser()
-parser.add_argument("--type", help='Experiment type: 2link, 3link',
+parser.add_argument("--type", help='Experiment type: 2link, 3link, 2link_test, 3link_test',
                     default='DEFAULT', type=str, nargs='?', const='DEFAULT')
 parser.add_argument("--mass_range", help='1->[0.1,1] 2->[1,10] 3->[0.1,10]',
                     default=3, type=int,nargs='?', const=3)
