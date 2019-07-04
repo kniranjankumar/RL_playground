@@ -502,7 +502,7 @@ class ControllerOCPose:
         self.mask = np.array([True for i in range(6)])
         # self.mask[3:] = False
         self.start = skel.q
-        self.select_block = 0
+        self.select_block = 1
         self.action_space = action_space
         self.skel = skel
         self.arm_type = self.skel.world.ball
@@ -800,7 +800,7 @@ class MyWorld(pydart.World):
         path, folder = os.path.split(os.getcwd())
         self.asset_path = os.path.join(path,'DartEnv2','gym','envs','dart','assets')
         # self.asset_path = "/home/niranjan/Projects/vis_inst/DartEnv2/gym/envs/dart/assets/KR5/"
-        # self.asset_path = "/home/niranjan/Projects/vis_inst/skynet/RL_playground/DartEnv2/gym/envs/dart/assets/"
+        self.asset_path = "/home/niranjan/Projects/vis_inst/skynet/RL_playground/DartEnv2/gym/envs/dart/assets/"
         # self.world = pydart.World.__init__(self, 0.001,
         #                                    self.asset_path+"/"+"arena2big.skel")
         self.world = pydart.World.__init__(self, 0.001,
@@ -871,14 +871,14 @@ if __name__ == '__main__':
     pydart.init()
     print('pydart initialization OK')
 
-    world = MyWorld(num_bodies=2,ball=1)
+    world = MyWorld(num_bodies=3,ball=1)
 
     # win = pydart.gui.viewer.PydartWindow(world)
     win = GLUTWindow(world, None)
     win.scene.add_camera(
         Trackball(
-            theta=-35.0, phi=-5.0, zoom=-0.5,
-            trans=[0, -0.5, -2]),
+            theta=-55.0, phi=-0.0, zoom=1,
+            trans=[0, 0.1, -2.5]),
         "Camera Y up")
     win.scene.set_camera(2)
     win.run()
