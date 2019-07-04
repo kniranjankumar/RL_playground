@@ -735,7 +735,7 @@ if arguments['only_test']:
         model = PPO2.load(policy_ckpt_path+'.pkl' , env, verbose=1, learning_rate=constfn(1e-5))
         env.sess = model.sess
         env.graph = model.graph
-        env.model.setup_feedable_training(env.sess, loss=arguments['predictor_loss,is_init_all=False'])
+        env.model.setup_feedable_training(env.sess, loss=arguments['predictor_loss'],is_init_all=False)
         policy = model
     except:
         print("error loading model. Using uniform policy")
