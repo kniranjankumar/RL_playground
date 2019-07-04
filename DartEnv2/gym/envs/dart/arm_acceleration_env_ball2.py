@@ -22,9 +22,19 @@ class ArmAccEnvBall2(gym.Env):
     """Superclass for all Dart environments.
     """
 
-    def __init__(self, ball_type=1, flip_enabled=False, start_state=None, coverage_factor=0.9, num_bodies=3, use_mass_distribution=False, num_tries=3, mass_range=[0.1,10], add_noise=True):
+    def __init__(self, ball_type=1, 
+                 flip_enabled=False, 
+                 start_state=None, 
+                 coverage_factor=0.9, 
+                 num_bodies=3, 
+                 use_mass_distribution=False, 
+                 num_tries=3, 
+                 mass_range=[0.1,10], 
+                 add_noise=True,
+                 action_scale=5):
         self.num_bodies = num_bodies
         self.num_actions = 2
+        self.action_scale = action_scale
         self.num_tries = num_tries
         self.variable_size = False
         self.add_noise = add_noise
@@ -72,6 +82,7 @@ class ArmAccEnvBall2(gym.Env):
                 self.box_skeleton.bodynodes[i].set_mass(self.mass[block_count])
                 self.box_skeleton.bodynodes[i].shapenodes[0].shape.set_size([0.15, 0.1, self.size[block_count, 0]])
                 self.box_skeleton.bodynodes[i].shapenodes[1].shape.set_size([0.15, 0.5, self.size[block_count, 0]])
+                self.dart_world.set_collision_detector(1)
                 self.box_skeleton.bodynodes[i].set_friction_coeff(self.mu)
 
                 print(block_count)
@@ -142,6 +153,7 @@ class ArmAccEnvBall2(gym.Env):
                 self.box_skeleton.bodynodes[i].set_mass(self.mass[block_count])
                 self.box_skeleton.bodynodes[i].shapenodes[0].shape.set_size([0.15, 0.1, self.size[block_count, 0]])
                 self.box_skeleton.bodynodes[i].shapenodes[1].shape.set_size([0.15, 0.1, self.size[block_count, 0]])
+                self.dart_world.set_collision_detector(1)
                 self.box_skeleton.bodynodes[i].set_friction_coeff(self.mu)
 
                     # CTJ[2,3] = -(self.size[0,0]+self.size[1,0]-0.1)*0.5
@@ -229,13 +241,13 @@ class ArmAccEnvBall2(gym.Env):
 
     def _step(self, action):
         if self.add_noise:
-            noise = self.np_random.normal(0, 0.1,2)
+            noise = self.np_random.normal(0, 0.01,2)
             action += noise
         action = np.clip(action, -1, 1)
         if self.flip_enabled:
-            action[0] = action[0] * 5
+            action[0] = action[0] * self.action_scale
         else:
-            action[0] = action[0] * 10 + 10
+            action[0] = action[0] * self.action_scale + self.action_scale
         # action[0] = 10
         # action[0] = -300
         offset, block_id = self.get_offset(action[1], self.num_bodies)
@@ -287,7 +299,7 @@ class ArmAccEnvBall2(gym.Env):
             self.dart_world.is_failure = True
         obs[nan_idx] = 0
         if self.add_noise:
-            obs += self.np_random.normal(0,0.1,self.observation_space.spaces['observation'].shape)
+            obs += self.np_random.normal(0,0.01,self.observation_space.spaces['observation'].shape)
         mass = self.mass/np.sum(self.mass) if self.use_mass_distribution else self.mass
         # obs = self.box_skeleton.q[idx]
         # obs = np.append(self.box_skeleton.q[idx],
