@@ -134,3 +134,58 @@ num_meta_iter = 6
 enable_notification = True
 is_fresh = True
 predictor_lr_steps = 3
+
+
+[2link_test_baseline]
+
+predictor_type = LSTM
+only_test = True
+ball_type = 2
+reward_scale = 10.0
+checkpoint_num = 0
+env_id = ArmAccEnvCustom-v0
+use_mass_distribution = True
+num_tries = 2
+predictor_steps = 500000
+predictor_loss = L2
+start_state = None
+PPO_learning_rate = 0.0001
+coverage_factor = 0.9
+policy_checkpoint_num = 100
+PPO_steps = 80000
+flip_enabled = True
+chain_length = 2
+predictor_dataset = 1000
+reward_type = dense
+train_predictor = True
+num_meta_iter = 6
+enable_notification = True
+is_fresh = True
+predictor_lr_steps = 3
+
+[3link_test_baseline]
+
+predictor_type = LSTM
+only_test = True
+ball_type = 2
+reward_scale = 10.0
+checkpoint_num = 0
+env_id = ArmAccEnvCustom-v0
+use_mass_distribution = True
+num_tries = 3
+predictor_steps = 500000
+predictor_loss = L2
+start_state = None
+PPO_learning_rate = 0.0001
+coverage_factor = 0.9
+policy_checkpoint_num = 100
+PPO_steps = 80000
+flip_enabled = True
+chain_length = 3
+predictor_dataset = 2000
+reward_type = dense
+train_predictor = True
+num_meta_iter = 6
+enable_notification = True
+is_fresh = True
+predictor_lr_steps = 3
