@@ -751,7 +751,7 @@ if arguments['only_test']:
     predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(arguments['checkpoint_num']),'model.ckpt')
     env.restore_model(predictor_ckpt_path)
     print('evaluating')
-    error = env.evaluate(10,policy)
+    error = env.evaluate(50,policy)
     # evaluate(policy,env)
     print(error)
     print(np.mean(np.array(error)))
