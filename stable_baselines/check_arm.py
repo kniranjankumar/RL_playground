@@ -703,7 +703,7 @@ arguments['folder_name'] = args.folder_name
 arguments['mass_range_upper'] = 10 if args.mass_range == 2 or args.mass_range == 3 else 1
 arguments['mass_range_lower'] = 0.1 if args.mass_range == 1 or args.mass_range == 3 else 1
 arguments['action_scale'] = args.action_scale
-arguments['ball_type'] = arg.ball_type
+arguments['ball_type'] = args.ball_type
 # arguments['chain_length'] = 2
 the_path = os.path.join(path, 'experiments', 'KR5_arm', arguments['folder_name'])
 folders = glob(os.path.join(the_path, '*'))
