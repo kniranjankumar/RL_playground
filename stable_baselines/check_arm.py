@@ -249,7 +249,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 init = tf.initialize_variables(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='LSTM_model'))
             self.sess.run(init)
 
-        def feedable_test(self, obs, act, mass, graph, batch_size=64):
+        def feedable_test(self, obs, act, mass, graph, batch_size=1):
             error = []
             # testing_data
             current = 0
@@ -266,21 +266,21 @@ class NetworkVecEnv(SubprocVecEnv):
                 error.append(error2)
                 current += batch_size
 
-            if mass.shape[0]-current-batch_size < 0:
-                obs_batch1 = obs[current:, :]
-                act_batch1 = act[current:, :]
-                mass_batch1 = mass[current:, :]
-                with graph.as_default():
-                    percent, predicted_mass, summary_test = self.sess.run(
-                        [self.percent, self.predict_mass, self.merged_summary_test],
-                        feed_dict={self.obs: obs_batch1, self.act: act_batch1,
-                                   self.mass: mass_batch1})
-                error.append(percent)
-            print(predicted_mass.shape,mass_batch1.shape)
-            # print(np.concatenate([predicted_mass[-1,:,:],mass_batch1], axis=1))
-            print(np.sum(np.abs(predicted_mass[-1,:,:]-mass_batch1), axis=1))
+#             if mass.shape[0]-current-batch_size < 0:
+#                 obs_batch1 = obs[current:, :]
+#                 act_batch1 = act[current:, :]
+#                 mass_batch1 = mass[current:, :]
+#                 with graph.as_default():
+#                     percent, predicted_mass, summary_test = self.sess.run(
+#                         [self.percent, self.predict_mass, self.merged_summary_test],
+#                         feed_dict={self.obs: obs_batch1, self.act: act_batch1,
+#                                    self.mass: mass_batch1})
+#                 error.append(percent)
+#             print(predicted_mass.shape,mass_batch1.shape)
+#             # print(np.concatenate([predicted_mass[-1,:,:],mass_batch1], axis=1))
+#             print(np.sum(np.abs(predicted_mass[-1,:,:]-mass_batch1), axis=1))
             # print(predicted_mass,mass_batch1)
-            return percent
+            return error
 
         def feedable_train(self, obs, act, mass, num_iter, graph, batch_size=64, learning_rate=[1e-1,1e-2]):
             # print(sess.run(tf.get_collection(tf.GraphKeys.VARIABLES)))
@@ -464,7 +464,7 @@ class NetworkVecEnv(SubprocVecEnv):
         rollout_act = rollout_act[good,:]
         rollout_mass = rollout_mass[good,:]
         print('selected',rollout_mass.shape)
-        percent_error = self.model.feedable_test(rollout_obs, rollout_act, rollout_mass, self.graph, batch_size=100)
+        percent_error = self.model.feedable_test(rollout_obs, rollout_act, rollout_mass, self.graph, batch_size=1)
         return percent_error
 
     def normalize(self, data):
