@@ -406,7 +406,7 @@ class NetworkVecEnv(SubprocVecEnv):
 
         return np.array(rollout_obs), np.array(rollout_act), np.array(rollout_mass)
 
-    def evaluate(self, num_eps, policy=None):
+    def evaluate(self, num_eps, data_path, policy=None):
         rollout_obs = []
         rollout_act = []
         rollout_mass = []
@@ -460,6 +460,9 @@ class NetworkVecEnv(SubprocVecEnv):
         rollout_obs = rollout_obs.reshape(-1, rollout_obs.shape[-1])
         rollout_act = (rollout_act.reshape(-1, rollout_act.shape[-1]))
         rollout_mass = rollout_mass.reshape(-1, rollout_mass.shape[-1])
+        np.save(data_path + '/obs.npy', rollout_obs)
+        np.save(data_path + '/act.npy', rollout_act)
+        np.save(data_path + '/mass.npy', rollout_mass)
 #         rollout_obs = rollout_obs[good,:]
 #         rollout_act = rollout_act[good,:]
 #         rollout_mass = rollout_mass[good,:]
@@ -751,7 +754,7 @@ if arguments['only_test']:
     predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(arguments['checkpoint_num']),'model.ckpt')
     env.restore_model(predictor_ckpt_path)
     print('evaluating')
-    error = env.evaluate(50,policy)
+    error = env.evaluate(50,data_path=os.path.join(the_path, 'data_test'), policy=policy)
     # evaluate(policy,env)
     print(error)
     print(np.mean(np.array(error)))
