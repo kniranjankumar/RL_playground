@@ -454,15 +454,15 @@ class NetworkVecEnv(SubprocVecEnv):
                 good.append(False)
             else:
                 good.append(True)
-        print(good)
+#         print(good)
         print(np.count_nonzero(good))
         rollout_obs, rollout_act, rollout_mass = np.array(rollout_obs), np.array(rollout_act), np.array(rollout_mass)
         rollout_obs = rollout_obs.reshape(-1, rollout_obs.shape[-1])
         rollout_act = (rollout_act.reshape(-1, rollout_act.shape[-1]))
         rollout_mass = rollout_mass.reshape(-1, rollout_mass.shape[-1])
-        rollout_obs = rollout_obs[good,:]
-        rollout_act = rollout_act[good,:]
-        rollout_mass = rollout_mass[good,:]
+#         rollout_obs = rollout_obs[good,:]
+#         rollout_act = rollout_act[good,:]
+#         rollout_mass = rollout_mass[good,:]
         print('selected',rollout_mass.shape)
         percent_error = self.model.feedable_test(rollout_obs, rollout_act, rollout_mass, self.graph, batch_size=1)
         return percent_error
