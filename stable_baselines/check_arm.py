@@ -460,6 +460,7 @@ class NetworkVecEnv(SubprocVecEnv):
         rollout_obs = rollout_obs.reshape(-1, rollout_obs.shape[-1])
         rollout_act = (rollout_act.reshape(-1, rollout_act.shape[-1]))
         rollout_mass = rollout_mass.reshape(-1, rollout_mass.shape[-1])
+        os.makedirs(data_path, exist_ok=True)
         np.save(data_path + '/obs.npy', rollout_obs)
         np.save(data_path + '/act.npy', rollout_act)
         np.save(data_path + '/mass.npy', rollout_mass)
