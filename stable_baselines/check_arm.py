@@ -464,7 +464,7 @@ class NetworkVecEnv(SubprocVecEnv):
 #         rollout_act = rollout_act[good,:]
 #         rollout_mass = rollout_mass[good,:]
         print('selected',rollout_mass.shape)
-        percent_error = self.model.feedable_test(rollout_obs, rollout_act, rollout_mass, self.graph, batch_size=1)
+        percent_error = self.model.feedable_test(rollout_obs, rollout_act, rollout_mass, self.graph, batch_size=799)
         return percent_error
 
     def normalize(self, data):
