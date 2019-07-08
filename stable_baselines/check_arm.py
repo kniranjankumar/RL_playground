@@ -366,10 +366,6 @@ class NetworkVecEnv(SubprocVecEnv):
         np.save(data_path + '/obs.npy', rollout_obs)
         np.save(data_path + '/act.npy', rollout_act)
         np.save(data_path + '/mass.npy', rollout_mass)
-#         rollout_obs = rollout_obs[good,:]
-#         rollout_act = rollout_act[good,:]
-#         rollout_mass = rollout_mass[good,:]
-        print('selected',rollout_mass.shape)
         percent_error = self.model.feedable_test(rollout_obs, rollout_act, rollout_mass, self.graph, batch_size=799)
         return percent_error
 
