@@ -19,19 +19,14 @@ import requests
 
 num = 16  # Number of processes to use
 path, folder = os.path.split(os.getcwd())
-the_path = os.path.join(path, 'experiments', 'KR5_arm', 'envs', '2b_2a_16K_oc_0.5_7_0.9_rand_start')
-# the_path = "/home/niranjan/Projects/vis_inst/experiments/KR5_arm/2b_2a_10k_constrained_no_flip_resized_acc_arm_soft"
-
-
 class NetworkVecEnv(SubprocVecEnv):
+    #Multi-threaded env with internal supervised predictor
     def __init__(self, env_fns1,predictor_type, reward_type, path, reward_scale=1, num_steps=3, use_mass_distribution=False):
         pydart2.init()
         SubprocVecEnv.__init__(self, env_fns1)
         self.num_envs = num
         self.path = path
         self.mass_distribution = use_mass_distribution
-        # self.sess = tf.Session()
-        # self.graph = tf.Graph()
         self.graph = None
         self.sess = None
         self.obs_buffer = np.array([])
@@ -50,6 +45,7 @@ class NetworkVecEnv(SubprocVecEnv):
         self.dummy_step = False
 
     class FCModel:
+        # Supervised predictor class with LSTM+FC and FC network options
         def __init__(self, path, sess, num_steps, act_dim, mass_dim, obs_dim, mass_range, model_type='LSTM', use_mass_distribution=False, reward_type='sparse'):
             self.path = path
             self.mass_dim = mass_dim
@@ -86,14 +82,8 @@ class NetworkVecEnv(SubprocVecEnv):
                                         weights_regularizer=slim.l2_regularizer(0.0005)):
                         obs = tf.split(net_obs,num_or_size_splits=self.num_steps+1, axis=1)
                         act = tf.split(net_act,num_or_size_splits=self.num_steps, axis=1)
-                        # mass_init = tf.fill()
                         rnn_input1 = [tf.concat([obs[i+1], act[i]],axis=1) for i in range(len(act))]
-                        # rnn_input1 = tf.concat(rnn_input1, axis=0)
                         rnn_input1 = tf.reshape(rnn_input1,shape=[-1, self.act_dim+self.obs_dim])
-                        # rnn_input = slim.fully_connected(rnn_input1, 128, scope='in1')
-                        # rnn_input = tf.reshape(rnn_input1,shape=[-1, self.num_steps ,rnn_input1.get_shape().as_list()[-1]])
-                        # rnn_input_ = tf.unstack(rnn_input, axis=1)
-                        # print(len(rnn_input_))
                         c0 = slim.fully_connected(obs[0], 64, scope='c0')
                         m0 = slim.fully_connected(obs[0], 64, scope='m0')
                         lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(num_units=128, state_is_tuple=True)
@@ -104,19 +94,8 @@ class NetworkVecEnv(SubprocVecEnv):
                             output = slim.fully_connected(lstm_output, self.mass_dim-1, activation_fn=None, scope='out')
                         else:
                             output = slim.fully_connected(lstm_output, self.mass_dim, activation_fn=None, scope='out')
-                        ##CUDNN RNN
-                        # rnn_input = tf.stack([tf.concat([obs[i+1], act[i]],axis=1) for i in range(len(act))], axis=0)
-                        # c0 = tf.expand_dims(slim.fully_connected(obs[0], 64, scope='c0'),axis=0)
-                        # m0 = tf.expand_dims(slim.fully_connected(obs[0], 64, scope='m0'), axis=0)
-                        # lstm_cell = tf.contrib.cudnn_rnn.CudnnLSTM(num_layers=1,num_units=64, dtype=tf.float64)
-                        # lstm_output, state = lstm_cell(initial_state=(c0, m0), inputs=rnn_input)
-                        # output = slim.fully_connected(lstm_output, self.mass_dim, activation_fn=None, scope='out')
-                        # var_error = slim.fully_connected(output, self.mass_dim, scope='out')
-                        # output = tf.distributions.Normal(loc=(mean_error+ 0.5*(mass_range[0]+mass_range[1])),scale=var_error)
                         return output
-                        # output_mean = tf.add_n(output)/len(output)
-                        # return tf.cast(output, tf.float64)
-
+                    
         def LSTM_model2(self, net_obs, net_act, mass_range):
             with self.graph.as_default():
                 with tf.variable_scope('LSTM_model', reuse=tf.AUTO_REUSE):
@@ -149,15 +128,6 @@ class NetworkVecEnv(SubprocVecEnv):
                             # output = tf.concat([output1,tf.expand_dims(output2, -1)], axis=2)
                         else:
                             output = slim.fully_connected(lstm_output, self.mass_dim, activation_fn=None, scope='out')
-                        ##CUDNN RNN
-                        # rnn_input = tf.stack([tf.concat([obs[i+1], act[i]],axis=1) for i in range(len(act))], axis=0)
-                        # c0 = tf.expand_dims(slim.fully_connected(obs[0], 64, scope='c0'),axis=0)
-                        # m0 = tf.expand_dims(slim.fully_connected(obs[0], 64, scope='m0'), axis=0)
-                        # lstm_cell = tf.contrib.cudnn_rnn.CudnnLSTM(num_layers=1,num_units=64, dtype=tf.float64)
-                        # lstm_output, state = lstm_cell(initial_state=(c0, m0), inputs=rnn_input)
-                        # output = slim.fully_connected(lstm_output, self.mass_dim, activation_fn=None, scope='out')
-                        # var_error = slim.fully_connected(output, self.mass_dim, scope='out')
-                        # output = tf.distributions.Normal(loc=(mean_error+ 0.5*(mass_range[0]+mass_range[1])),scale=var_error)
                         return output
 
         def fc_model(self, net_obs, net_act):
@@ -167,27 +137,13 @@ class NetworkVecEnv(SubprocVecEnv):
                                         activation_fn=tf.nn.relu,
                                         weights_initializer=tf.truncated_normal_initializer(0.0, 0.01),
                                         weights_regularizer=slim.l2_regularizer(0.0005)):
-                        # net_obs = slim.flatten(net_obs, scope='flatten_obs')
-                        # net_obs = slim.fully_connected(net_obs, 100, scope='fc_obs')
-                        # net_obs = slim.fully_connected(net_obs, 100, scope='fc_obs2')
-                        # net_act = slim.flatten(net_act, scope='flatten_act')
-                        # net_act = slim.fully_connected(net_act, 2, scope='fc_act1')
-                        # net_act = tf.expand_dims(net_act, -1)
-                        # net_act = slim.fully_connected(net_act, 2, scope='fc_act2')
-                        # net_act = tf.reshape(net_act,shape=[None,4,2])
-                        # net = tf.multiply(net_act,tf.expand_dims(net_obs,axis=2))
-                        # net = slim.flatten(net)
                         net = tf.concat([net_obs, net_act], axis=1)
                         # net = net_obs
                         net = slim.fully_connected(net, 256, scope='fc1')
-                        # net = slim.fully_connected(tf.concat(net, axis=1), 256, scope='fc2')
-                        # net = slim.batch_norm(tf.cast(net,tf.float32))
                         net = slim.fully_connected(net, 256, scope='fc2')
                         net = slim.fully_connected(net, 256, scope='fc3')
-                        # net = slim.fully_connected(net, 256, scope='fc4')
 
                         net = slim.fully_connected(net, self.mass_dim, activation_fn=None, scope='out')
-                        # net = tf.clip_by_value(net,1,4)
                         return tf.cast(net, tf.float64)
 
         def setup_feedable_training(self, sess, lr=1e-1, loss='huber', is_init_all=True):
@@ -213,14 +169,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 abs_error2_summary_test = tf.summary.scalar('abs_error2_test', abs_error2)
                 self.percent = tf.reduce_mean(
                     tf.reduce_mean(tf.divide(abs_error1, tf.cast(0.0001 + tf.abs(self.mass), tf.float32)), axis=1))
-                # mass = tf.tile(tf.expand_dims(self.mass,0),multiples=[2,1,1])
-                # self.mean_error_feedable = tf.reduce_mean(-self.predict_mass_dist.log_prob(mass))
-                # # mass = tf.tile(tf.expand_dims(self.mass,0),multiples=[2,1,1])
-                # abs_error = tf.losses.absolute_difference(self.mass, self.predict_mass[-1])
-                # percent = tf.reduce_mean(
-                #     tf.reduce_mean(tf.divide(abs_error, tf.cast(0.0001 + tf.abs(self.mass), tf.float32)), axis=1))
             else:
-                # abs_error = tf.losses.absolute_difference(self.mass, self.predict_mass)
                 abs_error = loss_fn(self.mass, self.predict_mass)
                 self.mean_error_feedable = tf.reduce_mean(abs_error)
                 self.percent = tf.reduce_mean(
@@ -230,12 +179,9 @@ class NetworkVecEnv(SubprocVecEnv):
             self.train_op_feedable = optimizer.minimize(self.mean_error_feedable)
             error_summary = tf.summary.scalar('error-abs', self.mean_error_feedable)
             percentage_error = tf.summary.scalar('error-percentage', self.percent)
-            # self.log_dir = './model_ckpt/'
             self.merged_summary = tf.summary.merge([error_summary, percentage_error])
-
             error_summary_test = tf.summary.scalar('error-abs_test', self.mean_error_feedable)
             percentage_error_test = tf.summary.scalar('error-percentage_test', self.percent)
-            # self.log_dir = './model_ckpt/'
             if self.model_type == 'LSTM':
                 self.merged_summary_test = tf.summary.merge([error_summary_test,
                                                              percentage_error_test,
@@ -265,27 +211,9 @@ class NetworkVecEnv(SubprocVecEnv):
 
                 error.append(error2)
                 current += batch_size
-
-#             if mass.shape[0]-current-batch_size < 0:
-#                 obs_batch1 = obs[current:, :]
-#                 act_batch1 = act[current:, :]
-#                 mass_batch1 = mass[current:, :]
-#                 with graph.as_default():
-#                     percent, predicted_mass, summary_test = self.sess.run(
-#                         [self.percent, self.predict_mass, self.merged_summary_test],
-#                         feed_dict={self.obs: obs_batch1, self.act: act_batch1,
-#                                    self.mass: mass_batch1})
-#                 error.append(percent)
-#             print(predicted_mass.shape,mass_batch1.shape)
-#             # print(np.concatenate([predicted_mass[-1,:,:],mass_batch1], axis=1))
-#             print(np.sum(np.abs(predicted_mass[-1,:,:]-mass_batch1), axis=1))
-            # print(predicted_mass,mass_batch1)
             return error
 
         def feedable_train(self, obs, act, mass, num_iter, graph, batch_size=64, learning_rate=[1e-1,1e-2]):
-            # print(sess.run(tf.get_collection(tf.GraphKeys.VARIABLES)))
-            # self.run_with_location_trace(sess, self.train_op_feedable,
-            #                              feed_dict={self.obs: obs, self.act: act, self.mass: mass})
             _, exp_name = os.path.split(self.path)
             tensorboard_path = os.path.join(os.path.dirname(self.path), 'tensorboard', exp_name)
             log_folders = glob(tensorboard_path + '/*')
@@ -303,11 +231,6 @@ class NetworkVecEnv(SubprocVecEnv):
             act = act[:-split, :]
             mass = mass[:-split, :]
             with graph.as_default():
-                # self.restore_model(sess, path)
-                # bias = tf.get_variable('model/fc1/biases/')
-                # if self.subset_save == None:
-                #     self.subset_save = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="model")[:6])
-                #     self.subset_save.restore(sess, path)
                 for i in tqdm(range(num_iter)):
                     lr = learning_rate[int(i/num_iter*len(learning_rate))]
                     idx = np.random.choice(range(mass.shape[0]), batch_size)
@@ -330,17 +253,9 @@ class NetworkVecEnv(SubprocVecEnv):
                         error.append(error2)
                         train_writer.add_summary(summary, i)
                         train_writer.add_summary(summary_test, i)
-                # data_path = os.path.join(self.path, 'data')
-                # data_path = self.path+'data'
-                # np.save(data_path + '/predicted.npy', predicted_mass)
-                # np.save(data_path + '/actual.npy', mass_batch1)
-
             return error
 
         def predict(self, sess, obs_in, act_in):
-
-            # return self.run_with_location_trace(sess,self.predict_mass,feed_dict={self.obs_in:np.expand_dims(obs_in, axis=0), self.act_in:np.expand_dims(act_in, axis=0)})
-            # obs_in, act_in = normalize_data(obs_in,np.expand_dims(act_in, axis=-1))
             with self.graph.as_default():
                 obs = np.array(obs_in)
                 act = np.array(act_in)
@@ -379,18 +294,9 @@ class NetworkVecEnv(SubprocVecEnv):
                     act, state = policy.predict(obs['observation'], state, mask, deterministic=not use_distribution_policy)
 
                 obs, rew, done, _ = super(NetworkVecEnv, self).step(act)
-                # print(rew)
-                # mask = don    e
-                # imgs = self.get_images()
-                # cv2.imshow('win',cv2.resize(np.vstack(imgs), (0,0,), fx=0.2, fy=0.2))
-                # cv2.waitKey(1)
                 obs_list.append(obs['observation'].copy())
                 act_list.append(np.array(act).copy())
                 mass_list.append(obs['mass'].copy())
-                # predict_mass = self.model.predict(self.sess,np.array(obs_list),np.array(act_list))
-                # error = np.mean(np.abs(np.array(obs['mass']) - predict_mass), axis=1)
-                # if self.mass_distribution:
-                #     rew1 = 1 - 2 * error
                 mask = done.copy()
                 if np.all(done == True):
                     if policy is not None:
@@ -425,10 +331,6 @@ class NetworkVecEnv(SubprocVecEnv):
                 else:
                     act, state = policy.predict(obs['observation'], state, mask, deterministic=True)
                 obs, rew, done, _ = super(NetworkVecEnv, self).step(act)
-                # mask = done
-                # imgs = self.get_images()
-                # cv2.imshow('win',cv2.resize(np.vstack(imgs), (0,0,), fx=0.2, fy=0.2))
-                # cv2.waitKey(1)
                 obs_list.append(obs['observation'].copy())
                 act_list.append(np.array(act).copy())
                 mass_list.append(obs['mass'].copy())
@@ -493,14 +395,6 @@ class NetworkVecEnv(SubprocVecEnv):
         rollout_obs = rollout_obs.reshape(-1, rollout_obs.shape[-1])
         rollout_act = (rollout_act.reshape(-1, rollout_act.shape[-1]))
         rollout_mass = rollout_mass.reshape(-1, rollout_mass.shape[-1])
-        # rollout_mass = rollout_mass[:, :self.observation_space_dict.spaces['mass'].shape[0]]
-
-        # rollout_obs = self.normalize(rollout_obs)
-        # rollout_act = self.normalize(rollout_act)
-        # rollout_mass = self.normalize(rollout_mass)
-
-        # rollout_act = rollout_act.reshape(-1, rollout_act.shape[-1])
-        # self.restore_model(os.path.join(self.path, 'checkpoint_predict', str(0), '0.ckpt'))
         error = 0
         lr_list = [1e-1*0.5**i for i in range(lr+1)]
         error = self.model.feedable_train(rollout_obs, rollout_act, rollout_mass, num_iter=steps, graph=self.graph,
@@ -578,10 +472,6 @@ class NetworkVecEnv(SubprocVecEnv):
             self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='LSTM_model'))
         else:
             self.saver = tf.train.Saver(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='model'))
-        # data_path = "./mass_prediction/model_ckpt/" + comment + '/' + str(int(i)) + '/' + str(int(i)) + ".ckpt"
-        # print('/home/niranjan/Projects/vis_inst/experiments/KR5_arm/check_folder_structure/predictor_ckpt/0/model.ckpt')
-        # print( data_path)
-        # self.saver.restore(self.sess,'/home/niranjan/Projects/vis_inst/experiments/KR5_arm/check_folder_structure/predictor_ckpt/0/model.ckpt')
         self.saver.restore(self.sess, data_path)
         print("success")
 
@@ -604,9 +494,6 @@ def make_env(env_id, rank, seed=0):
         os.makedirs(log_dir, exist_ok=True)
         env = Monitor(env, log_dir, allow_early_resets=True)
         env.seed(seed + 2 * rank)
-        # print('seed', rank)
-        # server1.start()
-        # print('starting server', rank)
         return env
 
     set_global_seeds(seed)
@@ -652,45 +539,6 @@ def save_argparse(save_path, args):
         print(str(k), str(v))
         fo.write(str(k) + ' >>> ' + str(v) + '\n\n')
     fo.close()
-
-
-def send_notification(message, value=' '):
-    payload = {'value1': message, 'value2': value}
-
-    r = requests.post(
-        " https://maker.ifttt.com/trigger/training_complete/with/key/o-SJLHofKsB7dZwjDmNCJVyvEBEiEzObP2zyRQiRvNy",
-        data=payload)
-
-
-# parser = argparse.ArgumentParser()
-# parser.add_argument("--is_fresh", help='Train on fresh dataset', default=False, action='store_true')
-# parser.add_argument("--train_predictor", help='Train predictor from scratch', default=False, action='store_true')
-# parser.add_argument("--predictor_steps", help='Number of steps the predictor will be trained', default=500000, type=int,nargs='?', const=500000)
-# parser.add_argument("--checkpoint_num", help='Checkpoint number to restore', default=0, type=int,nargs='?', const=0)
-# parser.add_argument("--policy_checkpoint_num", help='Policy Checkpoint number to restore', default=0, type=int,nargs='?', const=0)
-# parser.add_argument("--PPO_steps", help='Number of PPO steps', default=61000, type=int,nargs='?', const=61000)
-# parser.add_argument("--predictor_dataset", help='Size of the predictor dataset', default=1000, type=int,nargs='?', const=1000)
-# parser.add_argument("--PPO_learning_rate", help='Learning rate of PPO', default=1e-5, type=float,nargs='?', const=1e-5)
-# parser.add_argument("--predictor_type", help='FCN or LSTM predictor', default='LSTM', type=str, nargs='?', const='LSTM')
-# parser.add_argument("--reward_type", help='sparse or dense', default='dense', type=str, nargs='?', const='dense')
-# parser.add_argument("--folder_name", help='name of the log folder', default='2b_2a_16K_oc_0.5_7_0.9_rand_start', type=str, nargs='?', const='2b_2a_16K_oc_0.5_7_0.9_rand_start')
-# parser.add_argument("--env_id", help='EnvID', default='ArmAccEnvCustom-v0', type=str, nargs='?', const='ArmAccEnvCustom-v0')
-# parser.add_argument("--num_meta_iter", help='Number of meta training iterations', default=1, type=int,nargs='?', const=1)
-# parser.add_argument("--only_test", help='Test Env with given predictor and policy', default=False, action='store_true')
-# parser.add_argument("--ball_type", help='1->Low curvature 2->High Curvature', default=1, type=int,nargs='?', const=1)
-# parser.add_argument("--start_state", help='Starting configuration angle for articulated object', default=None, type=float, nargs='?', const=None)
-# parser.add_argument("--flip_enabled", help='Allow negative forces', default=False, action='store_true')
-# parser.add_argument("--coverage_factor", help='fraction of the block covered by the controller',  default=0.9, type=float,nargs='?', const=0.9)
-# parser.add_argument("--reward_scale", help='Factor by which the reward will be scaled from [-1,1]', default=1.0, type=float, nargs='?', const=1.0)
-# parser.add_argument("--predictor_lr_steps", help='Number of times learning rate will be halved', default=0, type=int,nargs='?', const=0)
-# parser.add_argument("--chain_length", help='Number of bodies in the chain', default=2, type=int,nargs='?', const=2)
-# parser.add_argument("--num_tries", help='Number of pushes the arm is allowed to do', default=2, type=int,nargs='?', const=2)
-# parser.add_argument("--predictor_loss", help='Huber, L1 or L2', default='huber', type=str, nargs='?', const='huber')
-# parser.add_argument("--enable_notification", help='Send notification to phone', default=False, action='store_true')
-# parser.add_argument("--use_mass_distribution", help='Predict mass distribution instead of actual mass', default=False, action='store_true')
-# parser.add_argument('--mass_range_upper', help='Mass range upper',  default=7, type=float,nargs='?', const=7)
-# parser.add_argument('--mass_range_lower', help='Mass range lower',  default=0.1, type=float,nargs='?', const=0.1)
-# args = parser.parse_args()
 parser = argparse.ArgumentParser()
 parser.add_argument("--type", help='Experiment type: 2link, 3link, 2link_test, 3link_test',
                     default='DEFAULT', type=str, nargs='?', const='DEFAULT')
@@ -773,9 +621,6 @@ else:
     os.makedirs(arg_save_path, exist_ok=True)
     # save_argparse(arg_save_path, args)
     model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=arguments['PPO_learning_rate'], tensorboard_log=policy_tensorboard_path)
-    # model = PPO2.load(the_path + "/checkpoint/policy", env, verbose=1, learning_rate=constfn(2.5e-4),
-    #                   tensorboard_log=policy_tensorboard + "/policy_tensorboard/" + _)
-
     env.graph = model.graph
     env.sess = model.sess
     with env.graph.as_default():
@@ -789,16 +634,12 @@ else:
                                                    lr=arguments['predictor_lr_steps'],
                                                    steps=arguments['predictor_steps'],
                                                    use_distribution_policy=True)
-            if arguments['enable_notification']:
-                send_notification('Supervised training completed')
         else:
             predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(arguments['checkpoint_num']), 'model.ckpt')
             env.restore_model(predictor_ckpt_path)
             policy_save_number = arguments['checkpoint_num']
 
     for i in range(arguments['num_meta_iter']):
-        # init = tf.initialize_variables(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='model'))
-        # model.sess.run(init)
         model.learn(total_timesteps=arguments['PPO_steps'])
         os.makedirs(policy_ckpt_path, exist_ok=True)
         model.save(policy_ckpt_path)
@@ -812,8 +653,6 @@ else:
                            data_path=predictor_data_path,
                            steps=arguments['predictor_steps'],
                            use_distribution_policy=False if i == arguments['num_meta_iter']-1 else True)
-        if arguments['enable_notification']:
-            send_notification('Supervised training completed', str(i))
     error = env.evaluate(10,model)
 
 
