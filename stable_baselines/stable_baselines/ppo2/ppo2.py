@@ -302,7 +302,7 @@ class PPO2(ActorCriticRLModel):
                 cliprangenow = self.cliprange(frac)
                 # true_reward is the reward without discount
                 obs, returns, masks, actions, values, neglogpacs, states, ep_infos, true_reward = runner.run()
-                print(true_reward.T)
+                print('shape:',true_reward.shape, 'mean:', np.mean(true_reward)) 
                 ep_info_buf.extend(ep_infos)
                 mb_loss_vals = []
                 if states is None:  # nonrecurrent version
