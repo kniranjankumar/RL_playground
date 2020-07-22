@@ -291,7 +291,9 @@ class PPO2(ActorCriticRLModel):
             t_first_start = time.time()
 
             nupdates = total_timesteps // self.n_batch
+            
             for update in range(nupdates + 1):
+                print("Number of Updates: " nupdates)
                 assert self.n_batch % self.nminibatches == 0
                 n_batch_train = self.n_batch // self.nminibatches
                 t_start = time.time()
