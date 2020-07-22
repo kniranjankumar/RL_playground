@@ -302,6 +302,7 @@ class PPO2(ActorCriticRLModel):
                 cliprangenow = self.cliprange(frac)
                 # true_reward is the reward without discount
                 obs, returns, masks, actions, values, neglogpacs, states, ep_infos, true_reward = runner.run()
+                print(true_reward.T)
                 ep_info_buf.extend(ep_infos)
                 mb_loss_vals = []
                 if states is None:  # nonrecurrent version
@@ -339,7 +340,7 @@ class PPO2(ActorCriticRLModel):
                 fps = int(self.n_batch / (t_now - t_start))
 
                 if writer is not None:
-                    print(update* (self.n_batch + 1))
+                    
                     self.episode_reward = total_episode_reward_logger(self.episode_reward,
                                                                       true_reward.T,
                                                                       masks.reshape((self.n_envs, self.n_steps)),
