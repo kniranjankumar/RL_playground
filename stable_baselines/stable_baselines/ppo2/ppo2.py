@@ -339,6 +339,7 @@ class PPO2(ActorCriticRLModel):
                 fps = int(self.n_batch / (t_now - t_start))
 
                 if writer is not None:
+                    print(update* (self.n_batch + 1))
                     self.episode_reward = total_episode_reward_logger(self.episode_reward,
                                                                       true_reward.T,
                                                                       masks.reshape((self.n_envs, self.n_steps)),
