@@ -537,7 +537,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 self.dummy_step = True
                 self.dummy_step_buffer = [obs['observation'], rew, done, _]
 
-            out = obs['observation'], rew, np.zeros_like(done, dtype='bool'), _
+            out = obs['observation'], rew, np.bitwise_not(done), _
         else:
             self.dummy_step = False
             out = self.dummy_step_buffer
@@ -800,7 +800,6 @@ else:
     for i in range(arguments['num_meta_iter']):
         # init = tf.initialize_variables(tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='model'))
         # model.sess.run(init)
-        env.reset()
         model.learn(total_timesteps=arguments['PPO_steps'])
         os.makedirs(policy_ckpt_path, exist_ok=True)
         model.save(policy_ckpt_path)
