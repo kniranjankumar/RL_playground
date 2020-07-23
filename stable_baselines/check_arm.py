@@ -537,7 +537,7 @@ class NetworkVecEnv(SubprocVecEnv):
                 self.dummy_step = True
                 self.dummy_step_buffer = [obs['observation'], rew, done, _]
 
-            out = obs['observation'], rew, np.bitwise_not(done), _
+            out = obs['observation'], rew, np.zeros_like(done, dtype='bool'), _
         else:
             self.dummy_step = False
             out = self.dummy_step_buffer
