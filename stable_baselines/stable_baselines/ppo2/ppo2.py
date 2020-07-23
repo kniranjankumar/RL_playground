@@ -95,6 +95,7 @@ class PPO2(ActorCriticRLModel):
         self.n_batch = None
         self.summary = None
         self.episode_reward = None
+        self.reward_accumulator = []
         if _init_setup_model:
             self.setup_model()
             # self.supervised_model = self.setup_model()
@@ -303,6 +304,7 @@ class PPO2(ActorCriticRLModel):
                 # true_reward is the reward without discount
                 obs, returns, masks, actions, values, neglogpacs, states, ep_infos, true_reward = runner.run()
                 print('shape:',true_reward.shape, 'mean:', np.mean(true_reward)) 
+                self.reward_accumulator.append(true_reward.T)
                 ep_info_buf.extend(ep_infos)
                 mb_loss_vals = []
                 if states is None:  # nonrecurrent version

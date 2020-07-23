@@ -16,7 +16,7 @@ from glob import glob
 from tqdm import tqdm
 from read_config import get_arguments
 import requests
-
+import pickle
 num = 16  # Number of processes to use
 path, folder = os.path.split(os.getcwd())
 the_path = os.path.join(path, 'experiments', 'KR5_arm', 'envs', '2b_2a_16K_oc_0.5_7_0.9_rand_start')
@@ -802,6 +802,8 @@ else:
         model.learn(total_timesteps=arguments['PPO_steps'])
         os.makedirs(policy_ckpt_path, exist_ok=True)
         model.save(policy_ckpt_path)
+        with open(os.path.join(policy_ckpt_path,'rewards.pkl'), 'wb') as f:
+            pickle.dump(model.reward_accumulator, f)
         log_folders = glob(predictor_tensorboard_path + '/*')
         predictor_tensorboard_path = os.path.join(predictor_tensorboard_path, str(int(len(log_folders))))
         predictor_ckpt_path = os.path.join(the_path, 'predictor_ckpt', str(int(len(log_folders))))
