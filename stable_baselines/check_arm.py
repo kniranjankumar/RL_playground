@@ -802,9 +802,9 @@ else:
         model.learn(total_timesteps=arguments['PPO_steps'])
         os.makedirs(policy_ckpt_path, exist_ok=True)
         model.save(policy_ckpt_path)
-        with open(os.path.join(policy_ckpt_path,'rewards.pkl'), 'wb') as f:
+        with open(os.path.join(policy_ckpt_path,'rewards'+str(i)+'.pkl'), 'wb') as f:
             pickle.dump(model.reward_accumulator, f)
-        with open(os.path.join(policy_ckpt_path,'masks.pkl'), 'wb') as f:
+        with open(os.path.join(policy_ckpt_path,'masks'+str(i)+'.pkl'), 'wb') as f:
             pickle.dump(model.mask_accumulator, f)
         log_folders = glob(predictor_tensorboard_path + '/*')
         predictor_tensorboard_path = os.path.join(predictor_tensorboard_path, str(int(len(log_folders))))
