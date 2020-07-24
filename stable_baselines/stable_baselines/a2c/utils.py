@@ -559,7 +559,7 @@ def q_explained_variance(q_pred, q_true):
     return 1.0 - (var_pred / var_y)
 
 
-def total_episode_reward_logger(rew_acc, rewards, masks, writer, steps):
+def total_episode_reward_logger(rew_acc, rewards, masks, writer, steps, num_steps):
     """
     calculates the cumulated episode reward, and prints to tensorflow log the output
 
@@ -593,6 +593,7 @@ def total_episode_reward_logger(rew_acc, rewards, masks, writer, steps):
         reward_array = rewards
         mask_array = masks
         eps_rewards = []
+        # num_steps=3
         print('steps', steps)
         for i in range(reward_array.shape[0]):
             mask = mask_array[i]
@@ -609,5 +610,5 @@ def total_episode_reward_logger(rew_acc, rewards, masks, writer, steps):
         sum_eps_rewards = np.mean(sum_eps_rewards,0)
         for i in range(sum_eps_rewards.shape[0]):
             summary = tf.Summary(value=[tf.Summary.Value(tag="episode_reward", simple_value=sum_eps_rewards[i])])
-            writer.add_summary(summary, steps+(i)*16*3)
+            writer.add_summary(summary, steps+(i)*16*num_steps)
     return rew_acc

@@ -773,7 +773,7 @@ else:
 
     os.makedirs(arg_save_path, exist_ok=True)
     # save_argparse(arg_save_path, args)
-    model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=arguments['PPO_learning_rate'], tensorboard_log=policy_tensorboard_path)
+    model = PPO2(MlpLstmPolicy, env, verbose=1, learning_rate=arguments['PPO_learning_rate'], tensorboard_log=policy_tensorboard_path, num_eps_steps=arguments['num_tries']+1)
     # model = PPO2.load(the_path + "/checkpoint/policy", env, verbose=1, learning_rate=constfn(2.5e-4),
     #                   tensorboard_log=policy_tensorboard + "/policy_tensorboard/" + _)
 

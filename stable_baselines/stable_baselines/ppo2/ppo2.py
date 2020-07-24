@@ -43,7 +43,7 @@ class PPO2(ActorCriticRLModel):
 
     def __init__(self, policy, env, gamma=0.99, n_steps=128, ent_coef=0.01, learning_rate=2.5e-4, vf_coef=0.5,
                  max_grad_norm=0.5, lam=0.95, nminibatches=4, noptepochs=4, cliprange=0.2, verbose=0,
-                 tensorboard_log=None, _init_setup_model=True):
+                 tensorboard_log=None, _init_setup_model=True, num_eps_steps=2):
 
         super(PPO2, self).__init__(policy=policy, env=env, verbose=verbose, requires_vec_env=True,
                                    _init_setup_model=_init_setup_model)
@@ -97,6 +97,7 @@ class PPO2(ActorCriticRLModel):
         self.episode_reward = None
         self.reward_accumulator = []
         self.mask_accumulator = []
+        self.num_eps_steps = num_eps_steps
         if _init_setup_model:
             self.setup_model()
             # self.supervised_model = self.setup_model()
@@ -348,7 +349,7 @@ class PPO2(ActorCriticRLModel):
                     self.episode_reward = total_episode_reward_logger(self.episode_reward,
                                                                       true_reward.T,
                                                                       masks.reshape((self.n_envs, self.n_steps)),
-                                                                      writer, update* (self.n_batch + 1))
+                                                                      writer, update* (self.n_batch + 1),num_steps=self.num_eps_steps)
                     # self.episode_reward = total_episode_reward_logger(self.episode_reward,
                     #                                                   true_reward.reshape((self.n_envs, self.n_steps)),
                     #                                                   masks.reshape((self.n_envs, self.n_steps)),
