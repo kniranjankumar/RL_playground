@@ -346,7 +346,7 @@ class PPO2(ActorCriticRLModel):
                 if writer is not None:
                     
                     self.episode_reward = total_episode_reward_logger(self.episode_reward,
-                                                                      true_reward.reshape((self.n_envs, self.n_steps)),
+                                                                      true_reward.T,
                                                                       masks.reshape((self.n_envs, self.n_steps)),
                                                                       writer, update* (self.n_batch + 1))
                     # self.episode_reward = total_episode_reward_logger(self.episode_reward,
@@ -432,7 +432,7 @@ class Runner(AbstractEnvRunner):
         mb_states = self.states
         ep_infos = []
         for _ in range(self.n_steps):
-            print(self.obs)
+            # print(self.obs)
             actions, values, self.states, neglogpacs = self.model.step(self.obs, self.states, self.dones, False)
 
                     # print('failed')
