@@ -572,23 +572,41 @@ def total_episode_reward_logger(rew_acc, rewards, masks, writer, steps):
     :return: (np.array float) the updated total running reward
     """
     with tf.variable_scope("environment_info", reuse=True):
-        print(rewards.shape, masks.shape)
-        print(rewards[0,:], masks[0,:])
-        # for env_idx in range(rewards.shape[0]):
-        for env_idx in range(1):
+        # print(rewards.shape, masks.shape)
+        # print(rewards[0,:], masks[0,:])
+        # # for env_idx in range(rewards.shape[0]):
+        # for env_idx in range(1):
 
-            dones_idx = np.sort(np.argwhere(masks[env_idx]))
+        #     dones_idx = np.sort(np.argwhere(masks[env_idx]))
 
-            if len(dones_idx) == 0:
-                rew_acc[env_idx] += sum(rewards[env_idx])
-            else:
-                rew_acc[env_idx] += sum(rewards[env_idx, :dones_idx[0, 0]])
-                summary = tf.Summary(value=[tf.Summary.Value(tag="episode_reward", simple_value=rew_acc[env_idx])])
-                # writer.add_summary(summary, steps + dones_idx[0, 0])
-                for k in range(1, len(dones_idx[:, 0])):
-                    rew_acc[env_idx] = sum(rewards[env_idx, dones_idx[k-1, 0]:dones_idx[k, 0]])
-                    summary = tf.Summary(value=[tf.Summary.Value(tag="episode_reward", simple_value=rew_acc[env_idx])])
-                    writer.add_summary(summary, int(0.25 * 0.25 * (steps - 6)) + dones_idx[k, 0])
-                rew_acc[env_idx] = sum(rewards[env_idx, dones_idx[-1, 0]:])
-
+        #     if len(dones_idx) == 0:
+        #         rew_acc[env_idx] += sum(rewards[env_idx])
+        #     else:
+        #         rew_acc[env_idx] += sum(rewards[env_idx, :dones_idx[0, 0]])
+        #         summary = tf.Summary(value=[tf.Summary.Value(tag="episode_reward", simple_value=rew_acc[env_idx])])
+        #         # writer.add_summary(summary, steps + dones_idx[0, 0])
+        #         for k in range(1, len(dones_idx[:, 0])):
+        #             rew_acc[env_idx] = sum(rewards[env_idx, dones_idx[k-1, 0]:dones_idx[k, 0]])
+        #             summary = tf.Summary(value=[tf.Summary.Value(tag="episode_reward", simple_value=rew_acc[env_idx])])
+        #             writer.add_summary(summary, int(0.25 * 0.25 * (steps - 6)) + dones_idx[k, 0])
+        #         rew_acc[env_idx] = sum(rewards[env_idx, dones_idx[-1, 0]:])
+        reward_array = rewards
+        mask_array = masks
+        print('steps', steps)
+        for i in range(reward_array.shape[0]):
+            mask = mask_array[i]
+            reward = reward_array[i]
+            all_true = np.argwhere(mask).reshape(-1)
+        #     print(all_true)
+            for j in range(all_true.shape[0]-1):
+        #         print(reward.shape)
+        #         print(reward[all_true[j]: all_true[j+1]])
+                eps_rewards.append(reward[all_true[j]: all_true[j+1]][:-1])
+        #         break
+        #     break
+        sum_eps_rewards = np.array([np.sum(item) for item in eps_rewards]).reshape(16,-1)
+        sum_eps_rewards = np.mean(sum_eps_rewards,0)
+        for i in range(sum_eps_rewards.shape[0]):
+            summary = tf.Summary(value=[tf.Summary.Value(tag="episode_reward", simple_value=sum_eps_rewards[i])])
+            writer.add_summary(summary, steps-(i-sum_eps_rewards.shape[0])*3)
     return rew_acc
