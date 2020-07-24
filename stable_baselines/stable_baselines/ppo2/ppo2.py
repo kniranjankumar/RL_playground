@@ -462,6 +462,7 @@ class Runner(AbstractEnvRunner):
         mb_neglogpacs = np.asarray(mb_neglogpacs, dtype=np.float32)
         mb_dones = np.asarray(mb_dones, dtype=np.bool)
         last_values = self.model.value(self.obs, self.states, self.dones)
+        print(mb_rewards,mb_dones)
         # discount/bootstrap off value fn
         mb_advs = np.zeros_like(mb_rewards)
         true_reward = np.copy(mb_rewards)
@@ -479,7 +480,8 @@ class Runner(AbstractEnvRunner):
 
         mb_obs, mb_returns, mb_dones, mb_actions, mb_values, mb_neglogpacs = \
             map(swap_and_flatten, (mb_obs, mb_returns, mb_dones, mb_actions, mb_values, mb_neglogpacs))
-
+        print(rewards,self.dones)
+        
         return mb_obs, mb_returns, mb_dones, mb_actions, mb_values, mb_neglogpacs, mb_states, ep_infos, true_reward
 
 
