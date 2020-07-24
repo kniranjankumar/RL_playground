@@ -445,7 +445,7 @@ class Runner(AbstractEnvRunner):
             if isinstance(self.env.action_space, gym.spaces.Box):
                 clipped_actions = np.clip(actions, self.env.action_space.low, self.env.action_space.high)
             self.obs[:], rewards, self.dones, infos = self.env.step(clipped_actions)
-            print(rewards,dones)
+            print(rewards,self.dones)
             for info in infos:
                 maybeep_info = info.get('episode')
                 if maybeep_info:
