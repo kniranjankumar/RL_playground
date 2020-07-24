@@ -432,6 +432,7 @@ class Runner(AbstractEnvRunner):
         mb_states = self.states
         ep_infos = []
         for _ in range(self.n_steps):
+            print(self.obs)
             actions, values, self.states, neglogpacs = self.model.step(self.obs, self.states, self.dones, False)
 
                     # print('failed')
@@ -455,6 +456,8 @@ class Runner(AbstractEnvRunner):
                     self.states[i, :] = 0
             mb_rewards.append(rewards)
         # batch of steps to batch of rollouts
+        # print(mb_rewards,mb_dones)
+        
         mb_obs = np.asarray(mb_obs, dtype=self.obs.dtype)
         mb_rewards = np.asarray(mb_rewards, dtype=np.float32)
         mb_actions = np.asarray(mb_actions)
@@ -462,7 +465,6 @@ class Runner(AbstractEnvRunner):
         mb_neglogpacs = np.asarray(mb_neglogpacs, dtype=np.float32)
         mb_dones = np.asarray(mb_dones, dtype=np.bool)
         last_values = self.model.value(self.obs, self.states, self.dones)
-        print(mb_rewards,mb_dones)
         # discount/bootstrap off value fn
         mb_advs = np.zeros_like(mb_rewards)
         true_reward = np.copy(mb_rewards)
