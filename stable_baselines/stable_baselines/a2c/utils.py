@@ -608,5 +608,5 @@ def total_episode_reward_logger(rew_acc, rewards, masks, writer, steps):
         sum_eps_rewards = np.mean(sum_eps_rewards,0)
         for i in range(sum_eps_rewards.shape[0]):
             summary = tf.Summary(value=[tf.Summary.Value(tag="episode_reward", simple_value=sum_eps_rewards[i])])
-            writer.add_summary(summary, steps-(i-sum_eps_rewards.shape[0])*3)
+            writer.add_summary(summary, steps-(sum_eps_rewards.shape[0]+i)*3)
     return rew_acc
