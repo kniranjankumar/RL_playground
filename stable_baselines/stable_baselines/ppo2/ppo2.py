@@ -346,7 +346,7 @@ class PPO2(ActorCriticRLModel):
                 if writer is not None:
                     
                     self.episode_reward = total_episode_reward_logger(self.episode_reward,
-                                                                      true_reward.T,
+                                                                      true_reward.reshape((self.n_envs, self.n_steps)),
                                                                       masks.reshape((self.n_envs, self.n_steps)),
                                                                       writer, update* (self.n_batch + 1))
                     # self.episode_reward = total_episode_reward_logger(self.episode_reward,
@@ -446,7 +446,7 @@ class Runner(AbstractEnvRunner):
             if isinstance(self.env.action_space, gym.spaces.Box):
                 clipped_actions = np.clip(actions, self.env.action_space.low, self.env.action_space.high)
             self.obs[:], rewards, self.dones, infos = self.env.step(clipped_actions)
-            print(rewards,self.dones)
+            # print(rewards,self.dones)
             for info in infos:
                 maybeep_info = info.get('episode')
                 if maybeep_info:
@@ -482,7 +482,7 @@ class Runner(AbstractEnvRunner):
 
         mb_obs, mb_returns, mb_dones, mb_actions, mb_values, mb_neglogpacs = \
             map(swap_and_flatten, (mb_obs, mb_returns, mb_dones, mb_actions, mb_values, mb_neglogpacs))
-        print(rewards,self.dones)
+        # print(rewards,self.dones)
         
         return mb_obs, mb_returns, mb_dones, mb_actions, mb_values, mb_neglogpacs, mb_states, ep_infos, true_reward
 
