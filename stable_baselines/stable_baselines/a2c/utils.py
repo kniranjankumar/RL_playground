@@ -592,6 +592,7 @@ def total_episode_reward_logger(rew_acc, rewards, masks, writer, steps):
         #         rew_acc[env_idx] = sum(rewards[env_idx, dones_idx[-1, 0]:])
         reward_array = rewards
         mask_array = masks
+        eps_rewards = []
         print('steps', steps)
         for i in range(reward_array.shape[0]):
             mask = mask_array[i]
