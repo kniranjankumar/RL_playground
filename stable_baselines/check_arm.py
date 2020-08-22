@@ -130,7 +130,8 @@ class NetworkVecEnv(SubprocVecEnv):
                         obs_act = [tf.concat([obs,act], axis=-1) for obs,act in zip(obs[1:],rnn_act)]
                         obs_act = tf.concat(obs_act, axis=0)
 #                         obs_act_embedding = obs_act
-                        obs_act_embedding = slim.fully_connected(obs_act,128,scope='input_embedding')
+                        obs_act_embedding1 = slim.fully_connected(obs_act,128,scope='input_embedding1')
+                        obs_act_embedding = slim.fully_connected(obs_act_embedding1,128,scope='input_embedding')    
                         obs_act_embedding = tf.reshape(obs_act_embedding,[self.num_steps,-1,128])
                         rnn_input = tf.split(obs_act_embedding, num_or_size_splits=self.num_steps, axis=0)
                         rnn_input = [tf.squeeze(item, axis=0) for item in rnn_input]
