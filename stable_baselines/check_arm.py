@@ -658,10 +658,7 @@ def save_argparse(save_path, args):
 
 def send_notification(message, value=' '):
     payload = {'value1': message, 'value2': value}
-
-    r = requests.post(
-        " https://maker.ifttt.com/trigger/training_complete/with/key/o-SJLHofKsB7dZwjDmNCJVyvEBEiEzObP2zyRQiRvNy",
-        data=payload)
+    #Add IFTTT webhook here if you want notifications on your phone
 
 
 # parser = argparse.ArgumentParser()
