@@ -404,7 +404,7 @@ class NetworkVecEnv(SubprocVecEnv):
             rollout_mass.append(np.array(mass_list[0]).copy())
             obs_list, act_list, mass_list = [], [], []
 
-
+        print("mean action was:", np.mean(rollout_act))
         return np.array(rollout_obs), np.array(rollout_act), np.array(rollout_mass)
 
     def evaluate(self, num_eps, data_path, policy=None):
